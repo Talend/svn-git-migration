@@ -1,0 +1,109 @@
+<!-- Ant script for migrating Talend SVN repositories to Git repostiories for the Studio -->    
+<project name="svn2gitMigration" default="migration">
+	<property name="svn2gitMigration.file.path" value="${ant.file.svn2gitMigration}"/>
+	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+      <classpath>
+        <pathelement location="${svn2gitMigration.dir.path}/ant-contrib-1.0b3.jar"/>
+      </classpath>
+    </taskdef>
+	
+    <property name="svn.git.repos.path" value="${svn2gitMigration.dir.path}/svn_git_repos"/>
+	    <property name="svn.git.tos" value="tos"/>
+        <property name="svn.git.top" value="top"/>
+        <property name="svn.git.tis_shared" value="tis_shared"/>
+
+	<property name="migration.workspace.path" value="${svn2gitMigration.dir.path}/migration_workspace"/>
+	<property name="final.repos.path" value="${svn2gitMigration.dir.path}/final_repos"/>
+	<path id="svn.git.repo.dirset">
+    	<dirset dir="${svn.git.repos.path}" >
+    	    <include name="*"/>
+    	</dirset>
+    </path>
+
+	
+	
+	<!-- main target to launche the svn to git migration -->
+    <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
+	<target name="migration" description="main migration script">
+		<runtarget  target="update.all.git.svn.repos"/>
+        <runtarget  target="perform.each.migration"/>
+	</target>
+
+<!-- ================================= 
+          target: update.all.git.svn.repos              
+         ================================= -->
+    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits">
+        <foreach target="update.git.svn.repo" param="svn.git.repo.path">
+        	<path refid ="svn.git.repo.dirset"/>
+    	</foreach>
+    </target>
+	
+<!-- ================================= 
+          target: update.git.svn.repo              
+         ================================= -->
+    <target name="update.git.svn.repo" description="update the local git repo from remote svn">
+        <echo message="updating ${svn.git.repo.path}"/>
+    </target>
+	
+<!-- ================================= 
+          target: perform.each.migration              
+         ================================= -->
+    <target name="perform.each.migration" description="this will loop to call all the targets">
+        <runtarget  target="migrate.to.tcommon-studio-se"/>
+        <runtarget  target="migrate.to.tdi-studio-se"/>
+    </target>
+	
+<!-- ================================= 
+          target: migrate.to.tcommon-studio-se              
+         ================================= -->
+    <target name="migrate.to.tcommon-studio-se"  description="migrate the existing git-svn repos to tcommon-studio-se git repos">
+    	<git-keep-folders from="${svn.git.tos}" >
+     		<dirset-element>
+     	        <dirset dir="${migration.workspace.path}/${svn.git.tos}">
+     	            <include name="aaaa"/>
+     	            <include name="bar"/>
+     	        </dirset>
+    		</dirset-element>
+        </git-keep-folders>
+    </target>
+	
+	<!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-keep-folders          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-keep-folders">
+        <attribute name="from" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
+    	<element name="dirset-element"/>
+        <sequential>
+            <!-- copy the @{from} repos -->
+        	<echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
+            <copy todir="${migration.workspace.path}" >
+                    <fileset dir="${svn.git.repos.path}" includes="@{from}/**"/>
+            </copy>
+        	<!-- compute folders to remove from folders to be keeps -->
+        	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
+
+            <dirset dir="${destination.dir}" id="all.folders.id">
+                <include name="*"/>
+            </dirset>
+        	<resources id="res">
+        		<string value="aaaa"/>
+        	</resources>
+        	<difference id="folders.to.remove.res">
+        		<dirset refid="all.folders.id"/>
+        		<dirset-element/>
+            </difference>
+        	<pathconvert property="folders.to.remove" refid="folders.to.remove.res" pathsep=" ">
+        	      <map from="${destination.dir}" to=""/>
+       	    </pathconvert>
+            <!-- remove all unncessary folders from the local repos -->
+        	<echo message="remove the following folders : ${folders.to.remove}"/>
+             <exec executable="git" dir="${destination.dir}/">
+                <arg line="filter-branch --index-filter 'git rm --cached --ignore-unmatch -r ${folders.to.remove}' -- --all"/>
+            </exec>
+        	
+        </sequential>
+    </macrodef>
+
+	
+</project>
