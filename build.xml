@@ -2,19 +2,26 @@
 <project name="svn2gitMigration" default="migration">
 	<property name="svn2gitMigration.file.path" value="${ant.file.svn2gitMigration}"/>
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
-    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
+    <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
+    <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
       <classpath>
         <pathelement location="${svn2gitMigration.dir.path}/ant-contrib-1.0b3.jar"/>
       </classpath>
     </taskdef>
 	
-    <property name="svn.git.repos.path" value="${svn2gitMigration.dir.path}/svn_git_repos"/>
-	    <property name="svn.git.tos" value="tos"/>
+    <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
+    <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
+	<property name="list.of.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
+    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,develop"/>
+<!-- 	    <property name="svn.git.tos" value="tos"/>
         <property name="svn.git.top" value="top"/>
         <property name="svn.git.tis_shared" value="tis_shared"/>
+-->
 
-	<property name="migration.workspace.path" value="${svn2gitMigration.dir.path}/migration_workspace"/>
-	<property name="final.repos.path" value="${svn2gitMigration.dir.path}/final_repos"/>
+	<property name="migration.workspace.path" value="${repo.root.folder}/migration_workspace"/>
+	<property name="final.repos.path" value="${repo.root.folder}/final_repos"/>
 	<path id="svn.git.repo.dirset">
     	<dirset dir="${svn.git.repos.path}" >
     	    <include name="*"/>
@@ -22,12 +29,62 @@
     </path>
 
 	
+
+<!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="init">
+        <echo message="repo.root.folder is [${repo.root.folder}]"/>
+        <fail message="You must specify a &quot;repo.root.folder&quot; that contains a folder named [svn_git_repos] ">
+            <condition>
+               <not>
+                <available file="${svn.git.repos.path}"/>
+               </not>
+             </condition>
+        </fail>
+        <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; property ">
+            <condition>
+            	<or>
+            	    <not>
+            	        <isset property="remote.git.username"/>
+            	    </not>
+                    <not>
+                        <isset property="remote.git.password"/>
+                    </not>
+            	</or>
+             </condition>
+        </fail>
+    	
+    	<mkdir dir="${migration.workspace.path}"/>
+        <mkdir dir="${final.repos.path}"/>
+    </target>
+	
+<!-- - - - - - - - - - - - - - - - - - 
+          target: clean.final.repos                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="clean.final.repos">
+        <!-- remove all final repos -->
+        <echo message="clean final repo : ${final.repos.path}"/>
+        <delete dir="${final.repos.path}" />
+        <mkdir dir="${final.repos.path}" />
+    </target>
+
+<!-- - - - - - - - - - - - - - - - - - 
+          target: clean.workspace                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="clean.workspace">
+        <echo message="clean temporary workspace : ${migration.workspace.path} "/>
+        <delete dir="${migration.workspace.path}" />
+        <mkdir dir="${migration.workspace.path}" />
+    </target>
+	
+	
 	
 	<!-- main target to launche the svn to git migration -->
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
-	<target name="migration" description="main migration script">
+	<target name="migration" depends="init" description="main migration script">
 		<runtarget  target="update.all.git.svn.repos"/>
-        <runtarget  target="perform.each.migration"/>
+        <runtarget  target="perform.each.repo.migration"/>
 	</target>
 
 <!-- ================================= 
@@ -44,66 +101,253 @@
          ================================= -->
     <target name="update.git.svn.repo" description="update the local git repo from remote svn">
         <echo message="updating ${svn.git.repo.path}"/>
+        <exec executable="git" dir="${svn.git.repo.path}/">
+           <arg line="svn fetch"/>
+       </exec>
+       <echo message="fixing branches and tags..."/>
+        <exec executable="java" dir="${svn.git.repo.path}/">
+           <arg line="-Dfile.encoding=utf-8 -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
+       </exec>
     </target>
 	
 <!-- ================================= 
-          target: perform.each.migration              
+          target: perform.each.repo.migration
+          1) creates all the git final repos
+          2) loop on each target git repo and tries to fill it with content from svn_git source repos
+          3) pushes the git repositories.              
          ================================= -->
-    <target name="perform.each.migration" description="this will loop to call all the targets">
-        <runtarget  target="migrate.to.tcommon-studio-se"/>
-        <runtarget  target="migrate.to.tdi-studio-se"/>
+    <target name="perform.each.repo.migration" depends="clean.final.repos" description="this will loop to call all the targets">
+        <!-- loop on all final repos -->
+    	<for list="${list.of.git.repos}" param="git.repo.name">
+    		<sequential>
+    			<antcall target="clean.workspace"/>
+    	        <echo message="initialize the final repo : @{git.repo.name}"/>
+    			<!-- initialize the final git repo-->
+    			<git-init-final-repo name="@{git.repo.name}"/>
+                <!-- migrate each source repos into it-->
+    			<for param="svn.git.repo.path">
+    			    <path refid ="svn.git.repo.dirset"/>
+    	            <sequential>
+    	            	<local name="svn.git.name"/><!-- make the property local-->
+    	            	<basename file="@{svn.git.repo.path}" property="svn.git.name"/>
+    	            	<migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.repo.name}"/>
+    	            </sequential>
+    			</for>
+                <!-- push the final repos-->
+                <git-push-repo localrepo="${final.repos.path}/@{git.repo.name}" remoteRepo="@{git.repo.name}"/>
+    		</sequential>
+    	</for>
     </target>
 	
-<!-- ================================= 
-          target: migrate.to.tcommon-studio-se              
-         ================================= -->
-    <target name="migrate.to.tcommon-studio-se"  description="migrate the existing git-svn repos to tcommon-studio-se git repos">
-    	<git-keep-folders from="${svn.git.tos}" >
-     		<dirset-element>
-     	        <dirset dir="${migration.workspace.path}/${svn.git.tos}">
-     	            <include name="aaaa"/>
-     	            <include name="bar"/>
-     	        </dirset>
-    		</dirset-element>
-        </git-keep-folders>
-    </target>
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: migrate.single.svn.to.git   
+              1) check that a migration is required by finding the txt definition file for migration
+              2) copies the svnrepo repo into the workspace
+              3) removes all non requested folders from the repository
+              4) update the git final repository from workspace repo.  
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="migrate.single.svn.to.git">
+        <attribute name="svnrepo" description="name of the svn.git repo"/>
+        <attribute name="gitRepo" description="name of the git repository"/>
+        <sequential>
+        	<if>
+        		   <available file="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
+            <then>
+            	<copy-original-to-workspace from="@{svnrepo}"/>
+            	<echo>data file used : @{svnrepo}2@{gitrepo}.txt</echo>
+            	<git-keep-folders from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
+            	<git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
+        	</then> <!-- else nothing to migrate -->
+        	</if>            
+        </sequential>
+    </macrodef>
+
 	
 	<!-- = = = = = = = = = = = = = = = = =
-          macrodef: git-keep-folders          
+          macrodef: copy svn           
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="copy-original-to-workspace">
+        <attribute name="from" description="repo name to be found in ${svn.git.repos.path}" />
+        <sequential>
+            <!-- copy the @{from} repos -->
+            <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
+            <copy todir="${migration.workspace.path}" >
+                    <fileset dir="${svn.git.repos.path}" includes="@{from}/**" defaultexcludes="no"/>
+            </copy>
+        </sequential>
+    </macrodef>
+
+
+	
+	<!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-keep-folders   
+          this will duplicate the "from" folder into the workspace and remote the other folders than the one to be kept in the git history       
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="git-keep-folders">
         <attribute name="from" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
-    	<element name="dirset-element"/>
+        <attribute name="includesfile" description="file path to the list of pattern to include in the git repo"/>
         <sequential>
-            <!-- copy the @{from} repos -->
-        	<echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
-            <copy todir="${migration.workspace.path}" >
-                    <fileset dir="${svn.git.repos.path}" includes="@{from}/**"/>
-            </copy>
         	<!-- compute folders to remove from folders to be keeps -->
+        	<local name="destination.dir"/>
         	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
 
-            <dirset dir="${destination.dir}" id="all.folders.id">
+            <dirset dir="${destination.dir}" id="all.folders.id"><!-- id do not need to be local it works -->
                 <include name="*"/>
             </dirset>
-        	<resources id="res">
-        		<string value="aaaa"/>
-        	</resources>
         	<difference id="folders.to.remove.res">
         		<dirset refid="all.folders.id"/>
-        		<dirset-element/>
+                <dirset dir="${destination.dir}" includesfile="@{includesfile}">
+                </dirset>
             </difference>
         	<pathconvert property="folders.to.remove" refid="folders.to.remove.res" pathsep=" ">
         	      <map from="${destination.dir}" to=""/>
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders : ${folders.to.remove}"/>
-             <exec executable="git" dir="${destination.dir}/">
-                <arg line="filter-branch --index-filter 'git rm --cached --ignore-unmatch -r ${folders.to.remove}' -- --all"/>
+            <exec executable="git" dir="${destination.dir}/">
+                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm --cached --ignore-unmatch -r ${folders.to.remove}' -- --all --tags"/>
             </exec>
         	
         </sequential>
     </macrodef>
 
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-merge-repo   
+          this will merge the workspace from repo into the final_repo to repo 
+          1) add the from repo to the remotes of the to final repos
+          2) fetch branches and tags from the from repo
+          3) then merge each branches from the from into the final repos
+          4) removes the remote repo        
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-merge-repo">
+        <attribute name="from" description="name of the workspace repo to import"/>
+        <attribute name="to" description="name of the remote repo to import to"/>
+        <sequential>
+        	<local name="repo.path"/>
+        	<property name="final.repo.path" value="${final.repos.path}/@{to}"/>
+            <echo message="merging the workspace repo [@{from}] into the final repos [/@{to}]"/>
+            <exec executable="git" dir="${final.repo.path}" failonerror="true">
+                 <arg line="remote add @{from} ${migration.workspace.path}/@{from}"/>
+            </exec>
+            <exec executable="git" dir="${final.repo.path}" failonerror="true">
+                 <arg line="fetch @{from}"/>
+            </exec>
+            <exec executable="git" dir="${final.repo.path}" failonerror="true">
+                 <arg line="fetch --tags @{from}"/>
+            </exec>
+        	
+        	<for list="master,${list.of.branches}" param="branch.name">
+        		<sequential>
+                    <exec executable="git" dir="${final.repo.path}" failonerror="true">
+                         <arg line="checkout @{branch.name}"/>
+                    </exec>
+                    <exec executable="git" dir="${final.repo.path}">
+                         <arg line="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;"/>
+                    </exec>
+        		</sequential>
+        	</for>
+            <exec executable="git" dir="${final.repo.path}" failonerror="true">
+                 <arg line="remote rm @{from}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+	
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-push-repo   
+          this will push all local branches and tags to the remote repo       
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-push-repo">
+        <attribute name="localrepo" description="path to the local repo to be pushed"/>
+        <attribute name="remoteRepo" description="remote repository name"/>
+        <sequential>
+        	<local name="remote.repo.url"/>
+        	<property name="remote.repo.url" value="${talend.git.base.url}/@{remoteRepo}"/> 
+            <echo message="push the final repo : @{localrepo} to [@{remoteRepo}]"/>
+        	<git-create-remote-repo name="@{remoteRepo}"/>
+            <echo message="setting the remote url to repo [@{localrepo}] on
+            	[${remote.repo.url}]"/>
+             <exec executable="git" dir="@{localrepo}/">
+                <arg line="remote add origin ${remote.repo.url}"/>
+            </exec>
+            <echo message="pushing all branches to [${remote.repo.url}]"/>
+            <exec executable="git" dir="@{localrepo}/">
+               <arg line="push origin --all"/>
+           </exec>
+            <echo message="pushing all tags to [${remote.repo.url}]"/>
+            <exec executable="git" dir="@{localrepo}/">
+               <arg line="push origin --tags"/>
+           </exec>
+        </sequential>
+    </macrodef>
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-create-remote-repo   
+          this creates a remote repo on bitBucket right after deleting it, this will fail if creation fails       
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-create-remote-repo">
+        <attribute name="name" description="name of the repo"/>
+        <sequential>
+            <echo message="deleting remote [@{name}] "/>
+            <exec executable="curl" resultproperty="curl.result">
+               <arg line="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
+           </exec>
+            <echo message="creating remote [@{name}] "/>
+             <exec executable="curl" failonerror="true">
+               <arg line="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
+           </exec>
+        </sequential>
+    </macrodef>
+	
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-init-final-repo   
+          this initialise the final repo and creates an initial commit to have the master branch and be able to use it.   
+          It also creates the branches 
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-init-final-repo">
+        <attribute name="name" description="name of the repo"/>
+        <sequential>
+            <local name="repo.path"/><!-- make the property local-->
+        	<property name="repo.path" value="${final.repos.path}/@{name}"/>
+            <echo message="initializing  [${repo.path}] "/>
+            <exec executable="git" failonerror="true">
+                <arg line="init ${repo.path}/"/>
+           </exec>
+            <exec executable="touch" dir="${repo.path}" failonerror="true">
+                <arg line=".gitignore"/>
+           </exec>
+            <exec executable="git" dir="${repo.path}" failonerror="true">
+                <arg line="add .gitignore"/>
+            </exec>
+           <exec executable="git" dir="${repo.path}" failonerror="true">
+                <arg line="commit -am &quot;intial commit for migration&quot;"/>
+           </exec>
+            <for list="${list.of.branches}" param="branch.name">
+                <sequential>
+                    <exec executable="git" dir="${repo.path}" failonerror="true">
+                         <arg line="branch @{branch.name}"/>
+                    </exec>
+                </sequential>     
+            </for>
+        </sequential>
+    </macrodef>
+
+<!-- ================================= 
+          target: git-init-final-repo.test              
+         ================================= -->
+    <target name="test.git-init-final-repo" depends="clean.final.repos" >
+        <git-init-final-repo name="testRepo"/>
+    </target>
+
+	<!-- ================================= 
+          target: git-merge-repo.test              
+         ================================= -->
+    <target name="test.git-merge-repo" depends="clean.workspace, clean.final.repos">
+    	<copy-original-to-workspace from="tos/"/>
+    	<git-init-final-repo name="remote-tos"/>
+    	<git-merge-repo to="remote-tos" from="tos"/> 
+    </target>
+
+	
 	
 </project>
