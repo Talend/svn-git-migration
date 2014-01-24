@@ -54,9 +54,6 @@
             	</or>
              </condition>
         </fail>
-    	
-    	<mkdir dir="${migration.workspace.path}"/>
-        <mkdir dir="${final.repos.path}"/>
     </target>
 	
 <!-- - - - - - - - - - - - - - - - - - 
@@ -82,7 +79,7 @@
 	
 	<!-- main target to launche the svn to git migration -->
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
-	<target name="migration" depends="init" description="main migration script">
+	<target name="migration" depends="init,clean.final.repos" description="main migration script">
 		<runtarget  target="update.all.git.svn.repos"/>
         <runtarget  target="perform.each.repo.migration"/>
 	</target>
@@ -106,7 +103,7 @@
        </exec>
        <echo message="fixing branches and tags..."/>
         <exec executable="java" dir="${svn.git.repo.path}/">
-           <arg line="-Dfile.encoding=utf-8 -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
+           <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
        </exec>
     </target>
 	
@@ -116,7 +113,7 @@
           2) loop on each target git repo and tries to fill it with content from svn_git source repos
           3) pushes the git repositories.              
          ================================= -->
-    <target name="perform.each.repo.migration" depends="clean.final.repos" description="this will loop to call all the targets">
+    <target name="perform.each.repo.migration" description="this will loop to call all the targets">
         <!-- loop on all final repos -->
     	<for list="${list.of.git.repos}" param="git.repo.name">
     		<sequential>
@@ -171,9 +168,9 @@
         <sequential>
             <!-- copy the @{from} repos -->
             <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
-            <copy todir="${migration.workspace.path}" >
-                    <fileset dir="${svn.git.repos.path}" includes="@{from}/**" defaultexcludes="no"/>
-            </copy>
+            <exec executable="cp" dir="${destination.dir}/">
+                <arg line="${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
+            </exec>
         </sequential>
     </macrodef>
 
