@@ -168,7 +168,7 @@
         <sequential>
             <!-- copy the @{from} repos -->
             <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
-            <exec executable="cp" dir="${destination.dir}/">
+            <exec executable="cp">
                 <arg line="${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
             </exec>
         </sequential>
