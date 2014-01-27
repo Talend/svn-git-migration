@@ -8,6 +8,9 @@ org.talend.soamanager
 org.talend.commandline.audit.nl
 org.talend.gadget.admindashboard
 org.talend.migration
+
+# ----NLS -----
+
 org.talend.soamanager.commons
 org.talend.commandline.client
 org.talend.jobserver.karaf.feature

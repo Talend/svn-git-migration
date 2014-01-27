@@ -14,7 +14,7 @@
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,develop"/>
+    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
 <!-- 	    <property name="svn.git.tos" value="tos"/>
         <property name="svn.git.top" value="top"/>
         <property name="svn.git.tis_shared" value="tis_shared"/>
@@ -169,7 +169,7 @@
             <!-- copy the @{from} repos -->
             <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
             <exec executable="cp">
-                <arg line="${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
+                <arg line="-r ${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
             </exec>
         </sequential>
     </macrodef>
@@ -202,7 +202,7 @@
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders : ${folders.to.remove}"/>
             <exec executable="git" dir="${destination.dir}/">
-                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm --cached --ignore-unmatch -r ${folders.to.remove}' -- --all --tags"/>
+                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${folders.to.remove}' -- --all --tags"/>
             </exec>
         	
         </sequential>
@@ -233,7 +233,7 @@
                  <arg line="fetch --tags @{from}"/>
             </exec>
         	
-        	<for list="master,${list.of.branches}" param="branch.name">
+        	<for list="${list.of.branches},master" param="branch.name">
         		<sequential>
                     <exec executable="git" dir="${final.repo.path}" failonerror="true">
                          <arg line="checkout @{branch.name}"/>
