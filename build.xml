@@ -14,8 +14,9 @@
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
-<!-- 	    <property name="svn.git.tos" value="tos"/>
+    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2,master"/>
+	<property name="list.of.tags" value="release-4_2_0,release-4_2_1,release-4_2_2,release-4_2_3,release-4_2_4,release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_4_0,release-5_4_1"/>
+	<!-- 	    <property name="svn.git.tos" value="tos"/>
         <property name="svn.git.top" value="top"/>
         <property name="svn.git.tis_shared" value="tis_shared"/>
 -->
@@ -140,8 +141,9 @@
           macrodef: migrate.single.svn.to.git   
               1) check that a migration is required by finding the txt definition file for migration
               2) copies the svnrepo repo into the workspace
-              3) removes all non requested folders from the repository
-              4) update the git final repository from workspace repo.  
+              3) removes unwanted branches and tags
+              4) removes all non requested folders from the repository
+              5) update the git final repository from workspace repo.  
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="migrate.single.svn.to.git">
         <attribute name="svnrepo" description="name of the svn.git repo"/>
@@ -152,6 +154,8 @@
             <then>
             	<copy-original-to-workspace from="@{svnrepo}"/>
             	<echo>data file used : @{svnrepo}2@{gitrepo}.txt</echo>
+            	<keep-branches list="${list.of.branches}" repoPath="${migration.workspace.path}/@{gitrepo}" />
+            	<keep-tags list="${list.of.tags}" repoPath="${migration.workspace.path}/@{gitrepo}" />
             	<git-keep-folders from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
             	<git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
         	</then> <!-- else nothing to migrate -->
@@ -159,6 +163,116 @@
         </sequential>
     </macrodef>
 
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: keep-branches
+          this removes all local branches excpet the ones in the list attribute (comma separated list)
+          this removes all remote branches           
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="keep-branches">
+        <attribute name="list" description="list of branches to keep" />
+        <attribute name="repoPath" description="path of the git repository" />
+        <sequential>
+            <!-- compute local branches to be removed -->
+            <resources id="branches.to.keep.res">
+                <tokens>
+                    <string value="@{list}" />
+                    <stringtokenizer delims=","/>
+                </tokens>
+            </resources>
+        	<local name="all.branches"/>
+            <exec executable="git" dir="@{repoPath}/" outputproperty="all.branches">
+                <arg line="branch -a"/>
+            </exec>
+            <resources id="all.local.branches.res">
+            	<restrict>
+                    <tokens>
+                        <string value="${all.branches}" />
+                        <stringtokenizer delims="\n, *" suppressdelims="true" />
+                    </tokens>
+            		<not>
+            			  <contains text="remotes/" casesensitive="no"/>
+            		</not>
+            	</restrict>
+            </resources>
+            <difference id="local.branches.to.remove.res">
+                <resources refid="branches.to.keep.res"/>
+                <resources refid="all.local.branches.res"/>
+            </difference>
+        	<local name="local.branches.to.remove"/>
+            <pathconvert property="local.branches.to.remove" refid="local.branches.to.remove.res" pathsep=" "/>
+        	
+            <!-- remove all calculated local branches -->
+            <echo message="remove the following branches : ${local.branches.to.remove}"/>
+            <exec executable="git" dir="@{repoPath}/">
+                <arg line="branch -D ${local.branches.to.remove}"/>
+            </exec>
+        	
+            <!-- compute remote branches to be removed -->
+            <resources id="all.remote.branches.res">
+            	<mappedresources>
+                    <restrict>
+                        <tokens>
+                            <string value="${all.branches}" />
+                            <stringtokenizer delims="\n, *" suppressdelims="true" />
+                        </tokens>
+                        <contains text="remotes/" casesensitive="no"/>
+                    </restrict>
+            		<globmapper from="remotes/*" to="*"/>
+            	</mappedresources>
+            </resources>
+            <local name="remote.branches.to.remove"/>
+            <pathconvert property="remote.branches.to.remove" refid="all.remote.branches.res" pathsep=" "/>
+            
+            <!-- remove all calculated local branches -->
+            <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
+            <exec executable="git" dir="@{repoPath}/">
+                <arg line="branch -rD ${remote.branches.to.remove}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: keep-tags
+          this removes all tags excpet the ones in the list attribute (comma separated list)
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="keep-tags">
+        <attribute name="list" description="list of tags to keep" />
+        <attribute name="repoPath" description="path of the git repository" />
+        <sequential>
+            <!-- compute local branches to be removed -->
+            <resources id="tags.to.keep.res">
+                <tokens>
+                    <string value="@{list}" />
+                    <stringtokenizer delims=","/>
+                </tokens>
+            </resources>
+            <local name="all.tags"/>
+            <exec executable="git" dir="@{repoPath}/" outputproperty="all.tags">
+                <arg line="tag"/>
+            </exec>
+            <resources id="all.tags.res">
+                <tokens>
+                    <string value="${all.tags}" />
+                    <stringtokenizer delims="\n" suppressdelims="true" />
+                </tokens>
+            </resources>
+            <difference id="tags.to.remove.res">
+                <resources refid="all.tags.res"/>
+                <intersect id="intersect"><resources refid="tags.to.keep.res"/><resources refid="all.tags.res"/></intersect>
+            </difference>
+            <local name="local.branches.to.remove"/>
+            <pathconvert property="tags.to.remove" refid="tags.to.remove.res" pathsep=" "/>
+            
+            <!-- remove all calculated local branches -->
+            <echo message="remove the following tags : ${tags.to.remove}"/>
+             <exec executable="git" dir="@{repoPath}/">
+                <arg line="tag -d ${tags.to.remove}"/>
+            </exec>
+
+        </sequential>
+    </macrodef>
+	
 	
 	<!-- = = = = = = = = = = = = = = = = =
           macrodef: copy svn           
@@ -168,6 +282,7 @@
         <sequential>
             <!-- copy the @{from} repos -->
             <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
+        	<!-- native cp is much faster than the Ant one but it is not multiplatform and should not work on Windows-->
             <exec executable="cp">
                 <arg line="-r ${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
             </exec>
@@ -196,6 +311,7 @@
                 <dirset dir="${destination.dir}" includesfile="@{includesfile}">
                 </dirset>
             </difference>
+        	<local name="folders.to.remove"/>
         	<pathconvert property="folders.to.remove" refid="folders.to.remove.res" pathsep=" ">
         	      <map from="${destination.dir}" to=""/>
        	    </pathconvert>
@@ -233,7 +349,7 @@
                  <arg line="fetch --tags @{from}"/>
             </exec>
         	
-        	<for list="${list.of.branches},master" param="branch.name">
+        	<for list="${list.of.branches}" param="branch.name">
         		<sequential>
                     <exec executable="git" dir="${final.repo.path}" failonerror="true">
                          <arg line="checkout @{branch.name}"/>
@@ -345,6 +461,65 @@
     	<git-merge-repo to="remote-tos" from="tos"/> 
     </target>
 
+    <!-- ================================= 
+          target: git-merge-repo.test              
+         ================================= -->
+    <target name="test.keep-branches" > <!-- depends="clean.workspace">-->
+<!--     	<copy-original-to-workspace from="tis_private"/>
+-->
+        <keep-branches list="${list.of.branches}" repopath="${migration.workspace.path}/tis_private"/>
+    </target>
+
+    <!-- ================================= 
+          target: git-merge-repo.test              
+         ================================= -->
+    <target name="test.keep-tags" ><!--depends="clean.workspace">
+        <copy-original-to-workspace from="tis_private"/>-->
+
+        <keep-tags list="${list.of.tags}" repopath="${migration.workspace.path}/tis_private"/>
+    </target>
+	
+    <!-- ================================= 
+          target: git-merge-repo.test              
+         ================================= -->
+    <target name="test.reousource-diff" depends="">
+    	<property name="branches" value="branch1,branch2,branch3"/>
+
+    	<resources id="branches_to_keep">
+    		<restrict>
+        		<tokens>
+        		    <string value="${branches}" />
+        		    <stringtokenizer delims=","/>
+        		</tokens>
+    			<contains text="2" casesensitive="no"/>
+    		</restrict>
+    	</resources>
+    	<echo message="branches_to_keep=${toString:branches_to_keep}"/>
+    	<resources id="A">
+    	    <string value="a"/>
+    	    <string value="b"/>
+    	</resources>
+    	<resources id="B">
+    	      <string value="b"/>
+    	      <string value="c"/>
+    	</resources>
+    	<union id="union"><resources refid="A"/><resources refid="B"/></union>
+    	<intersect id="intersect"><resources refid="A"/><resources refid="B"/></intersect>
+    	<difference id="difference"><resources refid="A"/><resources refid="B"/></difference>
+    	<difference id="no.in.A">
+    		<resources refid="B"/>
+    		<intersect id="intersect"><resources refid="A"/><resources refid="B"/></intersect>
+    	</difference>
+    	<echo>
+    	      A: ${toString:A}                    = a;b
+    	      B: ${toString:B}                    = b;c
+
+    	      union     : ${toString:union}       = a;b;c
+    	      intersect : ${toString:intersect}   = b
+    	      difference: ${toString:difference}  = a;c
+    		  B not in A: ${toString:no.in.A}     = c
+    	    </echo>
+    </target>
 	
 	
 </project>
