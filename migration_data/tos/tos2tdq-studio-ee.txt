@@ -1,9 +1,1 @@
-#----------- Based on >>org.talend.tdq.libraries_feature -----------
-
-#Those should be in tis_private2tXXX-studio-ee or tis_shared2tXXX-studio-ee
-#        |-tis_private/org.talend.libraries.jdbc.oracle
-#        |-tis_shared/org.talend.libraries.jdom
-#        |-tis_shared/org.talend.libraries.jdtcompiler
-
-org.talend.tdq.libraries_feature
-
+org.talend.tdq.libraries-feature

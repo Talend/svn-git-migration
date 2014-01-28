@@ -1,12 +1,12 @@
-#----------- Based on >>org.talend.rcp.branding.tos.bigdata_feature, -----------
 org.talend.demo.bigdata.ce
 org.talend.designer.components.bigdata
 org.talend.designer.hdfsbrowse
+org.talend.designer.hdfsbrowse.nl
 org.talend.designer.neo4j
 org.talend.designer.pigmap
-org.talend.libraries.apache.cassandra
 org.talend.libraries.couchbase
 org.talend.libraries.couchdb
+org.talend.libraries.hadoop
 org.talend.libraries.hadoop.apache.0.20.2
 org.talend.libraries.hadoop.apache.0.20.203
 org.talend.libraries.hadoop.apache.0.20.204
@@ -22,28 +22,21 @@ org.talend.libraries.hadoop.mapr
 org.talend.libraries.hadoop.mapr.3.0.1
 org.talend.libraries.hadoop.mapr2
 org.talend.libraries.hcatalog
-org.talend.libraries.mongo
 org.talend.libraries.neo4j
+org.talend.libraries.mongo
 org.talend.libraries.pig
 org.talend.libraries.s3
 org.talend.libraries.sdsulib
 org.talend.libraries.sqoop
+org.talend.libraries.zookeeper
 org.talend.oozie.scheduler
-org.talend.repository.pigudf
-org.talend.tos.bigdata.core_feature
-org.talend.tos.bigdata.designer_feature
-org.talend.tos.bigdata.libraries_feature
-org.talend.tos.bigdata.repository_feature
-org.talend.tos.bigdata_feature
-
-
-# -----RCP-----
-org.talend.rcp.branding.tos.bigdata
-org.talend.rcp.branding.tos.bigdata_feature
-
-#   ------NLs------
-org.talend.designer.hdfsbrowse.nl
 org.talend.oozie.scheduler.nl
-
-#   ------Tests------
 org.talend.oozie.scheduler.test
+org.talend.repository.pigudf
+org.talend.rcp.branding.tos.bigdata
+org.talend.rcp.branding.tos.bigdata-feature
+org.talend.tos.bigdata-feature
+org.talend.tos.bigdata.core-feature
+org.talend.tos.bigdata.designer-feature
+org.talend.tos.bigdata.libraries-feature
+org.talend.tos.bigdata.repository-feature

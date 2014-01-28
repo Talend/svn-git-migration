@@ -1,17 +1,5 @@
-#----------- Based on >>org.talend.top.libraries_feature -----------
-org.talend.libraries.google.libphonumber
-
-#Because org.talend.top.libraries_feature and org.talend.tos.bigdata.libraries_feature contained. so should be removed into tcommon-studio-se
-# org.talend.libraries.hadoop.apache.0.20.2
-# org.talend.libraries.hadoop.apache.0.20.203
-# org.talend.libraries.hadoop.apache.0.20.204
-# org.talend.libraries.hadoop.apache.1.0.0
-# org.talend.libraries.hadoop.cloudera.0.20.cdh3
-# org.talend.libraries.hadoop.cloudera.cdh4
-# org.talend.libraries.hadoop.hdp.1.0
-# org.talend.libraries.hadoop.hdp.1.2
-# org.talend.libraries.hadoop.mapr
-# org.talend.libraries.hadoop.mapr2
-
-org.talend.libraries.jung
 org.talend.top.libraries_feature
+org.talend.libraries.google.libphonumber
+org.talend.libraries.jung
+org.talend.libraries.windowKey
+
