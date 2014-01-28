@@ -330,21 +330,21 @@
         	<local name="destination.dir"/>
         	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
 
-            <fileset dir="${destination.dir}" id="all.folders.id"><!-- id do not need to be local it works -->
+            <fileset dir="${destination.dir}" id="all.root.files.id"><!-- id do not need to be local it works -->
                 <include name="*"/>
             </fileset>
-        	<difference id="folders.to.remove.res">
-        		<fileset refid="all.folders.id"/>
+        	<difference id="files.to.remove.res">
+        		<fileset refid="all.root.files.id"/>
                 <fileset dir="${destination.dir}" includesfile="@{includesfile}"/>
             </difference>
-        	<local name="folders.to.remove"/>
-        	<pathconvert property="folders.to.remove" refid="folders.to.remove.res" pathsep=" ">
+        	<local name="files.to.remove"/>
+        	<pathconvert property="files.to.remove" refid="files.to.remove.res" pathsep=" ">
         	      <map from="${destination.dir}" to=""/>
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
-        	<echo message="remove the following folders : ${folders.to.remove}"/>
+        	<echo message="remove the following folders : ${files.to.remove}"/>
             <exec executable="gitX" dir="${destination.dir}/">
-                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${folders.to.remove}' -- --all --tags"/>
+                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
             </exec>
         	
         </sequential>
