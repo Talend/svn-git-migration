@@ -1,4 +1,0 @@
-org.talend.libraries.apache
-org.talend.common.ui.runtime
-org.talend.commons.runtime
-orig

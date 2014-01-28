@@ -1,0 +1,13 @@
+#----------- Based on >>org.talend.rcp.branding.tos_feature -----------
+# -----RCP-----
+org.talend.rcp.branding.tos
+org.talend.rcp.branding.tos_feature
+
+#
+org.talend.rcp.branding.jetlxcmmty
+org.talend.rcp.branding.jetlxcmmty-feature
+org.talend.rcp.branding.sdi
+org.talend.rcp.branding.sdi-feature
+
+# -----Tests-----
+org.talend.rcp.branding.tos.test-feature
