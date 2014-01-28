@@ -343,7 +343,7 @@
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders : ${files.to.remove}"/>
-            <exec executable="gitX" dir="${destination.dir}/">
+            <exec executable="git" dir="${destination.dir}/">
                 <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
             </exec>
         	
