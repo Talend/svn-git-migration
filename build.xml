@@ -14,7 +14,8 @@
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2,master"/>
+    <property name="list.of.branches.no.master" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
+    <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-4_2_0,release-4_2_1,release-4_2_2,release-4_2_3,release-4_2_4,release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_4_0,release-5_4_1"/>
 	<!-- 	    <property name="svn.git.tos" value="tos"/>
         <property name="svn.git.top" value="top"/>
@@ -106,6 +107,8 @@
         <exec executable="java" dir="${svn.git.repo.path}/">
            <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
        </exec>
+       <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
+       <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
     </target>
 	
 <!-- ================================= 
@@ -154,8 +157,6 @@
             <then>
             	<copy-original-to-workspace from="@{svnrepo}"/>
             	<echo>data file used : @{svnrepo}2@{gitrepo}.txt</echo>
-            	<keep-branches list="${list.of.branches}" repoPath="${migration.workspace.path}/@{gitrepo}" />
-            	<keep-tags list="${list.of.tags}" repoPath="${migration.workspace.path}/@{gitrepo}" />
             	<git-keep-folders from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
             	<git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
         	</then> <!-- else nothing to migrate -->
@@ -196,10 +197,10 @@
             	</restrict>
             </resources>
             <difference id="local.branches.to.remove.res">
-                <resources refid="branches.to.keep.res"/>
                 <resources refid="all.local.branches.res"/>
+                <intersect id="intersect"><resources refid="branches.to.keep.res"/><resources refid="all.local.branches.res"/></intersect>
             </difference>
-        	<local name="local.branches.to.remove"/>
+            <local name="local.branches.to.remove"/>
             <pathconvert property="local.branches.to.remove" refid="local.branches.to.remove.res" pathsep=" "/>
         	
             <!-- remove all calculated local branches -->
@@ -435,7 +436,7 @@
            <exec executable="git" dir="${repo.path}" failonerror="true">
                 <arg line="commit -am &quot;intial commit for migration&quot;"/>
            </exec>
-            <for list="${list.of.branches}" param="branch.name">
+            <for list="${list.of.branches.no.master}" param="branch.name">
                 <sequential>
                     <exec executable="git" dir="${repo.path}" failonerror="true">
                          <arg line="branch @{branch.name}"/>
@@ -467,7 +468,7 @@
     <target name="test.keep-branches" > <!-- depends="clean.workspace">-->
 <!--     	<copy-original-to-workspace from="tis_private"/>
 -->
-        <keep-branches list="${list.of.branches}" repopath="${migration.workspace.path}/tis_private"/>
+        <keep-branches list="${list.of.branches}" repopath="${svn.git.repos.path}/tis_private"/>
     </target>
 
     <!-- ================================= 
@@ -476,7 +477,7 @@
     <target name="test.keep-tags" ><!--depends="clean.workspace">
         <copy-original-to-workspace from="tis_private"/>-->
 
-        <keep-tags list="${list.of.tags}" repopath="${migration.workspace.path}/tis_private"/>
+        <keep-tags list="${list.of.tags}" repopath="${svn.git.repos.path}/tis_private"/>
     </target>
 	
     <!-- ================================= 
