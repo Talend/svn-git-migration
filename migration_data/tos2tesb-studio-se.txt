@@ -3,7 +3,6 @@ org.talend.camel.core-feature
 org.talend.camel.designer
 org.talend.camel.designer-feature
 org.talend.camel.designer.nl
-org.talend.camel.libraries
 org.talend.camel.model
 org.talend.camel.repository-feature
 org.talend.designer.camel.components.localprovider
