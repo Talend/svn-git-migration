@@ -17,10 +17,6 @@
     <property name="list.of.branches.no.master" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-4_2_0,release-4_2_1,release-4_2_2,release-4_2_3,release-4_2_4,release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_4_0,release-5_4_1"/>
-	<!-- 	    <property name="svn.git.tos" value="tos"/>
-        <property name="svn.git.top" value="top"/>
-        <property name="svn.git.tis_shared" value="tis_shared"/>
--->
 
 	<property name="migration.workspace.path" value="${repo.root.folder}/migration_workspace"/>
 	<property name="final.repos.path" value="${repo.root.folder}/final_repos"/>
@@ -134,11 +130,40 @@
     	            	<migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.repo.name}"/>
     	            </sequential>
     			</for>
+                <!-- refactor the final repo before pushing it -->
+                <refactor-final-repo path="${final.repos.path}/@{git.repo.name}"/>
+    			<!-- check that repo contains what is expect -->
+    			<check-final-repo/>
                 <!-- push the final repos-->
                 <git-push-repo localrepo="${final.repos.path}/@{git.repo.name}" remoteRepo="@{git.repo.name}"/>
     		</sequential>
     	</for>
     </target>
+	
+	
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: refactor-final-repo
+          refactor plugins and features into main, test, i18n plugins and features folders.          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="refactor-final-repo">
+        <attribute name="path" description="path of the git repository to refactor" />
+        <sequential>
+        	<echo message="NOT YET IMPLEMENTED"/>            
+        </sequential>
+    </macrodef>
+	
+	
+	<!-- = = = = = = = = = = = = = = = = =
+          macrodef: check-final-repo          
+          this will check that the final repository, master branch contains all the desired folders. 
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="check-final-repo">
+        <attribute name="argname" default="default" />
+        <sequential>
+            <echo message="NOT YET IMPLEMENTED"/>            
+        </sequential>
+    </macrodef>
+
 	
     <!-- = = = = = = = = = = = = = = = = =
           macrodef: migrate.single.svn.to.git   
@@ -157,7 +182,7 @@
             <then>
             	<copy-original-to-workspace from="@{svnrepo}"/>
             	<echo>data file used : @{svnrepo}2@{gitrepo}.txt</echo>
-            	<git-keep-folders from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
+            	<git-keep-root-files from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
             	<git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
         	</then> <!-- else nothing to migrate -->
         	</if>            
@@ -293,10 +318,11 @@
 
 	
 	<!-- = = = = = = = = = = = = = = = = =
-          macrodef: git-keep-folders   
-          this will duplicate the "from" folder into the workspace and remote the other folders than the one to be kept in the git history       
+          macrodef: git-keep-root-files   
+          1) duplicate the "from" folder into the workspace
+          2) remove the root files that do not match the pattern found in the includesfile file. It also removes them from the git history       
          = = = = = = = = = = = = = = = = = -->
-    <macrodef name="git-keep-folders">
+    <macrodef name="git-keep-root-files">
         <attribute name="from" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
         <attribute name="includesfile" description="file path to the list of pattern to include in the git repo"/>
         <sequential>
@@ -304,13 +330,12 @@
         	<local name="destination.dir"/>
         	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
 
-            <dirset dir="${destination.dir}" id="all.folders.id"><!-- id do not need to be local it works -->
+            <fileset dir="${destination.dir}" id="all.folders.id"><!-- id do not need to be local it works -->
                 <include name="*"/>
-            </dirset>
+            </fileset>
         	<difference id="folders.to.remove.res">
-        		<dirset refid="all.folders.id"/>
-                <dirset dir="${destination.dir}" includesfile="@{includesfile}">
-                </dirset>
+        		<fileset refid="all.folders.id"/>
+                <fileset dir="${destination.dir}" includesfile="@{includesfile}"/>
             </difference>
         	<local name="folders.to.remove"/>
         	<pathconvert property="folders.to.remove" refid="folders.to.remove.res" pathsep=" ">
@@ -318,7 +343,7 @@
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders : ${folders.to.remove}"/>
-            <exec executable="git" dir="${destination.dir}/">
+            <exec executable="gitX" dir="${destination.dir}/">
                 <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${folders.to.remove}' -- --all --tags"/>
             </exec>
         	
@@ -453,6 +478,13 @@
         <git-init-final-repo name="testRepo"/>
     </target>
 
+	<!-- ================================= 
+	          target: git-init-final-repo.test              
+	         ================================= -->
+	    <target name="test.git-keep-root-files">
+	        <git-keep-root-files from="tis_private" includesfile="${migration.data.folder.path}/tis_private2tcommon-studio-ee.txt"/>
+	    </target>
+	
 	<!-- ================================= 
           target: git-merge-repo.test              
          ================================= -->
