@@ -329,20 +329,28 @@
         	<!-- compute folders to remove from folders to be keeps -->
         	<local name="destination.dir"/>
         	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
-
-            <fileset dir="${destination.dir}" id="all.root.files.id"><!-- id do not need to be local it works -->
-                <include name="*"/>
-            </fileset>
-        	<difference id="files.to.remove.res">
-        		<fileset refid="all.root.files.id"/>
+            <resources id="all.root.files.id">
+                <fileset dir="${destination.dir}">
+                    <include name="*"/>
+                </fileset>
+                <dirset dir="${destination.dir}">
+                    <include name="*"/>
+                </dirset>
+            </resources>
+            <resources id="root.files.to.be.kept">
                 <fileset dir="${destination.dir}" includesfile="@{includesfile}"/>
+                <dirset dir="${destination.dir}" includesfile="@{includesfile}"/>
+            </resources>
+        	<difference id="files.to.remove.res">
+        		<resources refid="all.root.files.id"/>
+                <resources refid="root.files.to.be.kept"/>
             </difference>
         	<local name="files.to.remove"/>
         	<pathconvert property="files.to.remove" refid="files.to.remove.res" pathsep=" ">
         	      <map from="${destination.dir}" to=""/>
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
-        	<echo message="remove the following folders : ${files.to.remove}"/>
+        	<echo message="remove the following folders and files : ${files.to.remove}"/>
             <exec executable="git" dir="${destination.dir}/">
                 <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
             </exec>
@@ -471,7 +479,7 @@
         </sequential>
     </macrodef>
 
-<!-- ================================= 
+    <!-- ================================= 
           target: git-init-final-repo.test              
          ================================= -->
     <target name="test.git-init-final-repo" depends="clean.final.repos" >
@@ -479,11 +487,13 @@
     </target>
 
 	<!-- ================================= 
-	          target: git-init-final-repo.test              
-	         ================================= -->
-	    <target name="test.git-keep-root-files">
-	        <git-keep-root-files from="tis_private" includesfile="${migration.data.folder.path}/tis_private2tcommon-studio-ee.txt"/>
-	    </target>
+	      target: git-init-final-repo.test              
+	     ================================= -->
+    <target name="test.git-keep-root-files">
+<!--         <git-keep-root-files from="tis_private" includesfile="${migration.data.folder.path}/tis_private2tcommon-studio-ee.txt"/>
+-->
+        <git-keep-root-files from="tis_private" includesfile="/Applications/java/talend/git/test_migration_data/tis_private2tcommon-studio-ee.txt"/>
+    </target>
 	
 	<!-- ================================= 
           target: git-merge-repo.test              
@@ -554,5 +564,23 @@
     	    </echo>
     </target>
 	
+<!-- ================================= 
+          target: test-file-set              
+         ================================= -->
+    <target name="test-file-set" >
+    	<resources id="all.res.id">
+        	<fileset dir="${svn2gitMigration.dir.path}" id="file.set.id">
+        		<include name="*"/>
+        	</fileset>
+            <dirset dir="${svn2gitMigration.dir.path}" id="dir.set.id">
+                <include name="*"/>
+            </dirset>
+    	</resources>
+    	<echo >
+    		file.set.id=${toString:file.set.id}
+            dir.set.id=${toString:dir.set.id}
+    		all.res.id=${toString:all.res.id}
+    	</echo>
+    </target>
 	
 </project>
