@@ -26,6 +26,13 @@
     	</dirset>
     </path>
 
+    <!-- refactor folders -->
+    <property name="main.plugins.subfolder" value="main/plugins"/>
+    <property name="main.features.subfolder" value="main/features"/>
+    <property name="test.plugins.subfolder" value="test/plugins"/>
+    <property name="test.features.subfolder" value="test/features"/>
+    <property name="i18n.plugins.subfolder" value="i18n/plugins"/>
+    <property name="i18n.features.subfolder" value="i18n/features"/>
 	
 
 <!-- - - - - - - - - - - - - - - - - - 
@@ -96,15 +103,13 @@
          ================================= -->
     <target name="update.git.svn.repo" description="update the local git repo from remote svn">
         <echo message="updating ${svn.git.repo.path}"/>
-        <exec executable="git" dir="${svn.git.repo.path}/">
-           <arg line="svn fetch"/>
-       </exec>
-       <echo message="fixing branches and tags..."/>
+        <git argline="svn fetch" dir="${svn.git.repo.path}/"/>	
+        <echo message="fixing branches and tags..."/>
         <exec executable="java" dir="${svn.git.repo.path}/">
            <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
-       </exec>
-       <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
-       <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
+        </exec>
+        <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
+        <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
     </target>
 	
 <!-- ================================= 
@@ -143,12 +148,65 @@
 	
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: refactor-final-repo
-          refactor plugins and features into main, test, i18n plugins and features folders.          
+          1) refactor plugins and features into main, test, i18n plugins and features folders.
+          2) commit the refactor          
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="refactor-final-repo">
         <attribute name="path" description="path of the git repository to refactor" />
         <sequential>
-        	<echo message="NOT YET IMPLEMENTED"/>            
+            <!-- mv the test bundles -->
+        	<git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
+        		<dirset-elem>
+                    <include name="*.test"/>
+        		</dirset-elem>
+        	</git-mv-set>
+            <!-- mv the test features (I don't know how to identify test features) -->
+            <!-- mv the i18n plugins -->
+            <git-mv-set dir="@{path}" dest="${i18n.plugins.subfolder}">
+                <dirset-elem>
+                    <include name="*.nl"/>
+                </dirset-elem>
+            </git-mv-set>
+            <!-- mv the i18n features (I don't know how to identify test features) -->
+            <!-- mv the main features -->
+            <git-mv-set dir="@{path}" dest="${main.features.subfolder}">
+                <dirset-elem>
+                    <include name="*-feature"/>
+                </dirset-elem>
+            </git-mv-set>
+            <!-- mv the main plugins (the rest of all root folders -->
+            <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
+                <dirset-elem>
+                    <include name="*"/>
+                    <exclude name="main"/>
+                    <exclude name="test"/>
+                    <exclude name="i18n"/>
+                </dirset-elem>
+            </git-mv-set>
+        	<git argline="commit -am &quot;refactor main,test and i18n plugins and features&quot;" dir="@{path}"/>
+        </sequential>
+    </macrodef>
+                    	
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-mv-set
+          1) create subfolder
+          2) add it to git 
+          3) move a set of files to a folder using git mv command          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-mv-set">
+        <attribute name="dir" description="root folder of the git repo"/>
+        <attribute name="dest" description="destination folder relative to 'dir'"/>
+    	<element name="dirset-elem" description="element that will be used to select the folders to be moved"/>
+        <sequential>
+            <mkdir dir="@{dir}/@{dest}"/>
+            <git argline="add @{dest}" dir="@{dir}/"/>  
+            <dirset dir="@{dir}" id="all.folders.to.move.set">
+                <dirset-elem/>
+            </dirset>
+            <local name="all.folders.to.move"/>
+            <pathconvert property="all.folders.to.move" refid="all.folders.to.move.set" pathsep=" "/>
+            <echo message="copy to [@{dir}/@{dest}] the plugins : ${all.folders.to.move}"/>
+            <git dir="@{dir}" argline="mv ${all.folders.to.move} @{dest}"/>
         </sequential>
     </macrodef>
 	
@@ -230,9 +288,7 @@
         	
             <!-- remove all calculated local branches -->
             <echo message="remove the following branches : ${local.branches.to.remove}"/>
-            <exec executable="git" dir="@{repoPath}/">
-                <arg line="branch -D ${local.branches.to.remove}"/>
-            </exec>
+            <git dir="@{repoPath}" argline="branch -D ${local.branches.to.remove}"/>
         	
             <!-- compute remote branches to be removed -->
             <resources id="all.remote.branches.res">
@@ -252,9 +308,7 @@
             
             <!-- remove all calculated local branches -->
             <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
-            <exec executable="git" dir="@{repoPath}/">
-                <arg line="branch -rD ${remote.branches.to.remove}"/>
-            </exec>
+            <git dir="@{repoPath}" argline="branch -rD ${remote.branches.to.remove}"/>
         </sequential>
     </macrodef>
 
@@ -292,9 +346,7 @@
             
             <!-- remove all calculated local branches -->
             <echo message="remove the following tags : ${tags.to.remove}"/>
-             <exec executable="git" dir="@{repoPath}/">
-                <arg line="tag -d ${tags.to.remove}"/>
-            </exec>
+            <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
 
         </sequential>
     </macrodef>
@@ -351,9 +403,7 @@
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders and files : ${files.to.remove}"/>
-            <exec executable="git" dir="${destination.dir}/">
-                <arg line="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
-            </exec>
+            <git dir="@{destination.dir}" argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
         	
         </sequential>
     </macrodef>
@@ -373,29 +423,17 @@
         	<local name="repo.path"/>
         	<property name="final.repo.path" value="${final.repos.path}/@{to}"/>
             <echo message="merging the workspace repo [@{from}] into the final repos [/@{to}]"/>
-            <exec executable="git" dir="${final.repo.path}" failonerror="true">
-                 <arg line="remote add @{from} ${migration.workspace.path}/@{from}"/>
-            </exec>
-            <exec executable="git" dir="${final.repo.path}" failonerror="true">
-                 <arg line="fetch @{from}"/>
-            </exec>
-            <exec executable="git" dir="${final.repo.path}" failonerror="true">
-                 <arg line="fetch --tags @{from}"/>
-            </exec>
+            <git argline="remote add @{from} ${migration.workspace.path}/@{from}" dir="@{final.repo.path}" />
+            <git argline="fetch @{from}" dir="@{final.repo.path}" />
+            <git argline="fetch --tags @{from}" dir="@{final.repo.path}" />
         	
         	<for list="${list.of.branches}" param="branch.name">
         		<sequential>
-                    <exec executable="git" dir="${final.repo.path}" failonerror="true">
-                         <arg line="checkout @{branch.name}"/>
-                    </exec>
-                    <exec executable="git" dir="${final.repo.path}">
-                         <arg line="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;"/>
-                    </exec>
+                    <git argline="checkout @{branch.name}" dir="@{final.repo.path}" />
+                    <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="@{final.repo.path}" />
         		</sequential>
         	</for>
-            <exec executable="git" dir="${final.repo.path}" failonerror="true">
-                 <arg line="remote rm @{from}"/>
-            </exec>
+            <git argline="remote rm @{from}" dir="@{final.repo.path}" />
         </sequential>
     </macrodef>
 
@@ -414,17 +452,11 @@
         	<git-create-remote-repo name="@{remoteRepo}"/>
             <echo message="setting the remote url to repo [@{localrepo}] on
             	[${remote.repo.url}]"/>
-             <exec executable="git" dir="@{localrepo}/">
-                <arg line="remote add origin ${remote.repo.url}"/>
-            </exec>
+            <git argline="remote add origin ${remote.repo.url}" dir="@{localrepo}/" />
             <echo message="pushing all branches to [${remote.repo.url}]"/>
-            <exec executable="git" dir="@{localrepo}/">
-               <arg line="push origin --all"/>
-           </exec>
+            <git argline="push origin --all" dir="@{localrepo}/" />
             <echo message="pushing all tags to [${remote.repo.url}]"/>
-            <exec executable="git" dir="@{localrepo}/">
-               <arg line="push origin --tags"/>
-           </exec>
+            <git argline="push origin --tags" dir="@{localrepo}/" />
         </sequential>
     </macrodef>
 
@@ -440,7 +472,7 @@
                <arg line="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
            </exec>
             <echo message="creating remote [@{name}] "/>
-             <exec executable="curl" failonerror="true">
+            <exec executable="curl" failonerror="true">
                <arg line="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
            </exec>
         </sequential>
@@ -457,28 +489,37 @@
             <local name="repo.path"/><!-- make the property local-->
         	<property name="repo.path" value="${final.repos.path}/@{name}"/>
             <echo message="initializing  [${repo.path}] "/>
-            <exec executable="git" failonerror="true">
-                <arg line="init ${repo.path}/"/>
-           </exec>
+            <git argline="init ${repo.path}/" dir="${svn2gitMigration.dir.path}" />
             <exec executable="touch" dir="${repo.path}" failonerror="true">
                 <arg line=".gitignore"/>
            </exec>
-            <exec executable="git" dir="${repo.path}" failonerror="true">
-                <arg line="add .gitignore"/>
-            </exec>
-           <exec executable="git" dir="${repo.path}" failonerror="true">
-                <arg line="commit -am &quot;intial commit for migration&quot;"/>
-           </exec>
+            <git argline="add .gitignore" dir="${repo.path}" />
+            <git argline="commit -am &quot;intial commit for migration&quot;" dir="${repo.path}" />
             <for list="${list.of.branches.no.master}" param="branch.name">
                 <sequential>
-                    <exec executable="git" dir="${repo.path}" failonerror="true">
-                         <arg line="branch @{branch.name}"/>
-                    </exec>
+                    <git argline="branch @{branch.name}" dir="${repo.path}" />
                 </sequential>     
             </for>
         </sequential>
     </macrodef>
 
+	<!-- = = = = = = = = = = = = = = = = =
+          macrodef: git          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git">
+        <attribute name="argline" description="argument line passed to the git command"/>
+        <attribute name="dir" description="directory where to run the git command"/>
+        <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
+        <sequential>
+            <echo message="in folder [@{dir}]"/>
+        	<echo message="git @{argline}"/>
+            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}">
+                  <arg line="@{argline}"/>
+             </exec>
+        </sequential>
+    </macrodef>
+
+	
     <!-- ================================= 
           target: git-init-final-repo.test              
          ================================= -->
@@ -582,5 +623,17 @@
     		all.res.id=${toString:all.res.id}
     	</echo>
     </target>
+
+	<!-- ================================= 
+          target: test.refactor-final-repo              
+         ================================= -->
+    <target name="test.refactor-final-repo" >
+    	<property name="git.repo.dir"  value="${final.repos.path}/tcommon-studio-ee"/>
+        <git argline="reset --hard" dir="${git.repo.dir}" />
+        <git argline="clean -fd" dir="${git.repo.dir}" />
+
+    	<refactor-final-repo path="${git.repo.dir}"/>
+    </target>
+
 	
 </project>
