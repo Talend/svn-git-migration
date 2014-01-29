@@ -420,20 +420,20 @@
         <attribute name="from" description="name of the workspace repo to import"/>
         <attribute name="to" description="name of the remote repo to import to"/>
         <sequential>
-        	<local name="repo.path"/>
-        	<property name="final.repo.path" value="${final.repos.path}/@{to}"/>
+        	<local name="final.git.repo.path"/>
+        	<property name="final.git.repo.path" value="${final.repos.path}/@{to}"/>
             <echo message="merging the workspace repo [@{from}] into the final repos [/@{to}]"/>
-            <git argline="remote add @{from} ${migration.workspace.path}/@{from}" dir="@{final.repo.path}" />
-            <git argline="fetch @{from}" dir="@{final.repo.path}" />
-            <git argline="fetch --tags @{from}" dir="@{final.repo.path}" />
+            <git argline="remote add @{from} ${migration.workspace.path}/@{from}" dir="${final.git.repo.path}" />
+            <git argline="fetch @{from}" dir="${final.git.repo.path}" />
+            <git argline="fetch --tags @{from}" dir="${final.git.repo.path}" />
         	
         	<for list="${list.of.branches}" param="branch.name">
         		<sequential>
-                    <git argline="checkout @{branch.name}" dir="@{final.repo.path}" />
-                    <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="@{final.repo.path}" />
+                    <git argline="checkout @{branch.name}" dir="${final.git.repo.path}" />
+                    <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
         		</sequential>
         	</for>
-            <git argline="remote rm @{from}" dir="@{final.repo.path}" />
+            <git argline="remote rm @{from}" dir="${final.git.repo.path}" />
         </sequential>
     </macrodef>
 
