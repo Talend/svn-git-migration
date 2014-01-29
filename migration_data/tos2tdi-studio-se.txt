@@ -33,6 +33,7 @@ org.talend.designer.hl7.nl
 org.talend.designer.mapper
 org.talend.designer.mapper.nl
 org.talend.designer.mapper.test
+org.talend.designer.mapper.advanced
 org.talend.designer.rowgenerator
 org.talend.designer.rowgenerator.nl
 org.talend.designer.rowgenerator.test
