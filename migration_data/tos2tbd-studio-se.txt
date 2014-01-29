@@ -6,7 +6,6 @@ org.talend.designer.neo4j
 org.talend.designer.pigmap
 org.talend.libraries.couchbase
 org.talend.libraries.couchdb
-org.talend.libraries.hadoop
 org.talend.libraries.hadoop.apache.0.20.2
 org.talend.libraries.hadoop.apache.0.20.203
 org.talend.libraries.hadoop.apache.0.20.204

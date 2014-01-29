@@ -1,13 +1,8 @@
 org.talend.cluster-feature
 org.talend.demo.bigdata.ee
-
-# Because org.talend.cluster-feature
 org.talend.designer.components.clusterprovider
-
 org.talend.tismpx-feature
 org.talend.tismpx.nobdlib-feature
-
-#Because org.talend.tismpx.nobdlib_feature and org.talend.tismpx_feature
 org.talend.designer.components.mrprovider
 org.talend.designer.components.tismpprovider
 org.talend.designer.mapreduce
@@ -16,10 +11,6 @@ org.talend.repository.hbaseprovider
 org.talend.repository.hcatalog
 org.talend.repository.hdfs
 org.talend.repository.oozie
-
-
-
-#  ------NLs-----
 org.talend.repository.hadoopcluster.nl
 org.talend.repository.hcatalog.nl
 org.talend.repository.hdfs.nl

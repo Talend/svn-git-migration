@@ -11,7 +11,5 @@ org.talend.libraries.camel.alldeps
 org.talend.libraries.esb.ext
 org.talend.resources.export.route
 org.talend.slf4j-feature
-
-#  ------RCP-----
 org.talend.rcp.branding.esbenterprise-feature
 

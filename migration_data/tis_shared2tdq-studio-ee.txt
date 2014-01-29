@@ -1,8 +1,5 @@
-# Because tdq/org.talend.survivorship_feature
 org.eclipse.webdav
 org.guvnor.tools
-
-#  ------RCP-----
 org.talend.generic.dq-feature
 org.talend.rcp.branding.generic.dq
 org.talend.rcp.branding.tdq

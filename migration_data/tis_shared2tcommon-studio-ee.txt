@@ -1,20 +1,12 @@
-#Because tis_shared/org.talend.tisprof_feature and tdq/org.talend.tisprof_feature
 org.drools.eclipse
-
-# Because org.talend.esbenterprise_feature and org.talend.tisprof_feature 
 org.talend.designer.brms
 org.talend.repository.brms
 org.talend.designer.components.tispeprovider
 org.talend.libraries.jdom
-
 org.talend.generic.cloud-feature
-
-# Because org.talend.tdq.libraries_feature and org.talend.tis_feature
 org.talend.libraries.jdtcompiler
-
 org.talend.model.tac
 org.talend.rcp.branding.all-feature
-
 org.eclipse.emf.teneo
 org.eclipse.emf.teneo.annotations
 org.eclipse.emf.teneo.hibernate
@@ -29,18 +21,12 @@ org.talend.repository.svnprovider
 org.talend.repository.svnprovider-feature
 org.talend.libraries.sequence
 org.talend.repository.view.svn
-
-
-#  ------RCP-----
-# Because contained the ESB and DQ
 org.talend.rcp.branding.esbdqenterprise-feature
 org.talend.rcp.branding.esbdqenterprisempx-feature
 org.talend.rcp.branding.esbdqprofessional-feature
 org.talend.rcp.branding.esbdqteamedition-feature
-
 org.talend.rcp.branding.generic
 org.talend.rcp.branding.generic.cloud
-
 org.talend.rcp.branding.talendplatform.bigdata-feature
 org.talend.rcp.branding.talendplatform.bpmdqee-feature
 org.talend.rcp.branding.talendplatform.bpmdqeempx-feature
@@ -60,24 +46,16 @@ org.talend.rcp.branding.talendplatform.dseempx-feature
 org.talend.rcp.branding.talendplatform.dspe-feature
 org.talend.rcp.branding.talendplatform.dste-feature
 org.talend.rcp.branding.talendplatform.esbbpm-feature
-
 org.talend.tooling-feature
 org.talend.tup-feature
-
-#  ------Tests-----
 org.talend.teneo.model.test
 org.talend.repository.remoteprovider.test
 org.talend.repository.svnprovider.test
-
 org.talend.rcp.branding.tuj
 org.talend.rcp.branding.tuj-feature
 org.talend.rcp.branding.swtbot.test-feature
 org.talend.rcp.branding.swtbot.test.all-feature
 org.talend.rcp.branding.generic.test
-org.eclipse.swtbot.forms.finder
-
-
-#  ------NLs-----
 org.talend.designer.brms.nl
 org.talend.repository.brms.nl
 org.talend.repository.databaseprovider.nl

@@ -22,7 +22,6 @@ org.talend.esb.tooling-feature
 org.talend.esb.tooling.rs.provider-feature
 org.talend.esb.tooling.ws.consumer-feature
 org.talend.esb.tooling.ws.provider-feature
-org.talend.esb.ws
 org.talend.esbstandard-feature
 org.talend.libraries.esb
 org.talend.rcp.branding.camel

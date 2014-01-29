@@ -22,10 +22,7 @@ org.talend.amc.rcp.branding.talend-feature
 org.talend.amc.rcp.branding.talend.nl
 org.talend.amc.rcp.nl
 org.talend.amc.web.log4j
-
-# add in tdi temp
 org.talend.commandline.audit-feature
-
 org.talend.core.tis
 org.talend.core.tis-feature
 org.talend.designer.cdc
@@ -39,10 +36,6 @@ org.talend.designer.jobtemplate
 org.talend.designer.runprocess.debug
 org.talend.designer.runprocess.remote
 org.talend.designer.runprocess.remote-feature
-
-# Because in org.talend.tis_feature
-#org.talend.designer.tdqmatching
-
 org.talend.desinger.routines.tisprovider
 org.talend.libraries.archiva
 org.talend.libraries.drools
@@ -76,8 +69,6 @@ org.talend.tisteam-feature
 org.talend.updates
 org.talend.validationrules
 org.talend.wsdl.advancement
-
-#  ------RCP-----
 org.talend.rcp.branding.generic.di
 org.talend.rcp.branding.generic.tis
 org.talend.rcp.branding.tisenterprise-feature
@@ -87,8 +78,6 @@ org.talend.rcp.branding.tisexpress-feature
 org.talend.rcp.branding.tisprof-feature
 org.talend.rcp.branding.tisprofrtx-feature
 org.talend.rcp.branding.tisteam-feature
-
-#  ------Tests-----
 org.talend.tis.junit.test-feature
 org.talend.designer.cdc.test
 org.talend.designer.component.preview.test
@@ -100,8 +89,6 @@ org.talend.remote.runtime.client.test
 org.talend.repository.ebcdic.test
 org.talend.repository.sapwizard.test
 org.talend.updates.test
-
-#  ------NLs-----
 org.talend.core.tis.nl
 org.talend.designer.cdc.nl
 org.talend.designer.component.preview.nl

@@ -1,8 +1,6 @@
 org.talend.componentdesigner
 org.talend.componentdesigner-feature
 org.talend.componentdesigner.nl
-org.talend.componentdesigner.rcp
-org.talend.componentdesigner.rcp.nl
 org.talend.designer-feature
 org.talend.designer.abstractmap
 org.talend.designer.abstractmap.nl
@@ -16,7 +14,6 @@ org.talend.designer.codegen.nl
 org.talend.designer.codegen.test
 org.talend.designer.components.exchange
 org.talend.designer.components.exchange.nl
-org.talend.designer.components.libs
 org.talend.designer.components.localprovider
 org.talend.designer.components.localprovider.test
 org.talend.designer.core
@@ -34,7 +31,6 @@ org.talend.designer.gefabstractmap
 org.talend.designer.hl7
 org.talend.designer.hl7.nl
 org.talend.designer.mapper
-org.talend.designer.mapper.advanced
 org.talend.designer.mapper.nl
 org.talend.designer.mapper.test
 org.talend.designer.rowgenerator

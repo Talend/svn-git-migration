@@ -1,2 +1,1 @@
-# Because tis_shared/org.talend.tooling_feature and top/org.talend.rcp.branding.top_feature
 org.talend.update.p2-feature

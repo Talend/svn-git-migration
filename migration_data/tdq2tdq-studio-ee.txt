@@ -7,15 +7,12 @@ org.talend.dataprofiler.core.tdq
 org.talend.dataprofiler.core.tdq.ui
 org.talend.dataprofiler.datamart
 org.talend.dataprofiler.persistence
-org.talend.dataquality.data.index
 org.talend.dataquality.data.resources
-org.talend.dataquality.hadoop
 org.talend.dataquality.parser
 org.talend.dataquality.reporting
 org.talend.dataquality.reporting.engine
-org.talend.dataquality.reporting.engine.build
-org.talend.designer.components.dqshprovider
 org.talend.designer.components.libs.tdq
+org.talend.designer.components.dqshprovider
 org.talend.designer.components.tdqhadoopprovider
 org.talend.designer.components.tdqprovider
 org.talend.designer.routines.tdqprovider
@@ -32,12 +29,7 @@ org.talend.tdq.components-feature
 org.talend.tdq.document
 org.talend.tdq.repository
 org.talend.tep-feature
-
-
-# -----RCP-----
 org.talend.rcp.branding.tdqsa-feature
-
-# -----Nls-----
 org.talend.datacleansing.core.nl
 org.talend.datacleansing.core.ui.nl
 org.talend.dataprofiler.core.tdq.nl
@@ -49,9 +41,6 @@ org.talend.dataquality.reporting.nl
 org.talend.dqdemo.nl
 org.talend.repository.antlride.ui.nl
 org.talend.survivorship.designer.nl
-
-# -----Tests-----
-test.dq.datamart
 org.talend.datacleansing.core.ui.test
 org.talend.dataprofiler.core.tdq.test
 org.talend.dataprofiler.datamart.test
