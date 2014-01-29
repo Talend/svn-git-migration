@@ -403,7 +403,7 @@
        	    </pathconvert>
             <!-- remove all unncessary folders from the local repos -->
         	<echo message="remove the following folders and files : ${files.to.remove}"/>
-            <git dir="@{destination.dir}" argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags"/>
+            <git argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags" dir="${destination.dir}"/>
         	
         </sequential>
     </macrodef>
