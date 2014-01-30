@@ -207,7 +207,7 @@
             <pathconvert property="all.folders.to.move" refid="all.folders.to.move.set" pathsep=" "/>
             <if>
                 <not>
-                    <contains string="${all.folders.to.move}" substring=""/>                    
+                	<length string="${all.folders.to.move}" trim="true" length="0" />                    
                 </not>
             	<then>
                     <echo message="move to [@{dir}/@{dest}] the plugins : ${all.folders.to.move}"/>
