@@ -205,8 +205,15 @@
             </dirset>
             <local name="all.folders.to.move"/>
             <pathconvert property="all.folders.to.move" refid="all.folders.to.move.set" pathsep=" "/>
-            <echo message="copy to [@{dir}/@{dest}] the plugins : ${all.folders.to.move}"/>
-            <git dir="@{dir}" argline="mv ${all.folders.to.move} @{dest}"/>
+            <if>
+                <not>
+                    <contains string="${all.folders.to.move}" substring=""/>                    
+                </not>
+            	<then>
+                    <echo message="move to [@{dir}/@{dest}] the plugins : ${all.folders.to.move}"/>
+                    <git dir="@{dir}" argline="mv ${all.folders.to.move} @{dest}"/>
+            	</then>
+            </if>
         </sequential>
     </macrodef>
 	
