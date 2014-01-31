@@ -13,7 +13,7 @@
 	
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
-	<property name="list.of.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
+	<property name="list.of.final.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
     <property name="list.of.branches.no.master" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-4_2_0,release-4_2_1,release-4_2_2,release-4_2_3,release-4_2_4,release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
@@ -85,8 +85,17 @@
 	<!-- main target to launche the svn to git migration -->
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
 	<target name="migration" depends="init,clean.final.repos" description="main migration script">
-		<runtarget  target="update.all.git.svn.repos"/>
-        <runtarget  target="perform.each.repo.migration"/>
+        <tempfile property="error.log"/>
+	    <trycatch>
+	        <try/>
+	           <runtarget  target="update.all.git.svn.repos"/>
+	           <runtarget  target="perform.each.repo.migration"/>
+	       <try/>
+	       <finally>
+	           <delete file="${error.log}"/>
+	       </finally>
+	    </trycatch>
+	    
 	</target>
 
 <!-- ================================= 
@@ -120,27 +129,27 @@
          ================================= -->
     <target name="perform.each.repo.migration" description="this will loop to call all the targets">
         <!-- loop on all final repos -->
-    	<for list="${list.of.git.repos}" param="git.repo.name">
+    	<for list="${list.of.final.git.repos}" param="git.final.repo.name">
     		<sequential>
     			<antcall target="clean.workspace"/>
-    	        <echo message="initialize the final repo : @{git.repo.name}"/>
+    	        <echo message="initialize the final repo : @{git.final.repo.name}"/>
     			<!-- initialize the final git repo-->
-    			<git-init-final-repo name="@{git.repo.name}"/>
+    			<git-init-final-repo name="@{git.final.repo.name}"/>
                 <!-- migrate each source repos into it-->
     			<for param="svn.git.repo.path">
     			    <path refid ="svn.git.repo.dirset"/>
     	            <sequential>
     	            	<local name="svn.git.name"/><!-- make the property local-->
     	            	<basename file="@{svn.git.repo.path}" property="svn.git.name"/>
-    	            	<migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.repo.name}"/>
+    	            	<migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.final.repo.name}"/>
     	            </sequential>
     			</for>
                 <!-- refactor the final repo before pushing it -->
-                <refactor-final-repo path="${final.repos.path}/@{git.repo.name}"/>
+                <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
     			<!-- check that repo contains what is expect -->
-    			<check-final-repo/>
+    			<check-final-repo repo="git.final.repo.name"/>
                 <!-- push the final repos-->
-                <git-push-repo localrepo="${final.repos.path}/@{git.repo.name}" remoteRepo="@{git.repo.name}"/>
+                <git-push-repo localrepo="${final.repos.path}/@{git.final.repo.name}" remoteRepo="@{git.final.repo.name}"/>
     		</sequential>
     	</for>
     </target>
@@ -223,9 +232,66 @@
           this will check that the final repository, master branch contains all the desired folders. 
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="check-final-repo">
-        <attribute name="argname" default="default" />
+        <attribute name="repo" default="name of the final repo to check" />
         <sequential>
-            <echo message="NOT YET IMPLEMENTED"/>            
+            <!-- create a resource with all files that should be in the final repo from the migration data files-->
+            <fileset dir="${migration.data.folder.path}" id="all.migration.files">
+                <include name="*@{repo}.txt"/>
+            </fileset>
+            <echo message="list of migration files:${toString:all.migration.files}"/>
+            <tempfile property="temp.file"/>
+            <trycatch>
+                <try>
+                    <concat destfile="${temp.file}">
+                        <fileset refid="all.migration.files"/>
+                    </concat>
+                    <local name="all.files.to.check"/>
+                    <loadresource property="all.files.to.check">
+                        <file file="${temp.file}"/>
+                    </loadresource>
+                    <resources id="all.files.to.check.res">
+                        <tokens>
+                            <string value="${all.files.to.check}" />
+                            <stringtokenizer delims="\n"/>
+                        </tokens>
+                    </resources>            
+                    <!-- create a resource with all files that are found in the final repo from the migration data files-->
+                    <dirset dir="${final.repos.path}/@{repo}" id="all.existing.dir.set">
+                        <include name="*/*/*"/>
+                     </dirset>
+                    <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
+                    <local name="all.existing.dir.path"/>
+                    <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
+                    <local name="all.existing.dir"/>
+                    <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
+                    <propertyregex property="all.existing.dir" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
+                    <resources id="all.exiting.files.res" >
+                        <tokens>
+                            <string value="${all.existing.dir}"/>
+                            <stringtokenizer delims="#"/>
+                        </tokens>
+                    </resources>
+                    <!-- compare the expected resources with the existing ones and stores the failure if they don't match-->
+                    <difference id="diff.expected.existing.res">
+                        <resources refid="all.files.to.check.res"/>
+                        <resources refid="all.exiting.files.res"/>
+                    </difference>
+                    <if>
+                        <not>
+                            <length length="0">
+                                <resources refid="diff.expected.existing.res"/>
+                            </length>
+                        </not>
+                        <then>
+                            <echo file="${error.logs}" append="true" message="Check of repo @{repo} Failed because ${line.separator}expected folder set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing folder set :${toString:all.exiting.files.res}">
+                            </echo>
+                        </then>
+                    </if>    
+                </try>
+                <finally>
+                    <delete file="${temp.file}"/>
+                </finally>
+            </trycatch>
         </sequential>
     </macrodef>
 
@@ -642,5 +708,12 @@
     	<refactor-final-repo path="${git.repo.dir}"/>
     </target>
 
+<!-- ================================= 
+          target: test.check-final-repo              
+         ================================= -->
+    <target name="test.check-final-repo">
+        <check-final-repo repo="tcommon-studio-ee"/>
+    </target>
+    
 	
 </project>
