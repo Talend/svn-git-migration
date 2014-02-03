@@ -4,6 +4,7 @@
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
 	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
+    <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
 	<taskdef resource="net/sf/antcontrib/antlib.xml">
       <classpath>
@@ -39,7 +40,6 @@
           target: init                      
          - - - - - - - - - - - - - - - - - -->
     <target name="init">
-        <echo message="repo.root.folder is [${repo.root.folder}]"/>
         <fail message="You must specify a &quot;repo.root.folder&quot; that contains a folder named [svn_git_repos] ">
             <condition>
                <not>
@@ -59,6 +59,11 @@
             	</or>
              </condition>
         </fail>
+        <delete file="${error.log.path}"/>
+        <echo message="--------------------- STARTING SVN -> GIT MIGRATION --------------------"/>
+        <echo message="root of svn-git, workspace and final folders for git repos is [${repo.root.folder}]"/>
+        <echo message="migration data folder is [${migration.data.folder.path}]"/>
+        <echo message="error log may be create at [${error.log.path}]"/>
     </target>
 	
 <!-- - - - - - - - - - - - - - - - - - 
@@ -85,14 +90,13 @@
 	<!-- main target to launche the svn to git migration -->
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
 	<target name="migration" depends="init,clean.final.repos" description="main migration script">
-        <tempfile property="error.log"/>
 	    <trycatch>
 	        <try/>
 	           <runtarget  target="update.all.git.svn.repos"/>
 	           <runtarget  target="perform.each.repo.migration"/>
 	       <try/>
 	       <finally>
-	           <delete file="${error.log}"/>
+	           <dump-error-log/>
 	       </finally>
 	    </trycatch>
 	    
@@ -238,7 +242,7 @@
             <fileset dir="${migration.data.folder.path}" id="all.migration.files">
                 <include name="*@{repo}.txt"/>
             </fileset>
-            <echo message="list of migration files:${toString:all.migration.files}"/>
+            <echo message="Checking [@{repo}] files from the migration data files:${toString:all.migration.files}"/>
             <tempfile property="temp.file"/>
             <trycatch>
                 <try>
@@ -276,6 +280,11 @@
                         <resources refid="all.files.to.check.res"/>
                         <resources refid="all.exiting.files.res"/>
                     </difference>
+                    <echo>
+                        all.files.to.check.res=${toString:all.files.to.check.res}
+                        all.exiting.files.res=${toString:all.exiting.files.res}
+                        diff.expected.existing.res=${toString:diff.expected.existing.res}
+                    </echo>
                     <if>
                         <not>
                             <length length="0">
@@ -283,7 +292,8 @@
                             </length>
                         </not>
                         <then>
-                            <echo file="${error.logs}" append="true" message="Check of repo @{repo} Failed because ${line.separator}expected folder set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing folder set :${toString:all.exiting.files.res}">
+                            <echo message="Check of [@{repo}] failed : see error.log." level="error"/>
+                            <echo file="${error.log.path}" append="true" message="${line.separator}Check of repo @{repo} Failed because ${line.separator}expected folder set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing folder set :${toString:all.exiting.files.res}${line.separator}here is the diff:${toString:diff.expected.existing.res}">
                             </echo>
                         </then>
                     </if>    
@@ -592,6 +602,24 @@
         </sequential>
     </macrodef>
 
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: dump-error-log          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="dump-error-log">
+        <sequential>
+            <loadfile property="error.log.content" srcFile="${error.log.path}" quiet="true"/>
+            <if>
+                <isset property="error.log.content"/>
+            <then>
+                <echo message="Dumping the file error.log : ${line.separator}${error.log.content}"/>
+            </then>
+            <else>
+                <echo message="no error log found so enjoy :)."/>
+            </else>
+            </if>
+        </sequential>
+    </macrodef>
+
 	
     <!-- ================================= 
           target: git-init-final-repo.test              
@@ -713,6 +741,7 @@
          ================================= -->
     <target name="test.check-final-repo">
         <check-final-repo repo="tcommon-studio-ee"/>
+        <dump-error-log/>
     </target>
     
 	
