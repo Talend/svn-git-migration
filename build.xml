@@ -6,6 +6,7 @@
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
     <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
+    <property name="commit.prefix" value="[GIT Migration]"/>
 	<taskdef resource="net/sf/antcontrib/antlib.xml">
       <classpath>
         <pathelement location="${svn2gitMigration.dir.path}/ant-contrib-1.0b3.jar"/>
@@ -13,11 +14,13 @@
     </taskdef>
 	
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
+    <property name="migration.data.branches.folder.path" value="${svn2gitMigration.dir.path}/migration_data/branches"/>
+    
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.final.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches.no.master" value="branch-5_4,branch-5_3,branch-5_2,branch-5_1,branch-5_0,branch-4_2"/>
+    <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
-	<property name="list.of.tags" value="release-4_2_0,release-4_2_1,release-4_2_2,release-4_2_3,release-4_2_4,release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
+	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
 
 	<property name="migration.workspace.path" value="${repo.root.folder}/migration_workspace"/>
 	<property name="final.repos.path" value="${repo.root.folder}/final_repos"/>
@@ -167,36 +170,41 @@
     <macrodef name="refactor-final-repo">
         <attribute name="path" description="path of the git repository to refactor" />
         <sequential>
-            <!-- mv the test bundles -->
-        	<git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
-        		<dirset-elem>
-                    <include name="*.test"/>
-        		</dirset-elem>
-        	</git-mv-set>
-            <!-- mv the test features (I don't know how to identify test features) -->
-            <!-- mv the i18n plugins -->
-            <git-mv-set dir="@{path}" dest="${i18n.plugins.subfolder}">
-                <dirset-elem>
-                    <include name="*.nl"/>
-                </dirset-elem>
-            </git-mv-set>
-            <!-- mv the i18n features (I don't know how to identify test features) -->
-            <!-- mv the main features -->
-            <git-mv-set dir="@{path}" dest="${main.features.subfolder}">
-                <dirset-elem>
-                    <include name="*-feature"/>
-                </dirset-elem>
-            </git-mv-set>
-            <!-- mv the main plugins (the rest of all root folders -->
-            <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
-                <dirset-elem>
-                    <include name="*"/>
-                    <exclude name="main"/>
-                    <exclude name="test"/>
-                    <exclude name="i18n"/>
-                </dirset-elem>
-            </git-mv-set>
-        	<git argline="commit -am &quot;refactor main,test and i18n plugins and features&quot;" dir="@{path}"/>
+            <for param="branch" list="${list.of.branches}">
+                <sequential>
+                    <git argline="checkout @{branch}" dir="@{path}"/>
+                    <!-- mv the test bundles -->
+                	<git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
+                		<dirset-elem>
+                            <include name="*.test"/>
+                		</dirset-elem>
+                	</git-mv-set>
+                    <!-- mv the test features (I don't know how to identify test features) -->
+                    <!-- mv the i18n plugins -->
+                    <git-mv-set dir="@{path}" dest="${i18n.plugins.subfolder}">
+                        <dirset-elem>
+                            <include name="*.nl"/>
+                        </dirset-elem>
+                    </git-mv-set>
+                    <!-- mv the i18n features (I don't know how to identify test features) -->
+                    <!-- mv the main features -->
+                    <git-mv-set dir="@{path}" dest="${main.features.subfolder}">
+                        <dirset-elem>
+                            <include name="*-feature"/>
+                        </dirset-elem>
+                    </git-mv-set>
+                    <!-- mv the main plugins (the rest of all root folders -->
+                    <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
+                        <dirset-elem>
+                            <include name="*"/>
+                            <exclude name="main"/>
+                            <exclude name="test"/>
+                            <exclude name="i18n"/>
+                        </dirset-elem>
+                    </git-mv-set>
+                	<git argline="commit -am &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
+                </sequential>
+            </for>
         </sequential>
     </macrodef>
                     	
@@ -233,75 +241,82 @@
 	
 	<!-- = = = = = = = = = = = = = = = = =
           macrodef: check-final-repo          
-          this will check that the final repository, master branch contains all the desired folders. 
+          this will check that in the final repository for each branches it contains all the desired folders. 
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="check-final-repo">
         <attribute name="repo" default="name of the final repo to check" />
         <sequential>
-            <!-- create a resource with all files that should be in the final repo from the migration data files-->
-            <fileset dir="${migration.data.folder.path}" id="all.migration.files">
-                <include name="*@{repo}.txt"/>
-            </fileset>
-            <echo message="Checking [@{repo}] files from the migration data files:${toString:all.migration.files}"/>
-            <tempfile property="temp.file"/>
-            <trycatch>
-                <try>
-                    <concat destfile="${temp.file}">
-                        <fileset refid="all.migration.files"/>
-                    </concat>
-                    <local name="all.files.to.check"/>
-                    <loadresource property="all.files.to.check">
-                        <file file="${temp.file}"/>
-                    </loadresource>
-                    <resources id="all.files.to.check.res">
-                        <tokens>
-                            <string value="${all.files.to.check}" />
-                            <stringtokenizer delims="\n"/>
-                        </tokens>
-                    </resources>            
-                    <!-- create a resource with all files that are found in the final repo from the migration data files-->
-                    <dirset dir="${final.repos.path}/@{repo}" id="all.existing.dir.set">
-                        <include name="*/*/*"/>
-                     </dirset>
-                    <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
-                    <local name="all.existing.dir.path"/>
-                    <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
-                    <local name="all.existing.dir"/>
-                    <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
-                    <propertyregex property="all.existing.dir" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
-                    <resources id="all.exiting.files.res" >
-                        <tokens>
-                            <string value="${all.existing.dir}"/>
-                            <stringtokenizer delims="#"/>
-                        </tokens>
-                    </resources>
-                    <!-- compare the expected resources with the existing ones and stores the failure if they don't match-->
-                    <difference id="diff.expected.existing.res">
-                        <resources refid="all.files.to.check.res"/>
-                        <resources refid="all.exiting.files.res"/>
-                    </difference>
-                    <echo>
-                        all.files.to.check.res=${toString:all.files.to.check.res}
-                        all.exiting.files.res=${toString:all.exiting.files.res}
-                        diff.expected.existing.res=${toString:diff.expected.existing.res}
-                    </echo>
-                    <if>
-                        <not>
-                            <length length="0">
-                                <resources refid="diff.expected.existing.res"/>
-                            </length>
-                        </not>
-                        <then>
-                            <echo message="Check of [@{repo}] failed : see error.log." level="error"/>
-                            <echo file="${error.log.path}" append="true" message="${line.separator}Check of repo @{repo} Failed because ${line.separator}expected folder set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing folder set :${toString:all.exiting.files.res}${line.separator}here is the diff:${toString:diff.expected.existing.res}">
+            <for param="branch" list="${list.of.branches}">
+                <sequential>
+                    <git argline="checkout @{branch}" dir="${final.repos.path}/@{repo}"/>
+                    <!-- create a resource with all files that should be in the final repo from the migration data files-->
+                    <fileset dir="${migration.data.branches.folder.path}/@{branch}" id="all.migration.files">
+                        <include name="*@{repo}.txt"/>
+                    </fileset>
+                    <echo message="Checking [@{repo}] files from the migration data files:${toString:all.migration.files}"/>
+                    <tempfile property="temp.file"/>
+                    <trycatch>
+                        <try>
+                            <concat destfile="${temp.file}">
+                                <fileset refid="all.migration.files"/>
+                            </concat>
+                            <local name="all.files.to.check"/>
+                            <loadresource property="all.files.to.check">
+                                <file file="${temp.file}"/>
+                            </loadresource>
+                            <resources id="all.files.to.check.res">
+                                <union>
+                                    <tokens>
+                                        <string value="${all.files.to.check}" />
+                                        <stringtokenizer delims="\n"/>
+                                    </tokens>
+                                </union>                               
+                            </resources>            
+                            <!-- create a resource with all files that are found in the final repo from the migration data files-->
+                            <dirset dir="${final.repos.path}/@{repo}" id="all.existing.dir.set">
+                                <include name="*/*/*"/>
+                             </dirset>
+                            <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
+                            <local name="all.existing.dir.path"/>
+                            <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
+                            <local name="all.existing.dir"/>
+                            <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
+                            <propertyregex property="all.existing.dir" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
+                            <resources id="all.existing.files.res" >
+                                <tokens>
+                                    <string value="${all.existing.dir}"/>
+                                    <stringtokenizer delims="#"/>
+                                </tokens>
+                            </resources>
+                            <!-- compare the expected resources with the existing ones and stores the failure if they don't match-->
+                            <difference id="diff.expected.existing.res">
+                                <resources refid="all.files.to.check.res"/>
+                                <resources refid="all.existing.files.res"/>
+                            </difference>
+                            <echo>
+                                all.files.to.check.res=${toString:all.files.to.check.res}
+                                all.existing.files.res=${toString:all.existing.files.res}
+                                diff.expected.existing.res=${toString:diff.expected.existing.res}
                             </echo>
-                        </then>
-                    </if>    
-                </try>
-                <finally>
-                    <delete file="${temp.file}"/>
-                </finally>
-            </trycatch>
+                            <if>
+                                <not>
+                                    <length length="0">
+                                        <resources refid="diff.expected.existing.res"/>
+                                    </length>
+                                </not>
+                                <then>
+                                    <echo message="Check of [@{repo}/@{branch}] failed : see error.log." level="error"/>
+                                    <echo file="${error.log.path}" append="true" message="${line.separator}Check of repo @{repo} Failed because ${line.separator}expected files set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing files set :${toString:all.existing.files.res}${line.separator}here is the diff:${toString:diff.expected.existing.res}">
+                                    </echo>
+                                </then>
+                            </if>    
+                        </try>
+                        <finally>
+                            <delete file="${temp.file}"/>
+                        </finally>
+                    </trycatch>
+                </sequential>
+            </for>
         </sequential>
     </macrodef>
 
@@ -316,17 +331,25 @@
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="migrate.single.svn.to.git">
         <attribute name="svnrepo" description="name of the svn.git repo"/>
-        <attribute name="gitRepo" description="name of the git repository"/>
+        <attribute name="gitrepo" description="name of the git repository"/>
         <sequential>
-        	<if>
-        		   <available file="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
+            <!-- check there is something to migrate -->
+            <fileset dir="${migration.data.branches.folder.path}" id="migration.data.files.id">
+                <include name="**/@{svnrepo}2@{gitrepo}.txt"/>
+            </fileset>
+            <if>
+                <not>
+                  <length length="0">
+                      <fileset refid="migration.data.files.id"/>
+                  </length>
+                </not>
             <then>
-            	<copy-original-to-workspace from="@{svnrepo}"/>
-            	<echo>data file used : @{svnrepo}2@{gitrepo}.txt</echo>
-            	<git-keep-root-files from="@{svnrepo}" includesfile="${migration.data.folder.path}/@{svnrepo}2@{gitrepo}.txt"/>
-            	<git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
-        	</then> <!-- else nothing to migrate -->
-        	</if>            
+                <echo message="migrating svn repo [@{svnrepo}] to git repo [@{gitrepo}]"/>
+                <copy-original-to-workspace from="@{svnrepo}"/>
+                <prepare.svn.git.repo svnrepo="@{svnrepo}" gitrepo="@{gitRepo}"/>
+                <git-merge-repo from="@{svnrepo}" to="@{gitrepo}"/>
+            </then><!-- else nothing to migrate -->
+            </if>           
         </sequential>
     </macrodef>
 
@@ -453,44 +476,134 @@
 
 	
 	<!-- = = = = = = = = = = = = = = = = =
-          macrodef: git-keep-root-files   
-          1) duplicate the "from" folder into the workspace
-          2) remove the root files that do not match the pattern found in the includesfile file. It also removes them from the git history       
+          macrodef: prepare.svn.git.repo
+          1) loop on all branches to remove the unnecessary folders not matching the migration data pattern
+          2) removes all unused folders from the whole git history       
          = = = = = = = = = = = = = = = = = -->
-    <macrodef name="git-keep-root-files">
-        <attribute name="from" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
-        <attribute name="includesfile" description="file path to the list of pattern to include in the git repo"/>
+    <macrodef name="prepare.svn.git.repo">
+        <attribute name="svnrepo" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
+        <attribute name="gitrepo" description="name of the final git repo found in ${final.repos.path}"/>
         <sequential>
-        	<!-- compute folders to remove from folders to be keeps -->
-        	<local name="destination.dir"/>
-        	<property name="destination.dir" value="${migration.workspace.path}/@{from}/"/>
-            <resources id="all.root.files.id">
-                <fileset dir="${destination.dir}">
-                    <include name="*"/>
-                </fileset>
-                <dirset dir="${destination.dir}">
-                    <include name="*"/>
-                </dirset>
-            </resources>
-            <resources id="root.files.to.be.kept">
-                <fileset dir="${destination.dir}" includesfile="@{includesfile}"/>
-                <dirset dir="${destination.dir}" includesfile="@{includesfile}"/>
-            </resources>
-        	<difference id="files.to.remove.res">
-        		<resources refid="all.root.files.id"/>
-                <resources refid="root.files.to.be.kept"/>
-            </difference>
-        	<local name="files.to.remove"/>
-        	<pathconvert property="files.to.remove" refid="files.to.remove.res" pathsep=" ">
-        	      <map from="${destination.dir}" to=""/>
-       	    </pathconvert>
-            <!-- remove all unncessary folders from the local repos -->
-        	<echo message="remove the following folders and files : ${files.to.remove}"/>
-            <git argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags" dir="${destination.dir}"/>
-        	
+            <var name="all.removed.files" value=""/>
+            <local name="destination.dir"/>
+            <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
+            <for param="branch" list="${list.of.branches}">
+                <sequential><!-- remove all root files and folders unecessary for the branch -->
+                    <local name="migration.date.file"/>
+                    <property name="migration.date.file" value="${migration.data.branches.folder.path}/@{branch}/@{svnrepo}2@{gitrepo}.txt"/>
+                    <echo message="using migration data file [${migration.date.file}]"/>
+                    <git argline="checkout @{branch}" dir="${destination.dir}"/>
+                    <compute-root-files-diff folder="${migration.workspace.path}/@{svnrepo}" resultid="files.to.remove.res">
+                        <resources-compare>
+                            <fileset dir="${destination.dir}" includesfile="${migration.date.file}"/>
+                            <dirset dir="${destination.dir}" includesfile="${migration.date.file}"/>
+                        </resources-compare>
+                    </compute-root-files-diff>
+                    <local name="files.to.remove"/>
+                    <pathconvert property="files.to.remove" refid="files.to.remove.res" pathsep=" ">
+                          <map from="${destination.dir}" to=""/>
+                    </pathconvert>
+                    <echo message="[@{branch}] remove this : ${files.to.remove}"/>
+                    <git argline="rm -r ${files.to.remove}" dir="${destination.dir}"/>
+                    <!-- remove the remaining folders cause git rm does not remove them -->
+                    <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
+                    <git argline="commit -am &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot;" dir="${destination.dir}"/>
+                    <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
+                </sequential>
+            </for>
+            <git-remove-history alreadyremoved="${all.removed.files}" gitrepo="@{gitrepo}" svnrepo="@{svnrepo}"/>
         </sequential>
     </macrodef>
 
+
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-remove-history
+          compute the folder that are not at all in all branches and remove them completly from the history          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-remove-history">
+        <attribute name="alreadyremoved" description="list of all files (space separated) that have been removed on each branches" />
+        <attribute name="svnrepo"/>
+        <attribute name="gitrepo"/>
+        <sequential>
+            <resources id="all.removed.files.res">
+                <union><!-- removes duplicates -->
+                    <tokens>
+                        <string value="@{alreadyremoved}" />
+                        <stringtokenizer delims=" " suppressdelims="true" />
+                    </tokens>
+                </union>
+            </resources>
+            <fileset dir="${migration.data.branches.folder.path}" id="all.migration.files">
+                <include name="**/@{svnrepo}2@{gitrepo}.txt"/>
+            </fileset>
+            <tempfile property="temp.file"/>
+            <trycatch>
+                <try>
+                    <concat destfile="${temp.file}">
+                        <fileset refid="all.migration.files"/>
+                    </concat>
+                    <local name="all.files.to.keep"/>
+                    <loadresource property="all.files.to.keep">
+                        <file file="${temp.file}"/>
+                    </loadresource>
+                    <resources id="all.files.to.keep.res">
+                        <union>
+                            <tokens>
+                                <string value="${all.files.to.keep}" />
+                                <stringtokenizer delims="\n"/>
+                            </tokens>
+                        </union>
+                    </resources>            
+                    <!-- compare the expected resources with the existing ones and stores the failure if they don't match-->
+                     <difference id="real.files.to.remove.res">
+                        <resources refid="all.removed.files.res"/>
+                         <intersect id="files.not.to.remove"><resources refid="all.files.to.keep.res"/><resources refid="all.removed.files.res"/></intersect>
+                    </difference>
+                    <local name="files.to.remove"/>
+                    <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=" "/>
+                    <git argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags" dir="${migration.workspace.path}/@{svnrepo}"/>
+                </try>
+                <finally>
+                    <delete file="${temp.file}"/>
+                </finally>
+            </trycatch>
+        </sequential>
+    </macrodef>
+    
+    
+    
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: compute the full path of root folder and files that are in folder dir and not matching "resources-compare"        
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="compute-root-files-diff">
+        <attribute name="folder" description="folder to check files against." />
+        <attribute name="resultid" description="property to be set with the result." />
+        <element name="resources-compare" description="resources to make the diff with." />
+        <sequential>
+           <resources id="all.root.files.id">
+                <fileset dir="@{folder}">
+                    <include name="*"/>
+                </fileset>
+                <dirset dir="@{folder}">
+                    <include name="*"/>
+                </dirset>
+           </resources>
+           <resources id="root.files.to.be.kept">
+                <resources-compare/>
+           </resources>
+           <difference id="@{resultid}">
+                <resources refid="all.root.files.id"/>
+                <resources refid="root.files.to.be.kept"/>
+           </difference>
+            <echo>
+                all.root.files.id=${toString:all.root.files.id}
+                root.files.to.be.kept=${toString:root.files.to.be.kept}
+                @{resultid}=${toString:@{resultid}}
+        </echo>
+        </sequential>
+    </macrodef>
+    
+    
     <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-merge-repo   
           this will merge the workspace from repo into the final_repo to repo 
@@ -577,7 +690,7 @@
                 <arg line=".gitignore"/>
            </exec>
             <git argline="add .gitignore" dir="${repo.path}" />
-            <git argline="commit -am &quot;intial commit for migration&quot;" dir="${repo.path}" />
+            <git argline="commit -am &quot;${commit.prefix} Initial commit for migration&quot;" dir="${repo.path}" />
             <for list="${list.of.branches.no.master}" param="branch.name">
                 <sequential>
                     <git argline="branch @{branch.name}" dir="${repo.path}" />
@@ -626,46 +739,54 @@
          ================================= -->
     <target name="test.git-init-final-repo" depends="clean.final.repos" >
         <git-init-final-repo name="testRepo"/>
+        <dump-error-log/>
     </target>
 
 	<!-- ================================= 
-	      target: git-init-final-repo.test              
+	      target: test.prepare.svn.git.repo              
 	     ================================= -->
-    <target name="test.git-keep-root-files">
-<!--         <git-keep-root-files from="tis_private" includesfile="${migration.data.folder.path}/tis_private2tcommon-studio-ee.txt"/>
--->
-        <git-keep-root-files from="tis_private" includesfile="/Applications/java/talend/git/test_migration_data/tis_private2tcommon-studio-ee.txt"/>
+    <target name="test.prepare.svn.git.repo" depends="clean.workspace">
+          <copy-original-to-workspace from="tis_private"/>
+
+        <prepare.svn.git.repo svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
+        <dump-error-log/>
     </target>
 	
 	<!-- ================================= 
           target: git-merge-repo.test              
          ================================= -->
-    <target name="test.git-merge-repo" depends="clean.workspace, clean.final.repos">
-    	<copy-original-to-workspace from="tos/"/>
-    	<git-init-final-repo name="remote-tos"/>
-    	<git-merge-repo to="remote-tos" from="tos"/> 
+    <target name="test.git-merge-repo"><!--  depends="clean.workspace, clean.final.repos">-->
+<!--     	<copy-original-to-workspace from="tos/"/>
+-->
+        
+        <git-init-final-repo name="tcommon-studio-ee"/>
+
+    	<git-merge-repo to="tcommon-studio-ee" from="tis_private"/> 
+        <dump-error-log/>
     </target>
 
     <!-- ================================= 
-          target: git-merge-repo.test              
+          target: test.keep-branches             
          ================================= -->
     <target name="test.keep-branches" > <!-- depends="clean.workspace">-->
 <!--     	<copy-original-to-workspace from="tis_private"/>
 -->
         <keep-branches list="${list.of.branches}" repopath="${svn.git.repos.path}/tis_private"/>
+        <dump-error-log/>
     </target>
 
     <!-- ================================= 
-          target: git-merge-repo.test              
+          target: test.keep-tags              
          ================================= -->
     <target name="test.keep-tags" ><!--depends="clean.workspace">
         <copy-original-to-workspace from="tis_private"/>-->
 
         <keep-tags list="${list.of.tags}" repopath="${svn.git.repos.path}/tis_private"/>
+        <dump-error-log/>
     </target>
 	
     <!-- ================================= 
-          target: git-merge-repo.test              
+          target: test.reousource-diff              
          ================================= -->
     <target name="test.reousource-diff" depends="">
     	<property name="branches" value="branch1,branch2,branch3"/>
@@ -736,13 +857,79 @@
     	<refactor-final-repo path="${git.repo.dir}"/>
     </target>
 
+    
+
 <!-- ================================= 
           target: test.check-final-repo              
          ================================= -->
     <target name="test.check-final-repo">
+        <delete file="${error.log.path}"/>
         <check-final-repo repo="tcommon-studio-ee"/>
         <dump-error-log/>
     </target>
+
+<!-- ================================= 
+          target: test-compute-root-files-diff              
+         ================================= -->
+    <target name="test-compute-root-files-diff" >
+        <compute-root-files-diff folder="${svn2gitMigration.dir.path}" resultid="my.id">
+            <resources-compare>
+                <fileset dir="${svn2gitMigration.dir.path}" includes="build.xml"/>
+                <dirset dir="${svn2gitMigration.dir.path}" includes="build.xml"/>                
+            </resources-compare>
+        </compute-root-files-diff>
+        <echo>res.id=${toString:my.id}</echo>
+
+    </target>
+
+<!-- ================================= 
+          target: test-git-remove-history              
+         ================================= -->
+    <target name="test-git-remove-history" depends="clean.workspace">
+        <copy-original-to-workspace from="tis_private"/>
+        <property name="all.file.removed" value="pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.administrator-feature org.talend.administrator.quartz org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance"/>
+        <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
+        
+    </target>
     
-	
+ <!-- ================================= 
+          target: test              
+         ================================= -->
+    <target name="test" >
+         <return-property return.property="tempfile"/>
+        <echo message="tempfile=${tempfile}"/>
+        <var name="tempfile" unset="true"/>
+        <return-property return.property="tempfile"/>
+        <echo message="tempfile=${tempfile}"/>
+        <return-resources return.resources.id="res.id"/>
+        <echo>res.id=${toString:res.id}</echo>
+        <return-resources return.resources.id="res.id"/>
+        <echo>res.id=${toString:res.id}</echo>
+    </target>
+   
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: return-property          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="return-property">
+        <attribute name="return.property" />
+        <sequential>
+            <tempfile property="@{return.property}"/>
+        </sequential>
+    </macrodef>
+
+    <!-- = = = = = = = = = = = = = = = = =
+              macrodef: return-resources          
+             = = = = = = = = = = = = = = = = = -->
+        <macrodef name="return-resources">
+            <attribute name="return.resources.id" />
+            <sequential>
+                <local name="temfile"/>
+                <tempfile property="temfile"/>
+                <resources id="@{return.resources.id}">
+                    <string value="${temfile}"/>
+                </resources>
+
+            </sequential>
+        </macrodef>
+ 
 </project>
