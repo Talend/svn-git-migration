@@ -94,10 +94,10 @@
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
 	<target name="migration" depends="init,clean.final.repos" description="main migration script">
 	    <trycatch>
-	        <try/>
+	        <try>
 	           <runtarget  target="update.all.git.svn.repos"/>
 	           <runtarget  target="perform.each.repo.migration"/>
-	       <try/>
+	       </try>
 	       <finally>
 	           <dump-error-log/>
 	       </finally>
