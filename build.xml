@@ -493,6 +493,7 @@
                     <property name="migration.date.file" value="${migration.data.branches.folder.path}/@{branch}/@{svnrepo}2@{gitrepo}.txt"/>
                     <echo message="using migration data file [${migration.date.file}]"/>
                     <git argline="checkout @{branch}" dir="${destination.dir}"/>
+                    <git argline="clean -fd" dir="${destination.dir}"/>
                     <compute-root-files-diff folder="${migration.workspace.path}/@{svnrepo}" resultid="files.to.remove.res">
                         <resources-compare>
                             <fileset dir="${destination.dir}" includesfile="${migration.date.file}"/>
