@@ -4,6 +4,7 @@
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
 	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
+    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.1.jar"/>
     <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
     <property name="commit.prefix" value="[GIT Migration]"/>
@@ -591,7 +592,13 @@
                     </difference>
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=" "/>
-                    <git argline="filter-branch --tag-name-filter cat --index-filter 'git rm -q --cached --ignore-unmatch -r ${files.to.remove}' -- --all --tags" dir="${migration.workspace.path}/@{svnrepo}"/>
+                    <for list="${files.to.remove}" delimiter=" " param="file.to.remove">
+                        <sequential>
+                            <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
+                                <arg line="--no-blob-protection --delete-folders @{file.to.remove}"/>
+                            </java>
+                        </sequential>
+                    </for>
                 </try>
                 <finally>
                     <delete file="${temp.file}"/>
@@ -915,8 +922,9 @@
 <!-- ================================= 
           target: test-git-remove-history              
          ================================= -->
-    <target name="test-git-remove-history" depends="clean.workspace">
-        <copy-original-to-workspace from="tis_private"/>
+    <target name="test-git-remove-history" ><!-- depends="clean.workspace">-->
+<!--         <copy-original-to-workspace from="tis_private"/>
+-->
         <property name="all.file.removed" value="pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.administrator-feature org.talend.administrator.quartz org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance"/>
         <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         
