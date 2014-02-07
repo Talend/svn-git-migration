@@ -17,7 +17,7 @@
     <property name="migration.data.branches.folder.path" value="${svn2gitMigration.dir.path}/migration_data/branches"/>
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
-	<property name="list.of.final.git.repos" value="tcommon-studio-se,tcommon-studio-ee,tdi-studio-se,tdi-studio-ee"/>
+	<property name="list.of.final.git.repos" value="tcommon-studio-ee,tcommon-studio-se,tdi-studio-se,tdi-studio-ee"/>
     <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
@@ -391,11 +391,19 @@
             </difference>
             <local name="local.branches.to.remove"/>
             <pathconvert property="local.branches.to.remove" refid="local.branches.to.remove.res" pathsep=" "/>
-        	
-            <!-- remove all calculated local branches -->
-            <echo message="remove the following branches : ${local.branches.to.remove}"/>
-            <git dir="@{repoPath}" argline="branch -D ${local.branches.to.remove}"/>
-        	
+        	<if>
+                <not>
+                    <length string="${local.branches.to.remove}" trim="true" length="0" />                    
+                </not>        	    
+        	<then>
+                <!-- remove all calculated local branches -->
+                <echo message="remove the following branches : ${local.branches.to.remove}"/>
+                <git dir="@{repoPath}" argline="branch -D ${local.branches.to.remove}"/>
+        	</then>
+        	<else>
+                <echo message="no branches to remove."/>
+        	</else>
+        	</if>
             <!-- compute remote branches to be removed -->
             <resources id="all.remote.branches.res">
             	<mappedresources>
@@ -413,8 +421,18 @@
             <pathconvert property="remote.branches.to.remove" refid="all.remote.branches.res" pathsep=" "/>
             
             <!-- remove all calculated local branches -->
-            <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
-            <git dir="@{repoPath}" argline="branch -rD ${remote.branches.to.remove}"/>
+            <if>
+                <not>
+                    <length string="${remote.branches.to.remove}" trim="true" length="0" />                    
+                </not>              
+            <then>
+                <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
+                <git dir="@{repoPath}" argline="branch -rD ${remote.branches.to.remove}"/>
+            </then>
+            <else>
+                <echo message="no remote branches to remove."/>
+            </else>
+            </if>
         </sequential>
     </macrodef>
 
@@ -450,9 +468,19 @@
             <local name="local.branches.to.remove"/>
             <pathconvert property="tags.to.remove" refid="tags.to.remove.res" pathsep=" "/>
             
-            <!-- remove all calculated local branches -->
-            <echo message="remove the following tags : ${tags.to.remove}"/>
-            <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
+            <if>
+                <not>
+                    <length string="${tags.to.remove}" trim="true" length="0" />                    
+                </not>              
+            <then>
+                <!-- remove all calculated tags -->
+                <echo message="remove the following tags : ${tags.to.remove}"/>
+                <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
+            </then>
+            <else>
+                <echo message="no tabs to remove."/>
+            </else>
+            </if>
 
         </sequential>
     </macrodef>
@@ -505,6 +533,7 @@
                           <map from="${destination.dir}" to=""/>
                     </pathconvert>
                     <echo message="[@{branch}] remove this : ${files.to.remove}"/>
+<fail/>
                     <git argline="rm -r ${files.to.remove}" dir="${destination.dir}"/>
                     <!-- remove the remaining folders cause git rm does not remove them -->
                     <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
