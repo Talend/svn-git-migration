@@ -1,0 +1,19 @@
+org.talend.designer.camel.dependencies.core/
+org.talend.designer.camel.dependencies.ui/
+org.talend.designer.camel.resource/
+org.talend.designer.camel.resource.core/
+org.talend.designer.codegen.test/
+org.talend.designer.components.bigdata/
+	org.talend.designer.components.tishadoopprovider/
+org.talend.designer.dbmap.test/
+org.talend.designer.documentation.nl/
+org.talend.designer.esb.components.router/
+org.talend.designer.esb.components.rs.consumer/
+org.talend.designer.hdfsbrowse/
+org.talend.designer.hdfsbrowse.nl/
+org.talend.designer.rowgenerator.test/
+org.talend.designer.xmlmap.test/
+org.talend.migrationTool.test/
+org.talend.oozie.scheduler.nl/
+org.talend.repository.metadata.nl/
+org.talend.repository.test/

@@ -1,0 +1,15 @@
+	org.talend.mdm.berkeley.xmldb/
+org.talend.mdm.bos/
+org.talend.mdm.bos-feature/
+	org.talend.mdm.bpm/
+org.talend.mdm.bpm-feature/
+	org.talend.mdm.bpm.groovy.ui/
+	org.talend.mdm.core.sandbox/
+	org.talend.mdm.oracle.xmldb/
+org.talend.mdm.studio.workflow/
+org.talend.mdm.studio.workflow.groovy.ui/
+	org.talend.mdm.tos/
+	org.talend.mdm.webapp.crossreferencing/
+	org.talend.mdm.webapp.hierarchical.enterprise/
+	org.talend.mdm.webapp.license/
+	org.talend.mdm.webapp.usersandroles/

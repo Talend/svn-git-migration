@@ -1,0 +1,25 @@
+org.bonitasoft.studio_1.0.0.5_10-feature/
+	org.talend.bossp-feature/
+	org.talend.bpm.workspace/
+org.talend.designer.components.mrprovider/
+org.talend.designer.mapreduce/
+org.talend.designer.mapreduce.test/
+org.talend.designer.tdqmatching/
+org.talend.libraries.drools/
+org.talend.libraries.jbpm/
+org.talend.libraries.jibx/
+	org.talend.libraries.svn/
+org.talend.libraries.tis.custom/
+	org.talend.mdm.bossp-feature/
+org.talend.rcp.branding.jetl.bigdata/
+org.talend.rcp.branding.jetl.bigdata-feature/
+org.talend.repository.hadoopcluster/
+org.talend.repository.hadoopcluster.nl/
+org.talend.repository.oozie/
+org.talend.repository.oozie.nl/
+org.talend.studio.workflow.workspace/
+org.talend.teneo.model.test/
+org.talend.tup-feature/
+org.talend.updates/
+org.talend.updates.nl/
+org.talend.updates.test/

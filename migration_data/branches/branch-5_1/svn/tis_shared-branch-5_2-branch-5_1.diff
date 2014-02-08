@@ -1,0 +1,63 @@
+org.talend.bossp-feature/
+org.talend.bpm.workspace/
+org.talend.cluster-feature/
+org.talend.dataservice.commandline/
+org.talend.designer.component.preview.test/
+org.talend.designer.components.clusterprovider/
+org.talend.designer.esb.bpm.core/
+org.talend.designer.esb.bpm.ui/
+org.talend.designer.joblet.test/
+org.talend.generic.cloud-feature/
+org.talend.generic.di-feature/
+org.talend.generic.dq-feature/
+org.talend.generic.mdm-feature/
+org.talend.mdm.bossp-feature/
+	org.talend.rcp.branding.esbdqenterprise/
+	org.talend.rcp.branding.esbdqenterprisempx/
+	org.talend.rcp.branding.esbdqprofessional/
+	org.talend.rcp.branding.esbdqteamedition/
+	org.talend.rcp.branding.esbenterprise/
+org.talend.rcp.branding.generic/
+org.talend.rcp.branding.generic.cloud/
+org.talend.rcp.branding.generic.di/
+org.talend.rcp.branding.generic.dq/
+org.talend.rcp.branding.generic.mdm/
+org.talend.rcp.branding.generic.test/
+org.talend.rcp.branding.generic.tis/
+org.talend.rcp.branding.swtbot.test.all-feature/
+	org.talend.rcp.branding.talendplatform.bigdata/
+org.talend.rcp.branding.talendplatform.bpmdqee-feature/
+org.talend.rcp.branding.talendplatform.bpmdqeempx-feature/
+	org.talend.rcp.branding.talendplatform.bpmee/
+	org.talend.rcp.branding.talendplatform.bpmeempx/
+	org.talend.rcp.branding.talendplatform.bpmpe/
+	org.talend.rcp.branding.talendplatform.bpmte/
+org.talend.rcp.branding.talendplatform.cloudbpmeempx-feature/
+	org.talend.rcp.branding.talendplatform.cloudee/
+	org.talend.rcp.branding.talendplatform.cloudpe/
+	org.talend.rcp.branding.talendplatform.cloudpertx/
+	org.talend.rcp.branding.talendplatform.cloudte/
+	org.talend.rcp.branding.talendplatform.dsee/
+	org.talend.rcp.branding.talendplatform.dseempx/
+	org.talend.rcp.branding.talendplatform.dspe/
+	org.talend.rcp.branding.talendplatform.dste/
+	org.talend.rcp.branding.talendplatform.esbbpm/
+	org.talend.rcp.branding.tdqenterprise/
+	org.talend.rcp.branding.tdqenterprisempx/
+	org.talend.rcp.branding.tdqprof/
+	org.talend.rcp.branding.tdqprofrtx/
+	org.talend.rcp.branding.tdqteam/
+	org.talend.rcp.branding.tisenterprise/
+	org.talend.rcp.branding.tisenterprisempx/
+	org.talend.rcp.branding.tisprof/
+	org.talend.rcp.branding.tisprofrtx/
+	org.talend.rcp.branding.tisteam/
+org.talend.rcp.branding.tuj/
+org.talend.rcp.branding.tuj-feature/
+org.talend.remote.jobserver.commons.test/
+org.talend.repository.hcatalog/
+org.talend.repository.hcatalog.nl/
+org.talend.repository.hdfs/
+org.talend.repository.hdfs.nl/
+org.talend.resources.export.job/
+org.talend.resources.export.route/

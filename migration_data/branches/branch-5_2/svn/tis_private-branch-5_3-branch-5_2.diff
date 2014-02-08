@@ -1,0 +1,5 @@
+org.talend.administrator.quartz/
+org.talend.libraries.jdbc.db2/
+org.talend.libraries.jdbc.informix/
+org.talend.libraries.jdbc.oracle/
+org.talend.libraries.jdbc.sybase/

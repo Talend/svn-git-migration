@@ -1,0 +1,23 @@
+org.bonitasoft.studio.common.nl/
+org.talend.bpm/
+org.talend.bpm-feature/
+	org.talend.designer.components.tishadoopprovider/
+org.talend.designer.jobtemplate.test/
+org.talend.esbenterprise.nodi-feature/
+org.talend.model.tac/
+	org.talend.rcp.branding.jasperPro/
+	org.talend.rcp.branding.jasperPro-feature/
+org.talend.rcp.branding.talendplatform.bigdata/
+org.talend.rcp.branding.talendplatform.bigdata-feature/
+org.talend.rcp.branding.talendplatform.bpmee/
+org.talend.rcp.branding.talendplatform.bpmee-feature/
+org.talend.rcp.branding.talendplatform.bpmeempx/
+org.talend.rcp.branding.talendplatform.bpmeempx-feature/
+org.talend.rcp.branding.talendplatform.bpmpe/
+org.talend.rcp.branding.talendplatform.bpmpe-feature/
+org.talend.rcp.branding.talendplatform.bpmte/
+org.talend.rcp.branding.talendplatform.bpmte-feature/
+org.talend.rcp.branding.talendplatform.esbbpm/
+org.talend.rcp.branding.talendplatform.esbbpm-feature/
+org.talend.repository.ebcdic.test/
+org.talend.repository.view.svn/

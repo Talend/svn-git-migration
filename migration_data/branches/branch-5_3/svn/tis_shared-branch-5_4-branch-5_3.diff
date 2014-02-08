@@ -1,0 +1,9 @@
+org.talend.demo.bigdata.ee/
+org.talend.esb.platform-feature/
+org.talend.libraries.camel.alldeps/
+org.talend.libraries.esb.ext/
+org.talend.libraries.jdom/
+org.talend.libraries.jdtcompiler/
+org.talend.libraries.sequence/
+org.talend.tismpx.nobdlib-feature/
+org.talend.tooling-feature/

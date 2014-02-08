@@ -1,0 +1,17 @@
+	org.bonitasoft.studio.export2mdm/
+org.bonitasoft.studio.workspace.mdm/
+	org.talend.bonita-feature/
+org.talend.bos-feature/
+org.talend.mdm.bpm/
+org.talend.mdm.bpm.groovy.ui/
+org.talend.mdm.core.sandbox/
+org.talend.mdm.patchtool/
+org.talend.mdm.repository.enterprise.nl/
+org.talend.mdm.tos/
+org.talend.mdm.workbench.enterprise.nl/
+	org.talend.rcp.branding.temtdqenterprise/
+	org.talend.rcp.branding.temtdqenterprisempx/
+	org.talend.rcp.branding.temtdqprof/
+	org.talend.rcp.branding.temtdqprofrtx/
+	org.talend.rcp.branding.temtdqteam/
+org.talend.temtdqprofrtx.bossp-feature/

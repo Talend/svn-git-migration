@@ -1,0 +1,86 @@
+org.talend.babel.all_feature/
+org.talend.babel.all-feature/
+	org.talend.commons/
+	org.talend.commons.nl/
+	org.talend.commons.test/
+org.talend.core.ui/
+org.talend.core.ui.nl/
+	org.talend.designer.camel.spring.core/
+	org.talend.designer.camel.spring.ui/
+	org.talend.designer.camel.spring.ui.nl/
+	org.talend.designer.esb.webservice/
+	org.talend.designer.esb.webservice.nl/
+org.talend.designer.gefabstractmap/
+org.talend.designer.neo4j/
+org.talend.designer.pigmap/
+	org.talend.esb.help/
+	org.talend.help/
+org.talend.i18n.all-feature/
+org.talend.libraries.apache.batik/
+org.talend.libraries.apache.cassandra/
+org.talend.libraries.apache.chemistry/
+org.talend.libraries.apache.common/
+org.talend.libraries.apache.cxf/
+org.talend.libraries.apache.google/
+org.talend.libraries.apache.http/
+org.talend.libraries.apache.xml/
+org.talend.libraries.asm/
+org.talend.libraries.bonita/
+org.talend.libraries.crm/
+org.talend.libraries.custom/
+org.talend.libraries.ebcdic/
+org.talend.libraries.edifact/
+org.talend.libraries.ehcache/
+org.talend.libraries.esb/
+org.talend.libraries.excel/
+org.talend.libraries.ftp/
+org.talend.libraries.groovy/
+org.talend.libraries.guava/
+org.talend.libraries.hadoop/
+org.talend.libraries.hadoop.apache.0.20.2/
+org.talend.libraries.hadoop.apache.0.20.203/
+org.talend.libraries.hadoop.apache.0.20.204/
+org.talend.libraries.hadoop.apache.1.0.0/
+org.talend.libraries.hadoop.cloudera.0.20.cdh3/
+org.talend.libraries.hadoop.cloudera.cdh4/
+org.talend.libraries.hadoop.hdp.1.0/
+org.talend.libraries.hadoop.hdp.1.2/
+org.talend.libraries.hadoop.mapr/
+org.talend.libraries.hadoop.mapr2/
+org.talend.libraries.hcatalog/
+org.talend.libraries.hl7/
+org.talend.libraries.jasperreport/
+org.talend.libraries.javacsv.test/
+org.talend.libraries.jax/
+org.talend.libraries.jboss/
+	org.talend.libraries.jdbc.db2/
+org.talend.libraries.jdbc.derby/
+org.talend.libraries.jdbc.exasol/
+org.talend.libraries.jdbc.firebird/
+	org.talend.libraries.jdbc.informix/
+	org.talend.libraries.jdbc.mssql/
+	org.talend.libraries.jdbc.oracle/
+org.talend.libraries.jdbc.paraccel/
+	org.talend.libraries.jdbc.sybase/
+org.talend.libraries.jdbc.vertica/
+org.talend.libraries.jersey/
+org.talend.libraries.jetty/
+org.talend.librariesmanager.ui/
+org.talend.libraries.microsoft/
+org.talend.libraries.mondrian/
+org.talend.libraries.novabpm/
+org.talend.libraries.palo/
+org.talend.libraries.pig/
+org.talend.libraries.saaj/
+org.talend.libraries.sdsulib/
+org.talend.libraries.servlet/
+org.talend.libraries.slf4j/
+org.talend.libraries.sqoop/
+org.talend.libraries.svn/
+org.talend.libraries.xml/
+org.talend.libraries.zookeeper/
+org.talend.repository.json/
+org.talend.repository.pigudf/
+org.talend.tos.bigdata.libraries-feature/
+org.talend.tos.libraries-feature/
+test.drools_training/

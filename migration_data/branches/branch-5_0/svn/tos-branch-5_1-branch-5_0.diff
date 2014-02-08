@@ -1,0 +1,36 @@
+	org.eclipse.datatools.connectivity.oda/
+	org.eclipse.datatools.enablement.oda.xml/
+	org.eclipse.datatools-feature/
+org.talend.core.runtime.test/
+org.talend.datatools.xml/
+org.talend.designer.components.tishadoopprovider/
+org.talend.designer.documentation/
+org.talend.designer.esb.components.rs.provider/
+org.talend.designer.esb.components.ws.consumer/
+org.talend.designer.esb.components.ws.provider/
+org.talend.designer.esb.routines/
+org.talend.esb.tooling.rs.provider-feature/
+org.talend.esb.tooling.ws.consumer-feature/
+org.talend.esb.tooling.ws.provider-feature/
+org.talend.libraries.csv/
+org.talend.librariesmanager.test/
+org.talend.oozie.scheduler/
+org.talend.oozie.scheduler.test/
+	org.talend.rcp.branding.jasper/
+	org.talend.rcp.branding.jasper-feature/
+org.talend.rcp.branding.tos.bigdata/
+org.talend.rcp.branding.tos.bigdata-feature/
+org.talend.repository.metadata/
+org.talend.repository.metadata.test/
+	org.talend.repository.test/
+org.talend.repository.view/
+org.talend.repository.view.di/
+org.talend.repository.view.di.nl/
+org.talend.repository.view.esb/
+org.talend.repository.view.esb.nl/
+org.talend.repository.view.example/
+org.talend.repository.view.nl/
+org.talend.tos.bigdata.core-feature/
+org.talend.tos.bigdata.designer-feature/
+org.talend.tos.bigdata-feature/
+org.talend.tos.bigdata.repository-feature/

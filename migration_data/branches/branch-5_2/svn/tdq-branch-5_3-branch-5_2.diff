@@ -1,0 +1,7 @@
+org.talend.dataquality.reporting.engine/
+org.talend.dataquality.reporting.engine.build/
+org.talend.dataquality.reporting.engine.nl/
+org.talend.dataquality.reporting.engine.test/
+	org.talend.libraries.hadoop/
+	org.talend.libraries.jasperreport/
+test.dq.datamart/
