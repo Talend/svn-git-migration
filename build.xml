@@ -120,7 +120,7 @@
          ================================= -->
     <target name="update.git.svn.repo" description="update the local git repo from remote svn">
         <echo message="updating ${svn.git.repo.path}"/>
-        <git argline="svn fetch" dir="${svn.git.repo.path}/"/>	
+        <git argline="svn rebase" dir="${svn.git.repo.path}/"/>	
         <echo message="fixing branches and tags..."/>
         <exec executable="java" dir="${svn.git.repo.path}/">
            <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
