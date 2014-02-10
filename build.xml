@@ -534,7 +534,6 @@
                           <map from="${destination.dir}" to=""/>
                     </pathconvert>
                     <echo message="[@{branch}] remove this : ${files.to.remove}"/>
-<fail/>
                     <git argline="rm -r ${files.to.remove}" dir="${destination.dir}"/>
                     <!-- remove the remaining folders cause git rm does not remove them -->
                     <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
