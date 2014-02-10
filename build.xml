@@ -590,20 +590,24 @@
                         <resources refid="all.removed.files.res"/>
                          <intersect id="files.not.to.remove"><resources refid="all.files.to.keep.res"/><resources refid="all.removed.files.res"/></intersect>
                     </difference>
+                    <echo >
+                        real.files.to.remove.res=${toString:real.files.to.remove.res}
+                        all.removed.files.res=${toString:all.removed.files.res}
+                        files.not.to.remove=${toString:files.not.to.remove}
+                        all.files.to.keep.res=${toString:all.files.to.keep.res}
+                    </echo>
                     <local name="files.to.remove"/>
-                    <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=" "/>
-                    <for list="${files.to.remove}" delimiter=" " param="file.to.remove">
-                        <sequential>
-                            <echo message="removing [@{file.to.remove}] from the history."/>
-                            <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                                <arg line="--no-blob-protection --delete-folders @{file.to.remove}"/>
-                            </java>
-                        </sequential>
-                    </for>
+                    <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
+                    <echo message="removing [${files.to.remove}] from the history using bfg."/>
+                    <echo message="java commmand: --no-blob-protection --delete-folders '{${files.to.remove}}'"/>
+                    <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
+                        <arg line="--no-blob-protection --delete-folders '{${files.to.remove}}'"/>
+                    </java>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
+                    <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <!--removes all empty commits-->
-                    <git argline="filter-branch --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' -- --all"/>
+                    <git argline="filter-branch --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' -- --all" dir="${migration.workspace.path}/@{svnrepo}"/>
                 </try>
                 <finally>
                     <delete file="${temp.file}"/>
@@ -927,10 +931,10 @@
 <!-- ================================= 
           target: test-git-remove-history              
          ================================= -->
-    <target name="test-git-remove-history" ><!-- depends="clean.workspace">-->
-<!--         <copy-original-to-workspace from="tis_private"/>
--->
-        <property name="all.file.removed" value="pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.administrator-feature org.talend.administrator.quartz org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance"/>
+    <target name="test-git-remove-history" depends="clean.workspace">
+        <copy-original-to-workspace from="tis_private"/>
+
+        <property name="all.file.removed" value="pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.commanline.test org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobserver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance pom.xml drools-guvnor-custom org.talend.administrator org.talend.administrator-feature org.talend.administrator.quartz org.talend.ant.build org.talend.gadget.admindashboard org.talend.jobserver.karaf.feature org.talend.mavenUrlHandler org.talend.oryx org.talend.remote.jobser ver.sigar org.talend.remote.server org.talend.soamanager org.talend.soamanager.commons org.talend.test.build org.talend.test.performance"/>
         <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         
     </target>
@@ -971,7 +975,7 @@
                 <resources id="@{return.resources.id}">
                     <string value="${temfile}"/>
                 </resources>
-
+                <echo>test { @ {   = '{@{return.resources.id}}'</echo>
             </sequential>
         </macrodef>
  
