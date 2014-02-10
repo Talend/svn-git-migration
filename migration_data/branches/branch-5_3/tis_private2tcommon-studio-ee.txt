@@ -1,5 +1,3 @@
-org.talend.administrator-feature
-org.talend.administrator.quartz
 org.talend.commandline
 org.talend.commandline-feature
 org.talend.commandline.audit
