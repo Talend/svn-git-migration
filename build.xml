@@ -19,7 +19,7 @@
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.final.git.repos" value="tcommon-studio-ee,tcommon-studio-se,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
+    <property name="list.of.branches.no.master" value=""/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
 
@@ -590,16 +590,9 @@
                         <resources refid="all.removed.files.res"/>
                          <intersect id="files.not.to.remove"><resources refid="all.files.to.keep.res"/><resources refid="all.removed.files.res"/></intersect>
                     </difference>
-                    <echo >
-                        real.files.to.remove.res=${toString:real.files.to.remove.res}
-                        all.removed.files.res=${toString:all.removed.files.res}
-                        files.not.to.remove=${toString:files.not.to.remove}
-                        all.files.to.keep.res=${toString:all.files.to.keep.res}
-                    </echo>
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
-                    <echo message="java commmand: --no-blob-protection --delete-folders '{${files.to.remove}}'"/>
                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
                         <arg line="--no-blob-protection --delete-folders '{${files.to.remove}}'"/>
                     </java>
