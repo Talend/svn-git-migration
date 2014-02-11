@@ -166,7 +166,8 @@
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: refactor-final-repo
           1) refactor plugins and features into main, test, i18n plugins and features folders.
-          2) commit the refactor          
+          2) commit the refactor       
+          3) remove the empty commits   
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="refactor-final-repo">
         <attribute name="path" description="path of the git repository to refactor" />
@@ -203,9 +204,11 @@
                             <exclude name="i18n"/>
                         </dirset-elem>
                     </git-mv-set>
-                	<git argline="commit -am &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
+                	<git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
                 </sequential>
             </for>
+            <!--removes all empty commits-->
+            <git argline="filter-branch --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' -- --all" dir="@{path}"/>
         </sequential>
     </macrodef>
                     	
@@ -522,7 +525,7 @@
                     <property name="migration.date.file" value="${migration.data.branches.folder.path}/@{branch}/@{svnrepo}2@{gitrepo}.txt"/>
                     <echo message="using migration data file [${migration.date.file}]"/>
                     <git argline="checkout @{branch}" dir="${destination.dir}"/>
-                    <git argline="clean -fd" dir="${destination.dir}"/>
+                    <git argline="clean -fd -q" dir="${destination.dir}"/>
                     <compute-root-files-diff folder="${migration.workspace.path}/@{svnrepo}" resultid="files.to.remove.res">
                         <resources-compare>
                             <fileset dir="${destination.dir}" includesfile="${migration.date.file}"/>
@@ -534,10 +537,10 @@
                           <map from="${destination.dir}" to=""/>
                     </pathconvert>
                     <echo message="[@{branch}] remove this : ${files.to.remove}"/>
-                    <git argline="rm -r ${files.to.remove}" dir="${destination.dir}"/>
+                    <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
                     <!-- remove the remaining folders cause git rm does not remove them -->
                     <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
-                    <git argline="commit -am &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot;" dir="${destination.dir}"/>
+                    <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot;" dir="${destination.dir}"/>
                     <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
                 </sequential>
             </for>
@@ -598,8 +601,6 @@
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
-                    <!--removes all empty commits-->
-                    <git argline="filter-branch --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' -- --all" dir="${migration.workspace.path}/@{svnrepo}"/>
                 </try>
                 <finally>
                     <delete file="${temp.file}"/>
@@ -728,7 +729,7 @@
                 <arg line=".gitignore"/>
            </exec>
             <git argline="add .gitignore" dir="${repo.path}" />
-            <git argline="commit -am &quot;${commit.prefix} Initial commit for migration&quot;" dir="${repo.path}" />
+            <git argline="commit -qam &quot;${commit.prefix} Initial commit for migration&quot;" dir="${repo.path}" />
             <for list="${list.of.branches.no.master}" param="branch.name">
                 <sequential>
                     <git argline="branch @{branch.name}" dir="${repo.path}" />

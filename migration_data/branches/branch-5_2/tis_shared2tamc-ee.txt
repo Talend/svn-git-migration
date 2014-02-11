@@ -22,3 +22,4 @@ org.talend.amc.rcp.branding.talend-feature
 org.talend.amc.rcp.branding.talend.nl
 org.talend.amc.rcp.nl
 org.talend.amc.web.log4j
+org.talend.amc.data
