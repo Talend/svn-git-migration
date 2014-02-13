@@ -5,7 +5,6 @@ org.talend.designer.components.tispeprovider
 org.talend.libraries.jdom
 org.talend.generic.cloud-feature
 org.talend.libraries.jdtcompiler
-org.talend.model.tac
 org.talend.rcp.branding.all-feature
 org.eclipse.emf.teneo
 org.eclipse.emf.teneo.annotations
