@@ -2,9 +2,9 @@
 <project name="svn2gitMigration" default="migration">
 	<property name="svn2gitMigration.file.path" value="${ant.file.svn2gitMigration}"/>
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
-	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
-    <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
-    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.1.jar"/>
+	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/../.."/>
+    <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/../svn-migration-scripts.jar"/>
+    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/../bfg-1.11.1.jar"/>
     <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
     <property name="commit.prefix" value="[GIT Migration]"/>
@@ -19,7 +19,7 @@
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 	<property name="list.of.final.git.repos" value="tcommon-studio-ee,tcommon-studio-se,tdi-studio-se,tdi-studio-ee"/>
-    <property name="list.of.branches.no.master" value=""/>
+    <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
 
