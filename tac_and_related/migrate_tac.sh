@@ -25,7 +25,7 @@ clone () {
     echo ------------------------------------
     echo ''
   done
-#  filter-branch --commit-filter 'git_commit_non_empty_tree "$@"' -- --all
+# git filter-branch --commit-filter 'git_commit_non_empty_tree "$@"' -- --all
 }
 
 merge () {
