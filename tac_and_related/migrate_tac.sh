@@ -7,7 +7,7 @@ clone () {
   time java -Dfile.encoding=utf-8 -jar ~/talend-svn-git-migration/svn-migration-scripts.jar clean-git --force
 
   echo ' ---> Delete some branches'
-  for branch in branch-2_1 branch-2_2 branch-2_3 branch-2_4 branch-3_0 branch-3_1 branch-3_2 branch-4_0 branch-4_1 branch-4_1_metadata branch-splitmodel branch-tempbuild-5_4_0 jobserver-karaf branch-3_2_mdm;
+  for branch in branch-2_1 branch-2_2 branch-2_3 branch-2_4 branch-3_0 branch-3_1 branch-3_2 branch-4_0 branch-4_1 branch-4_1_metadata branch-splitmodel branch-tempbuild-5_4_0 jobserver-karaf branch-3_2_mdm mhelleboid-1 mhelleboid-2 branch-1_0_gxt TOD-prod;
   do
     git branch -D $branch
   done 
@@ -19,7 +19,7 @@ clone () {
     echo '---> ' $folder
     echo ------------------------------------
     java -jar ~/talend-svn-git-migration/bfg-1.11.1.jar --no-blob-protection --delete-folders $folder
-    rm -rf ../$1.bfg.report
+    rm -rf ../$1.bfg-report
     git reset --hard
     echo 'Reste ' `ls | wc -w`
     echo ------------------------------------
