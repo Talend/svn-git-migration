@@ -1,7 +1,12 @@
 #! /bin/bash
 
 clone () {
-  cd ~/checkout/$1
+  cd
+  echo ' ---> Init checkout folder '$1
+  cd checkout
+  rm -rf $1
+  cp ../checkout-save/$1 . -r
+  cd $1
 
   echo ' ---> Clean branches & tags with svn-migration-scripts.jar'
   time java -Dfile.encoding=utf-8 -jar ~/talend-svn-git-migration/svn-migration-scripts.jar clean-git --force
@@ -25,7 +30,7 @@ clone () {
     echo ------------------------------------
     echo ''
   done
-# git filter-branch --commit-filter 'git_commit_non_empty_tree "$@"' -- --all
+  git filter-branch --commit-filter 'git_commit_non_empty_tree "$@"' -- --all
 }
 
 merge () {
@@ -55,12 +60,6 @@ prepare_merge () {
   git branch branch-5_0
   git branch branch-4_2
 }
-
-cd
-echo ' ---> Delete old checkout'
-time rm -rf checkout/
-echo ' ---> Init new checkout from save'
-time cp checkout-save/ checkout/ -r
 
 clone tis_private
 #clone tis_shared
