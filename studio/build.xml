@@ -208,7 +208,7 @@
                             <exclude name="i18n"/>
                         </dirset-elem>
                     </git-mv-set>
-                	<git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
+                	<git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}" failonerror="false"/>
                 </sequential>
             </for>
             <!--removes all empty commits-->
@@ -752,9 +752,21 @@
         <sequential>
             <echo message="in folder [@{dir}]"/>
         	<echo message="git @{argline}"/>
-            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}">
+            <local name="error.prop"/>
+            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop">
                   <arg line="@{argline}"/>
              </exec>
+             <!-- log the error that occured if failonerror was false -->
+            <if>
+                <not>
+                	<length string="${error.prop}" trim="true" length="0" />                    
+                </not>
+            	<then>
+                    <echo message="previous git command failed (but keep going) : ${error.prop}"/>
+                    <!-- also log in the error log  -->
+                    <echo file="${error.log.path}" append="true" message="git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
+            	</then>
+            </if>
         </sequential>
     </macrodef>
 
