@@ -1,4 +1,4 @@
-org.talend.tismpx-feature
-org.talend.designer.components.tismpprovider
 org.talend.designer.components.tishadoopprovider
+org.talend.designer.components.tismpprovider
 org.talend.repository.hbaseprovider
+org.talend.tismpx-feature

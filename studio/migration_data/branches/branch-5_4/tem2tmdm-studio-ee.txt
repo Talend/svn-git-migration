@@ -1,3 +1,4 @@
+
 org.bonitasoft.studio.workspace.mdm
 org.talend.bos-feature
 org.talend.mdm.bos
@@ -28,7 +29,6 @@ org.talend.rcp.branding.temtdqprofrtx-feature
 org.talend.rcp.branding.temtdqteam-feature
 org.talend.tem-feature
 org.talend.temtdqprof-feature
-org.talend.temtdqprofrtx-feature
 org.talend.temtdqprofrtx.bossp-feature
+org.talend.temtdqprofrtx-feature
 org.talend.temtdqteam-feature
-

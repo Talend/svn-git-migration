@@ -3,6 +3,7 @@ org.talend.designer.hdfsbrowse
 org.talend.designer.hdfsbrowse.nl
 org.talend.designer.neo4j
 org.talend.designer.pigmap
+org.talend.libraries.hadoop
 org.talend.libraries.hadoop.apache.0.20.2
 org.talend.libraries.hadoop.apache.0.20.203
 org.talend.libraries.hadoop.apache.0.20.204
@@ -21,12 +22,11 @@ org.talend.libraries.zookeeper
 org.talend.oozie.scheduler
 org.talend.oozie.scheduler.nl
 org.talend.oozie.scheduler.test
-org.talend.repository.pigudf
 org.talend.rcp.branding.tos.bigdata
 org.talend.rcp.branding.tos.bigdata-feature
-org.talend.tos.bigdata-feature
+org.talend.repository.pigudf
 org.talend.tos.bigdata.core-feature
 org.talend.tos.bigdata.designer-feature
+org.talend.tos.bigdata-feature
 org.talend.tos.bigdata.libraries-feature
 org.talend.tos.bigdata.repository-feature
-org.talend.libraries.hadoop

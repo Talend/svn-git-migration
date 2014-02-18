@@ -1,10 +1,10 @@
 org.talend.amc
-org.talend.amc-feature
 org.talend.amc.charts
 org.talend.amc.charts.nl
 org.talend.amc.commons
 org.talend.amc.commons-feature
 org.talend.amc.data
+org.talend.amc-feature
 org.talend.amc.libraries
 org.talend.amc.metter
 org.talend.amc.metter.nl

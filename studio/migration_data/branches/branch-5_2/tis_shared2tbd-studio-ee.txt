@@ -1,10 +1,10 @@
+
 org.talend.cluster-feature
 org.talend.designer.components.clusterprovider
-org.talend.tismpx-feature
 org.talend.designer.components.tismpprovider
 org.talend.repository.hbaseprovider
 org.talend.repository.hcatalog
-org.talend.repository.hdfs
 org.talend.repository.hcatalog.nl
+org.talend.repository.hdfs
 org.talend.repository.hdfs.nl
-
+org.talend.tismpx-feature

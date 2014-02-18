@@ -1,3 +1,4 @@
+
 com.eviware.soapui.eclipse.talend
 org.eclipse.jdt.ui.talend
 org.talend.camel.commandline
@@ -6,7 +7,6 @@ org.talend.designer.publish
 org.talend.esbenterprise-feature
 org.talend.esbenterprise.nodi-feature
 org.talend.esbenterprise.tooling-feature
+org.talend.rcp.branding.esbenterprise-feature
 org.talend.resources.export.route
 org.talend.slf4j-feature
-org.talend.rcp.branding.esbenterprise-feature
-

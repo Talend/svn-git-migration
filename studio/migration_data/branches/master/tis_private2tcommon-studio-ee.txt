@@ -1,12 +1,16 @@
+
 org.talend.commandline
-org.talend.commandline-feature
 org.talend.commandline.audit
+org.talend.commandline.audit.nl
 org.talend.commandline.client
+org.talend.commandline-feature
 org.talend.commandline.performances
 org.talend.commandline.remoteexecution-feature
 org.talend.commandline.remotexecution
+org.talend.commandline.test
 org.talend.configurator
 org.talend.configurator.common
+org.talend.configurator.test
 org.talend.dbrepocleaner
 org.talend.dbrepocleaner-feature
 org.talend.libraries.jdbc.db2
@@ -17,6 +21,7 @@ org.talend.libraries.jline
 org.talend.libraries.jmx
 org.talend.license.gui
 org.talend.license.gui-feature
+org.talend.license.gui.nl
 org.talend.migration
 org.talend.migration-feature
 org.talend.monitoring
@@ -25,8 +30,3 @@ org.talend.monitoring.server
 org.talend.remote.jobserver.commons-feature
 org.talend.remote.jobserver.server
 org.talend.remote.jobserver.server-feature
-org.talend.commandline.audit.nl
-org.talend.license.gui.nl
-org.talend.commandline.test
-org.talend.configurator.test
-

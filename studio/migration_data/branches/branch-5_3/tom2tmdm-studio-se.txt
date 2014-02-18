@@ -12,7 +12,7 @@ org.talend.mdm.workbench.serverexplorer
 org.talend.mdm.workbench.serverexplorer.nl
 org.talend.mdm.workbench.test
 org.talend.rcp.branding.tom
-org.talend.rcp.branding.tom-feature
 org.talend.rcp.branding.tombundle
 org.talend.rcp.branding.tombundle-feature
+org.talend.rcp.branding.tom-feature
 org.talend.tom-feature

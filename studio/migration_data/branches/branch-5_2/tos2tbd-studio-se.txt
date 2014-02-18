@@ -6,7 +6,7 @@ org.talend.oozie.scheduler.nl
 org.talend.oozie.scheduler.test
 org.talend.rcp.branding.tos.bigdata
 org.talend.rcp.branding.tos.bigdata-feature
-org.talend.tos.bigdata-feature
 org.talend.tos.bigdata.core-feature
 org.talend.tos.bigdata.designer-feature
+org.talend.tos.bigdata-feature
 org.talend.tos.bigdata.repository-feature

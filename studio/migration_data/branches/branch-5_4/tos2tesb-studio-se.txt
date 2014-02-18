@@ -1,8 +1,9 @@
-org.talend.camel-feature
 org.talend.camel.core-feature
 org.talend.camel.designer
 org.talend.camel.designer-feature
 org.talend.camel.designer.nl
+org.talend.camel-feature
+org.talend.camel.libraries
 org.talend.camel.model
 org.talend.camel.repository-feature
 org.talend.designer.camel.components.localprovider
@@ -18,11 +19,12 @@ org.talend.designer.esb.components.ws.provider
 org.talend.designer.esb.routines
 org.talend.designer.publish.core
 org.talend.designer.routines.camelprovider
+org.talend.esbstandard-feature
 org.talend.esb.tooling-feature
 org.talend.esb.tooling.rs.provider-feature
 org.talend.esb.tooling.ws.consumer-feature
 org.talend.esb.tooling.ws.provider-feature
-org.talend.esbstandard-feature
+org.talend.esb.ws
 org.talend.libraries.esb
 org.talend.rcp.branding.camel
 org.talend.rcp.branding.camel-feature
@@ -33,5 +35,3 @@ org.talend.repository.services-feature
 org.talend.repository.services.nl
 org.talend.repository.view.esb
 org.talend.repository.view.esb.nl
-org.talend.camel.libraries
-org.talend.esb.ws

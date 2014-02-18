@@ -1,10 +1,15 @@
+
 org.talend.commandline
-org.talend.commandline-feature
 org.talend.commandline.audit
+org.talend.commandline.audit.nl
 org.talend.commandline.client
+org.talend.commandline-feature
 org.talend.commandline.remoteexecution-feature
 org.talend.commandline.remotexecution
+org.talend.commandline.test
+org.talend.commanline.test
 org.talend.configurator
+org.talend.configurator.test
 org.talend.dbrepocleaner
 org.talend.dbrepocleaner-feature
 org.talend.libraries.jline
@@ -19,8 +24,3 @@ org.talend.monitoring.server
 org.talend.remote.jobserver.commons-feature
 org.talend.remote.jobserver.server
 org.talend.remote.jobserver.server-feature
-org.talend.commandline.audit.nl
-org.talend.commandline.test
-org.talend.commanline.test
-org.talend.configurator.test
-

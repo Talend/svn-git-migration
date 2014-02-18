@@ -1,3 +1,4 @@
+
 org.bonitasoft.studio.workspace.mdm
 org.talend.bos-feature
 org.talend.mdm.bpm
@@ -13,10 +14,10 @@ org.talend.mdm.repository.svn
 org.talend.mdm.studio.process.model
 org.talend.mdm.tem.test-feature
 org.talend.mdm.tos
-org.talend.mdm.workbench-updatesite
 org.talend.mdm.workbench.enterprise
 org.talend.mdm.workbench.enterprise.nl
 org.talend.mdm.workbench.enterprise.test
+org.talend.mdm.workbench-updatesite
 org.talend.rcp.branding.tem
 org.talend.rcp.branding.tem-feature
 org.talend.rcp.branding.temtdqenterprise-feature
@@ -26,7 +27,6 @@ org.talend.rcp.branding.temtdqprofrtx-feature
 org.talend.rcp.branding.temtdqteam-feature
 org.talend.tem-feature
 org.talend.temtdqprof-feature
-org.talend.temtdqprofrtx-feature
 org.talend.temtdqprofrtx.bossp-feature
+org.talend.temtdqprofrtx-feature
 org.talend.temtdqteam-feature
-
