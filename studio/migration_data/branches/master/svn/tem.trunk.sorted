@@ -27,6 +27,7 @@ org.talend.mdm.qizx.xmldb/
 org.talend.mdm.repository.enterprise/
 org.talend.mdm.repository.enterprise.nl/
 org.talend.mdm.repository.enterprise.test/
+org.talend.mdm.repository.model.relation/
 org.talend.mdm.repository.svn/
 org.talend.mdm.service.svn/
 org.talend.mdm.service.synchronization/
