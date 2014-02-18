@@ -1,0 +1,1000 @@
+
+----------------Branch: branch-5_0
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-acceptance
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.berkeley.xmldb
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.oracle.xmldb
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.crossreferencing
+      |-org.talend.mdm.webapp.hierarchical.enterprise
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.license
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.usersandroles
+      |-org.talend.mdm.webapp.workflow
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workbench-updatesite
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+      |-webextensions
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jasperPro
+      |-org.talend.rcp.branding.jasperPro-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-build.mdm.server
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.itemsbrowser
+      |-org.talend.mdm.webapp.itemsbrowser2
+      |-org.talend.mdm.webapp.itemstrash
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.updatereport
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcome
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.emptyproject
+      |-org.talend.rcp.branding.jasper
+      |-org.talend.rcp.branding.jasper-feature
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
+
+----------------Branch: branch-5_1
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-acceptance
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.berkeley.xmldb
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.oracle.xmldb
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.crossreferencing
+      |-org.talend.mdm.webapp.hierarchical.enterprise
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.license
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.usersandroles
+      |-org.talend.mdm.webapp.workflow
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+      |-webextensions
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.talendplatform.bpmee-feature
+      |-org.talend.rcp.branding.talendplatform.bpmeempx-feature
+      |-org.talend.rcp.branding.talendplatform.bpmpe-feature
+      |-org.talend.rcp.branding.talendplatform.bpmte-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-build.mdm.server
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.itemsbrowser
+      |-org.talend.mdm.webapp.itemsbrowser2
+      |-org.talend.mdm.webapp.itemstrash
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.updatereport
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcome
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.emptyproject
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
+
+----------------Branch: branch-5_2
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-acceptance
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.berkeley.xmldb
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.core.sandbox
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.oracle.xmldb
+      |-org.talend.mdm.patchtool
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.crossreferencing
+      |-org.talend.mdm.webapp.hierarchical.enterprise
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.license
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.usersandroles
+      |-org.talend.mdm.webapp.workflow
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+      |-webextensions
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.mavenUrlHandler
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-build.mdm.server
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.itemsbrowser
+      |-org.talend.mdm.webapp.itemsbrowser2
+      |-org.talend.mdm.webapp.itemstrash
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.stagingarea
+      |-org.talend.mdm.webapp.updatereport
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcome
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.emptyproject
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
+
+----------------Branch: branch-5_3
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-acceptance
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.patchtool
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.workflow
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+      |-webextensions
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.administrator.quartz
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.mavenUrlHandler
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetl.bigdata
+      |-org.talend.rcp.branding.jetl.bigdata-feature
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-build.mdm.server
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.stagingarea
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.babel.all_feature
+      |-org.talend.babel.all-feature
+      |-org.talend.emptyproject
+      |-org.talend.i18n.all-feature
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-test.drools_training
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
+
+----------------Branch: branch-5_4
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.patchtool
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.workflow
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workbench-updatesite
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.administrator.quartz
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.mavenUrlHandler
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetl.bigdata
+      |-org.talend.rcp.branding.jetl.bigdata-feature
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.stagingarea
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.babel.all-feature
+      |-org.talend.emptyproject
+      |-org.talend.i18n.all-feature
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-test.drools_training
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
+
+----------------Branch: master
+ >>START++++++SVN Repository:tem
+  $Some projects missed in data files possibly:
+      |-mdm-performance
+      |-org.talend.mdm.backgroundqueue
+      |-org.talend.mdm.base.enterprise
+      |-org.talend.mdm.bonita.connector
+      |-org.talend.mdm.connector.svn
+      |-org.talend.mdm.core.enterprise
+      |-org.talend.mdm.db.migration
+      |-org.talend.mdm.ext.service.schedule
+      |-org.talend.mdm.izpack
+      |-org.talend.mdm.jaas.existdb.jboss
+      |-org.talend.mdm.jaas.ldap.jboss
+      |-org.talend.mdm.jmx
+      |-org.talend.mdm.nsis
+      |-org.talend.mdm.patchtool
+      |-org.talend.mdm.qizx.xmldb
+      |-org.talend.mdm.service.svn
+      |-org.talend.mdm.service.synchronization
+      |-org.talend.mdm.service.workflow
+      |-org.talend.mdm.webapp.core.enterprise
+      |-org.talend.mdm.webapp.crossreference
+      |-org.talend.mdm.webapp.hierarchy
+      |-org.talend.mdm.webapp.licensemanager
+      |-org.talend.mdm.webapp.search
+      |-org.talend.mdm.webapp.stewardship
+      |-org.talend.mdm.webapp.synchronization
+      |-org.talend.mdm.webapp.synchronizationaction
+      |-org.talend.mdm.webapp.universemanager
+      |-org.talend.mdm.webapp.usermanager
+      |-org.talend.mdm.webapp.workflow.tasks
+      |-org.talend.mdm.workbench-updatesite
+      |-org.talend.mdm.workflow
+      |-talend.ext.libraries
+
+ <<END++++++SVN Repository:tem
+
+
+ >>START++++++SVN Repository:tis_private
+  $Some projects missed in data files possibly:
+      |-drools-guvnor-custom
+      |-org.talend.administrator
+      |-org.talend.administrator-feature
+      |-org.talend.administrator.quartz
+      |-org.talend.ant.build
+      |-org.talend.gadget.admindashboard
+      |-org.talend.jobserver.karaf.feature
+      |-org.talend.mavenUrlHandler
+      |-org.talend.oryx
+      |-org.talend.remote.jobserver.sigar
+      |-org.talend.remote.server
+      |-org.talend.soamanager
+      |-org.talend.soamanager.commons
+      |-org.talend.test.build
+      |-org.talend.test.performance
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_private
+
+
+ >>START++++++SVN Repository:tis_shared
+  $Some projects missed in data files possibly:
+      |-development
+      |-HashTests
+      |-org.eclipse.swtbot.forms.finder
+      |-org.eclipse.swt.unknown
+      |-org.talend.designer.components.thalesprovider
+      |-org.talend.model.tac
+      |-org.talend.rcp.branding.dqsh
+      |-org.talend.rcp.branding.dqsh-feature
+      |-org.talend.rcp.branding.jetl
+      |-org.talend.rcp.branding.jetl.bigdata
+      |-org.talend.rcp.branding.jetl.bigdata-feature
+      |-org.talend.rcp.branding.jetlexpress
+      |-org.talend.rcp.branding.jetlexpress-feature
+      |-org.talend.rcp.branding.jetl-feature
+      |-org.talend.rcp.branding.jetlplus
+      |-org.talend.rcp.branding.jetlplus-feature
+      |-org.talend.rcp.branding.kurtosys
+      |-org.talend.rcp.branding.kurtosys-feature
+      |-org.talend.rcp.branding.lynasetl
+      |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.thales
+      |-org.talend.rcp.branding.thales-feature
+      |-org.talend.rcp.branding.tod
+      |-org.talend.rcp.branding.tod-feature
+      |-org.talend.rcp.branding.wdci
+      |-org.talend.rcp.branding.wdci-feature
+      |-org.talend.thalestechnical-feature
+      |-pom.xml
+
+ <<END++++++SVN Repository:tis_shared
+
+
+ >>START++++++SVN Repository:tom
+  $Some projects missed in data files possibly:
+      |-org.talend.mdm.base
+      |-org.talend.mdm.bulkload.client
+      |-org.talend.mdm.calljob.plugin
+      |-org.talend.mdm.commmon
+      |-org.talend.mdm.commons.core
+      |-org.talend.mdm.connector.core
+      |-org.talend.mdm.connector.jdbc
+      |-org.talend.mdm.connector.logging
+      |-org.talend.mdm.connector.smtp
+      |-org.talend.mdm.core
+      |-org.talend.mdm.core.open
+      |-org.talend.mdm.core.plugin.base
+      |-org.talend.mdm.datamodel.synchronization
+      |-org.talend.mdm.ext.images.server
+      |-org.talend.mdm.ext.publish.component
+      |-org.talend.mdm.jaas.jboss.open
+      |-org.talend.mdm.service.calljob
+      |-org.talend.mdm.service.calltransformer
+      |-org.talend.mdm.service.dumptoconsole
+      |-org.talend.mdm.service.itemdispatcher
+      |-org.talend.mdm.service.jdbc
+      |-org.talend.mdm.service.logging
+      |-org.talend.mdm.service.loggingsmtp
+      |-org.talend.mdm.service.smtp
+      |-org.talend.mdm.webapp.adapter.logging
+      |-org.talend.mdm.webapp.adapter.smtp
+      |-org.talend.mdm.webapp.base
+      |-org.talend.mdm.webapp.browserecords
+      |-org.talend.mdm.webapp.core
+      |-org.talend.mdm.webapp.core.open
+      |-org.talend.mdm.webapp.general
+      |-org.talend.mdm.webapp.hierarchical
+      |-org.talend.mdm.webapp.journal
+      |-org.talend.mdm.webapp.openmdm
+      |-org.talend.mdm.webapp.recyclebin
+      |-org.talend.mdm.webapp.reporting
+      |-org.talend.mdm.webapp.stagingarea
+      |-org.talend.mdm.webapp.viewbrowser
+      |-org.talend.mdm.webapp.welcomeportal
+      |-org.talend.mdm.xmldb
+      |-org.talend.mdm.xmlserver.interfaces
+      |-talend.mdm.libraries
+
+ <<END++++++SVN Repository:tom
+
+
+ >>START++++++SVN Repository:tos
+  $Some projects missed in data files possibly:
+      |-org.talend.babel.all-feature
+      |-org.talend.emptyproject
+      |-org.talend.i18n.all-feature
+      |-org.talend.rcp.branding.jetlxcmmty
+      |-org.talend.rcp.branding.jetlxcmmty-feature
+      |-org.talend.rcp.branding.sdi
+      |-org.talend.rcp.branding.sdi-feature
+      |-pom.xml
+      |-test.drools_training
+      |-tuj
+
+ <<END++++++SVN Repository:tos
+
+
+
+*************************************************************
