@@ -33,3 +33,5 @@ org.talend.repository.services-feature
 org.talend.repository.services.nl
 org.talend.repository.view.esb
 org.talend.repository.view.esb.nl
+org.talend.camel.libraries
+org.talend.esb.ws

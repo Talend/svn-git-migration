@@ -43,7 +43,6 @@ org.talend.repository.antlride.ui.nl
 org.talend.survivorship.designer.nl
 org.talend.datacleansing.core.ui.test
 org.talend.dataprofiler.core.tdq.test
-org.talend.dataprofiler.datamart.test
 org.talend.dataprofiler.persistence.test
 org.talend.dataquality.hadoop.test
 org.talend.dataquality.parser.test
@@ -53,4 +52,7 @@ org.talend.designer.components.libs.tdq.test
 org.talend.designer.routines.tdqprovider.test
 org.talend.survivorship.test
 org.talend.survivorship.ui.test
-
+org.talend.dataquality.data.index
+org.talend.dataquality.hadoop
+org.talend.dataquality.reporting.engine.build
+test.dq.datamart

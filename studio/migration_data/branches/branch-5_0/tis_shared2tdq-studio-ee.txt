@@ -1,7 +1,5 @@
 org.eclipse.webdav
 org.guvnor.tools
-org.talend.generic.dq-feature
-org.talend.rcp.branding.generic.dq
 org.talend.rcp.branding.tdq
 org.talend.rcp.branding.tdq-feature
 org.talend.rcp.branding.tdqenterprise-feature

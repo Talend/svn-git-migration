@@ -2,9 +2,7 @@ org.drools.eclipse
 org.talend.designer.brms
 org.talend.repository.brms
 org.talend.designer.components.tispeprovider
-org.talend.libraries.jdom
 org.talend.generic.cloud-feature
-org.talend.libraries.jdtcompiler
 org.talend.model.tac
 org.talend.rcp.branding.all-feature
 org.eclipse.emf.teneo
@@ -19,7 +17,6 @@ org.talend.repository.remoteprovider
 org.talend.repository.remoteprovider-feature
 org.talend.repository.svnprovider
 org.talend.repository.svnprovider-feature
-org.talend.libraries.sequence
 org.talend.repository.view.svn
 org.talend.rcp.branding.esbdqenterprise-feature
 org.talend.rcp.branding.esbdqenterprisempx-feature
@@ -46,9 +43,6 @@ org.talend.rcp.branding.talendplatform.dseempx-feature
 org.talend.rcp.branding.talendplatform.dspe-feature
 org.talend.rcp.branding.talendplatform.dste-feature
 org.talend.rcp.branding.talendplatform.esbbpm-feature
-org.talend.tooling-feature
-org.talend.tup-feature
-org.talend.teneo.model.test
 org.talend.repository.remoteprovider.test
 org.talend.repository.svnprovider.test
 org.talend.rcp.branding.tuj

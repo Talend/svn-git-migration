@@ -2,7 +2,6 @@ org.talend.cluster-feature
 org.talend.demo.bigdata.ee
 org.talend.designer.components.clusterprovider
 org.talend.tismpx-feature
-org.talend.tismpx.nobdlib-feature
 org.talend.designer.components.mrprovider
 org.talend.designer.components.tismpprovider
 org.talend.designer.mapreduce
@@ -15,3 +14,4 @@ org.talend.repository.hadoopcluster.nl
 org.talend.repository.hcatalog.nl
 org.talend.repository.hdfs.nl
 org.talend.repository.oozie.nl
+org.talend.designer.mapreduce.test

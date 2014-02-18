@@ -39,3 +39,4 @@ org.talend.tos.bigdata.core-feature
 org.talend.tos.bigdata.designer-feature
 org.talend.tos.bigdata.libraries-feature
 org.talend.tos.bigdata.repository-feature
+org.talend.libraries.hadoop

@@ -49,3 +49,8 @@ org.talend.dataquality.standardization.test
 org.talend.dataquality.test
 org.talend.sqltools.test
 org.talend.dataquality.test-feature
+org.talend.dataquality.matchmerge
+org.talend.dataquality.standardization.migration
+test.mydistance
+test.myudi
+org.talend.dataquality.editor

@@ -1,6 +1,8 @@
 org.talend.componentdesigner
 org.talend.componentdesigner-feature
 org.talend.componentdesigner.nl
+org.talend.componentdesigner.rcp
+org.talend.componentdesigner.rcp.nl
 org.talend.designer-feature
 org.talend.designer.abstractmap
 org.talend.designer.abstractmap.nl
@@ -65,7 +67,6 @@ org.talend.libraries.jboss
 org.talend.libraries.groovy
 org.talend.libraries.guava
 org.talend.libraries.jax
-org.talend.libraries.jboss
 org.talend.libraries.jersey
 org.talend.libraries.jetty
 org.talend.libraries.microsoft
@@ -110,3 +111,4 @@ org.talend.sqlbuilder.nl
 org.talend.tos-feature
 org.talend.tos.components-feature
 org.talend.tos.libraries-feature
+org.talend.designer.components.libs

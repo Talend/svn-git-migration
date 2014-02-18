@@ -53,4 +53,7 @@ org.talend.designer.components.libs.tdq.test
 org.talend.designer.routines.tdqprovider.test
 org.talend.survivorship.test
 org.talend.survivorship.ui.test
-
+org.talend.dataquality.data.index
+org.talend.dataquality.hadoop
+org.talend.dataquality.reporting.engine.build
+test.dq.datamart

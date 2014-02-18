@@ -22,6 +22,7 @@ org.talend.core.ui.nl
 org.talend.cwm.mip
 org.talend.cwm.mip.edit
 org.talend.cwm.mip.edit.nl
+org.talend.cwm.mip.editor
 org.talend.cwm.mip.nl
 org.talend.datatools.xml
 org.talend.help-feature
@@ -60,6 +61,7 @@ org.talend.libraries.jdbc.paraccel
 org.talend.libraries.jdbc.postgresql
 org.talend.libraries.jdbc.sqlite3
 org.talend.libraries.jdbc.teradata
+org.talend.libraries.jdbc.saphana
 org.talend.libraries.jexcel
 org.talend.libraries.jfreechart
 org.talend.libraries.jxplorer
@@ -110,3 +112,4 @@ org.talend.resources.nl
 org.talend.utils
 org.talend.utils-feature
 org.talend.utils.test
+org.talend.developpement

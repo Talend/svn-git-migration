@@ -11,4 +11,4 @@ org.talend.rcp.branding.tdqep-feature
 org.talend.rcp.branding.tdqprof-feature
 org.talend.rcp.branding.tdqprofrtx-feature
 org.talend.rcp.branding.tdqteam-feature
-
+org.talend.designer.tdqmatching

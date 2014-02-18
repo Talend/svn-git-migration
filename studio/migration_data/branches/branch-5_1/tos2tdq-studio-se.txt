@@ -1,5 +1,5 @@
-org.talend.top.libraries_feature
+org.talend.top.libraries-feature
 org.talend.libraries.google.libphonumber
 org.talend.libraries.jung
-org.talend.libraries.windowKey
+
 

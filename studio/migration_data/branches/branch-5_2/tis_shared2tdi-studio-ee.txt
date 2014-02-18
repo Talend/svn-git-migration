@@ -14,10 +14,7 @@ org.talend.designer.runprocess.remote
 org.talend.designer.runprocess.remote-feature
 org.talend.desinger.routines.tisprovider
 org.talend.libraries.archiva
-org.talend.libraries.drools
-org.talend.libraries.jbpm
-org.talend.libraries.jibx
-org.talend.libraries.tis.custom
+org.talend.libraries.svn
 org.talend.metalanguage.jobscript
 org.talend.metalanguage.jobscript-feature
 org.talend.metalanguage.jobscript.generator
@@ -42,7 +39,6 @@ org.talend.tisenterprise-feature
 org.talend.tisexpress-feature
 org.talend.tisprof-feature
 org.talend.tisteam-feature
-org.talend.updates
 org.talend.validationrules
 org.talend.wsdl.advancement
 org.talend.rcp.branding.generic.di
@@ -64,7 +60,6 @@ org.talend.remote.jobserver.commons.test
 org.talend.remote.runtime.client.test
 org.talend.repository.ebcdic.test
 org.talend.repository.sapwizard.test
-org.talend.updates.test
 org.talend.core.tis.nl
 org.talend.designer.cdc.nl
 org.talend.designer.component.preview.nl
@@ -81,5 +76,4 @@ org.talend.repository.edifact.nl
 org.talend.repository.hl7.nl
 org.talend.repository.importation.nl
 org.talend.repository.sapwizard.nl
-org.talend.updates.nl
 org.talend.validationrules.nl

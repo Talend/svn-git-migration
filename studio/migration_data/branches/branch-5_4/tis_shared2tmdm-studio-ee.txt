@@ -6,3 +6,4 @@ org.talend.designer.esb.bpm.core
 org.talend.designer.esb.bpm.ui
 org.talend.generic.mdm-feature
 org.talend.rcp.branding.generic.mdm
+org.talend.studio.workflow.workspace

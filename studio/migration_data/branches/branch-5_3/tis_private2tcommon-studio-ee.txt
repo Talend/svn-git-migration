@@ -6,7 +6,6 @@ org.talend.commandline.performances
 org.talend.commandline.remoteexecution-feature
 org.talend.commandline.remotexecution
 org.talend.configurator
-org.talend.configurator.common
 org.talend.dbrepocleaner
 org.talend.dbrepocleaner-feature
 org.talend.libraries.jdbc.db2

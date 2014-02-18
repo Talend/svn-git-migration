@@ -23,7 +23,6 @@ org.talend.esb.tooling.rs.provider-feature
 org.talend.esb.tooling.ws.consumer-feature
 org.talend.esb.tooling.ws.provider-feature
 org.talend.esbstandard-feature
-org.talend.libraries.esb
 org.talend.rcp.branding.camel
 org.talend.rcp.branding.camel-feature
 org.talend.rcp.branding.esbstandard
@@ -33,3 +32,11 @@ org.talend.repository.services-feature
 org.talend.repository.services.nl
 org.talend.repository.view.esb
 org.talend.repository.view.esb.nl
+org.talend.designer.camel.spring.core
+org.talend.designer.camel.spring.ui
+org.talend.designer.camel.spring.ui.nl
+org.talend.designer.esb.webservice
+org.talend.designer.esb.webservice.nl
+org.talend.esb.help
+org.talend.camel.libraries
+org.talend.esb.ws
