@@ -1,4 +1,3 @@
-
 org.talend.libraries.google.libphonumber
 org.talend.libraries.jung
 org.talend.libraries.windowKey

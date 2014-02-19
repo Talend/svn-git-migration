@@ -1,4 +1,3 @@
-
 com.eviware.soapui.eclipse.talend
 org.eclipse.jdt.ui.talend
 org.talend.camel.commandline

@@ -1,4 +1,3 @@
-org.talend.commandline.audit-feature
 org.talend.core.tis
 org.talend.core.tis-feature
 org.talend.core.tis.nl

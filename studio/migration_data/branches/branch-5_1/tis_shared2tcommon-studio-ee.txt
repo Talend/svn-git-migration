@@ -3,6 +3,7 @@ org.eclipse.emf.teneo
 org.eclipse.emf.teneo.annotations
 org.eclipse.emf.teneo.hibernate
 org.eclipse.emf.teneo.hibernate.mapper
+org.talend.commandline.audit-feature
 org.talend.designer.brms
 org.talend.designer.brms.nl
 org.talend.designer.components.tispeprovider

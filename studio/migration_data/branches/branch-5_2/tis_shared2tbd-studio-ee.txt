@@ -1,4 +1,3 @@
-
 org.talend.cluster-feature
 org.talend.designer.components.clusterprovider
 org.talend.designer.components.tismpprovider

@@ -1,4 +1,3 @@
-
 org.bonitasoft.studio.workspace.mdm
 org.talend.bos-feature
 org.talend.mdm.bpm
