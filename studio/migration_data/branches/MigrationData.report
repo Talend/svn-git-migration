@@ -61,7 +61,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -72,7 +71,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
@@ -230,7 +228,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -241,7 +238,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
@@ -403,7 +399,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -414,7 +409,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
@@ -567,7 +561,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -578,7 +571,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
@@ -731,7 +723,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -742,7 +733,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
@@ -892,7 +882,6 @@
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
       |-org.talend.test.build
-      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -903,7 +892,6 @@
       |-development
       |-HashTests
       |-org.eclipse.swtbot.forms.finder
-      |-org.eclipse.swt.unknown
       |-org.talend.designer.components.thalesprovider
       |-org.talend.model.tac
       |-org.talend.rcp.branding.dqsh
