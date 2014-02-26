@@ -247,7 +247,16 @@
                             <exclude name="i18n"/>
                         </dirset-elem>
                     </git-mv-set>
-                	<git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}" failonerror="false"/>
+                    <!-- commit only if status is not empty -->
+                    <git argline="status -s" dir="@{path}" output="git.status"/>
+                    <if>
+                        <not>
+                            <length string="${git.status}" trim="true" length="0" />                    
+                        </not>
+                        <then>
+                            <git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
+                        </then>
+                    </if>
                 </sequential>
             </for>
             <!--removes all empty commits-->
@@ -788,14 +797,17 @@
         <attribute name="argline" description="argument line passed to the git command"/>
         <attribute name="dir" description="directory where to run the git command"/>
         <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
+        <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
         <sequential>
             <echo message="in folder [@{dir}]"/>
         	<echo message="git @{argline}"/>
             <local name="error.prop"/>
-            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop">
+            <var name="@{output}" unset="true"/>
+            
+            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
                   <arg line="@{argline}"/>
-             </exec>
-             <!-- log the error that occured if failonerror was false -->
+            </exec>
+            <!-- log the error that occured if failonerror was false -->
             <if>
                 <not>
                 	<length string="${error.prop}" trim="true" length="0" />                    
@@ -991,7 +1003,7 @@
           target: test              
          ================================= -->
     <target name="test" >
-         <return-property return.property="tempfile"/>
+        <return-property return.property="tempfile"/>
         <echo message="tempfile=${tempfile}"/>
         <var name="tempfile" unset="true"/>
         <return-property return.property="tempfile"/>
@@ -1000,6 +1012,12 @@
         <echo>res.id=${toString:res.id}</echo>
         <return-resources return.resources.id="res.id"/>
         <echo>res.id=${toString:res.id}</echo>
+        <!-- check the git requires a commit -->
+        <git argline="status -s" dir="/Applications/java/talend/git/talend-svn-git-migration/studio/migration_data" output="foo"/>
+        <echo message="git command output=${foo}"/>
+        <git argline="status -s" dir="/Applications/java/talend/git/example" output="foo"/>
+        <echo message="git command output=${foo}"/>
+
     </target>
    
 <!-- = = = = = = = = = = = = = = = = =
