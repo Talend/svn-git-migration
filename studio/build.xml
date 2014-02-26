@@ -18,7 +18,6 @@
     <property name="migration.data.branches.folder.path" value="${svn2gitMigration.dir.path}/migration_data/branches"/>
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
-	<property name="list.of.final.git.repos" value="tcommon-studio-ee,tcommon-studio-se,tdi-studio-ee,tdi-studio-se,tdq-studio-ee,tdq-studio-se,tmdm-studio-ee,tmdm-studio-se,tbd-studio-ee,tbd-studio-se,tesb-studio-ee,tesb-studio-se,tamc-ee"/>
     <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
     <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
 	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
@@ -34,16 +33,18 @@
     <!-- refactor folders -->
     <property name="main.plugins.subfolder" value="main/plugins"/>
     <property name="main.features.subfolder" value="main/features"/>
-    <property name="test.plugins.subfolder" value="test/plugins"/>
-    <property name="test.features.subfolder" value="test/features"/>
+    <property name="test.subfolder" value="test"/>
+    <property name="test.plugins.subfolder" value="${test.subfolder}/plugins"/>
+    <property name="test.features.subfolder" value="${test.subfolder}/features"/>
     <property name="i18n.plugins.subfolder" value="i18n/plugins"/>
     <property name="i18n.features.subfolder" value="i18n/features"/>
+    <property name="sample.subfolder" value="sample"/>
 	
 
 <!-- - - - - - - - - - - - - - - - - - 
           target: init                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="init">
+    <target name="init" depends="compute.list.of.git.repos">
         <fail message="You must specify a &quot;repo.root.folder&quot; that contains a folder named [svn_git_repos] ">
             <condition>
                <not>
@@ -67,9 +68,34 @@
         <echo message="--------------------- STARTING SVN -> GIT MIGRATION --------------------"/>
         <echo message="root of svn-git, workspace and final folders for git repos is [${repo.root.folder}]"/>
         <echo message="migration data folder is [${migration.data.folder.path}]"/>
+        <echo message="final git repos list is [${list.of.final.git.repos}]"/>
         <echo message="error log may be create at [${error.log.path}]"/>
     </target>
-	
+
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: compute.list.of.git.repos
+          look at the migration data file name and strip what is before the 2 and the .txt to know the name of the remote repos.                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="compute.list.of.git.repos">
+        <resources id="all.master.migration.files.id">
+            <fileset dir="${migration.data.branches.folder.path}/master">
+                <include name="*.txt"/>
+            </fileset>
+       </resources>
+        <pathconvert property="all.master.migration.files" refid="all.master.migration.files.id" pathsep=","/>
+        <propertyregex property="all.final.git.repos.multiple" input="${all.master.migration.files}," regexp="(.*?)2(.*?).txt," replace="\2,"/>
+        <resources id="final.git.repos.res" >
+            <union>
+                <tokens>
+                    <string value="${all.final.git.repos.multiple}"/>
+                    <stringtokenizer delims=","/>
+                </tokens>
+            </union>
+        </resources>
+        <pathconvert property="list.of.final.git.repos" refid="final.git.repos.res" pathsep=","/>
+    </target> 
+
+    
 <!-- - - - - - - - - - - - - - - - - - 
           target: clean.final.repos                      
          - - - - - - - - - - - - - - - - - -->
@@ -179,6 +205,19 @@
             <for param="branch" list="${list.of.branches}">
                 <sequential>
                     <git argline="checkout @{branch}" dir="@{path}"/>
+                    <!-- mv the sample projects -->
+                    <git-mv-set dir="@{path}" dest="${sample.subfolder}">
+                        <dirset-elem>
+                            <include name="test.mydistance"/>
+                            <include name="test.myudi"/>
+                        </dirset-elem>
+                    </git-mv-set>
+                    <!-- mv the test projects -->
+                    <git-mv-set dir="@{path}" dest="${test.subfolder}">
+                        <dirset-elem>
+                            <include name="test.dq.datamart"/>
+                        </dirset-elem>
+                    </git-mv-set>
                     <!-- mv the test bundles -->
                 	<git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
                 		<dirset-elem>
