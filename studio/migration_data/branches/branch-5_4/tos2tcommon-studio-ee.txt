@@ -1,0 +1,2 @@
+org.talend.babel.all-feature
+org.talend.i18n.all-feature
