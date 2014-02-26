@@ -1,0 +1,7 @@
+generate.eclipse.launch.config
+org.talend.archivaJavaClient
+org.talend.commons.model
+org.talend.licensegenerator
+talend.license.junit
+talend.security.injector
+createJar.sh

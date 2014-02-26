@@ -170,10 +170,10 @@
     	<for list="${list.of.final.git.repos}" param="git.final.repo.name">
     		<sequential>
     		    <antcall target="clean.workspace"/>
-    	            <echo message="initialize the final repo : @{git.final.repo.name}"/>
+  	            <echo message="initialize the final repo : @{git.final.repo.name}"/>
     		    <!-- initialize the final git repo-->
-   		    <git-init-final-repo name="@{git.final.repo.name}"/>
-                    <!-- migrate each source repos into it-->
+    		    <git-init-final-repo name="@{git.final.repo.name}"/>
+                <!-- migrate each source repos into it-->
     		    <for param="svn.git.repo.path">
     		       <path refid ="svn.git.repo.dirset"/>
     	               <sequential>
@@ -182,12 +182,12 @@
     	            	  <migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.final.repo.name}"/>
     	               </sequential>
     		    </for>
-                    <!-- refactor the final repo before pushing it -->
-                    <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
-         	    <!-- check that repo contains what is expect -->
+                <!-- refactor the final repo before pushing it -->
+                <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
+         	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
-                    <!-- push the final repos-->
-                    <git-push-repo localrepo="${final.repos.path}/@{git.final.repo.name}" remoteRepo="@{git.final.repo.name}"/>
+                <!-- push the final repos-->
+                <git-push-repo localrepo="${final.repos.path}/@{git.final.repo.name}" remoteRepo="@{git.final.repo.name}"/>
     		</sequential>
     	</for>
     </target>
