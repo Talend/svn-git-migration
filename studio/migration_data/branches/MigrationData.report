@@ -650,9 +650,7 @@
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.babel.all_feature
-      |-org.talend.babel.all-feature
       |-org.talend.emptyproject
-      |-org.talend.i18n.all-feature
       |-org.talend.rcp.branding.jetlxcmmty
       |-org.talend.rcp.branding.jetlxcmmty-feature
       |-org.talend.rcp.branding.sdi
@@ -810,9 +808,7 @@
 
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
-      |-org.talend.babel.all-feature
       |-org.talend.emptyproject
-      |-org.talend.i18n.all-feature
       |-org.talend.rcp.branding.jetlxcmmty
       |-org.talend.rcp.branding.jetlxcmmty-feature
       |-org.talend.rcp.branding.sdi
@@ -908,6 +904,15 @@
       |-org.talend.rcp.branding.kurtosys-feature
       |-org.talend.rcp.branding.lynasetl
       |-org.talend.rcp.branding.lynasetl-feature
+      |-org.talend.rcp.branding.tdq
+      |-org.talend.rcp.branding.tdqenterprise-feature
+      |-org.talend.rcp.branding.tdqenterprisempx-feature
+      |-org.talend.rcp.branding.tdqep
+      |-org.talend.rcp.branding.tdqep-feature
+      |-org.talend.rcp.branding.tdq-feature
+      |-org.talend.rcp.branding.tdqprof-feature
+      |-org.talend.rcp.branding.tdqprofrtx-feature
+      |-org.talend.rcp.branding.tdqteam-feature
       |-org.talend.rcp.branding.thales
       |-org.talend.rcp.branding.thales-feature
       |-org.talend.rcp.branding.tod
@@ -970,9 +975,7 @@
 
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
-      |-org.talend.babel.all-feature
       |-org.talend.emptyproject
-      |-org.talend.i18n.all-feature
       |-org.talend.rcp.branding.jetlxcmmty
       |-org.talend.rcp.branding.jetlxcmmty-feature
       |-org.talend.rcp.branding.sdi
