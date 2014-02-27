@@ -23,4 +23,3 @@ org.talend.license.gui.nl
 org.talend.remote.jobserver.commons-feature
 org.talend.remote.jobserver.server
 org.talend.remote.jobserver.server-feature
-org.talend.test.performance
