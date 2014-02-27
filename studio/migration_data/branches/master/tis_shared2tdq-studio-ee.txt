@@ -3,3 +3,12 @@ org.guvnor.tools
 org.talend.designer.tdqmatching
 org.talend.generic.dq-feature
 org.talend.rcp.branding.generic.dq
+org.talend.rcp.branding.tdq
+org.talend.rcp.branding.tdqenterprise-feature
+org.talend.rcp.branding.tdqenterprisempx-feature
+org.talend.rcp.branding.tdqep
+org.talend.rcp.branding.tdqep-feature
+org.talend.rcp.branding.tdq-feature
+org.talend.rcp.branding.tdqprof-feature
+org.talend.rcp.branding.tdqprofrtx-feature
+org.talend.rcp.branding.tdqteam-feature
