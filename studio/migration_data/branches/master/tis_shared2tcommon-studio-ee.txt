@@ -57,7 +57,5 @@ org.talend.repository.svnprovider-feature
 org.talend.repository.svnprovider.nl
 org.talend.repository.svnprovider.test
 org.talend.repository.view.svn
-org.talend.teneo.model
-org.talend.teneo.model.test
 org.talend.tooling-feature
 org.talend.tup-feature

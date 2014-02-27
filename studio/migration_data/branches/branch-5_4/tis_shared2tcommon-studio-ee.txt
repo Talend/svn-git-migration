@@ -12,7 +12,6 @@ org.talend.generic.cloud-feature
 org.talend.libraries.jdom
 org.talend.libraries.jdtcompiler
 org.talend.libraries.sequence
-org.talend.model.tac
 org.talend.rcp.branding.all-feature
 org.talend.rcp.branding.esbdqenterprise-feature
 org.talend.rcp.branding.esbdqenterprisempx-feature
@@ -58,7 +57,5 @@ org.talend.repository.svnprovider-feature
 org.talend.repository.svnprovider.nl
 org.talend.repository.svnprovider.test
 org.talend.repository.view.svn
-org.talend.teneo.model
-org.talend.teneo.model.test
 org.talend.tooling-feature
 org.talend.tup-feature

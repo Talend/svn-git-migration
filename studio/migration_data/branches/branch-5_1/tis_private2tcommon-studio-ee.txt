@@ -6,7 +6,6 @@ org.talend.commandline-feature
 org.talend.commandline.remoteexecution-feature
 org.talend.commandline.remotexecution
 org.talend.commandline.test
-org.talend.commanline.test
 org.talend.configurator
 org.talend.configurator.test
 org.talend.dbrepocleaner
@@ -15,8 +14,6 @@ org.talend.libraries.jline
 org.talend.libraries.jmx
 org.talend.license.gui
 org.talend.license.gui-feature
-org.talend.migration
-org.talend.migration-feature
 org.talend.monitoring
 org.talend.monitoring.client
 org.talend.monitoring.server

@@ -9,7 +9,6 @@ org.talend.designer.brms
 org.talend.designer.brms.nl
 org.talend.designer.components.tispeprovider
 org.talend.generic.cloud-feature
-org.talend.model.tac
 org.talend.rcp.branding.all-feature
 org.talend.rcp.branding.esbdqenterprise-feature
 org.talend.rcp.branding.esbdqenterprisempx-feature
@@ -55,6 +54,4 @@ org.talend.repository.svnprovider-feature
 org.talend.repository.svnprovider.nl
 org.talend.repository.svnprovider.test
 org.talend.repository.view.svn
-org.talend.teneo.model
-org.talend.teneo.model.test
 org.talend.tup-feature

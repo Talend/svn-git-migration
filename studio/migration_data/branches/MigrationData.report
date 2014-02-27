@@ -50,17 +50,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -69,7 +65,6 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
@@ -217,17 +212,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -236,7 +227,6 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
@@ -387,18 +377,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.mavenUrlHandler
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -407,7 +392,6 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
@@ -548,19 +532,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.administrator.quartz
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.mavenUrlHandler
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -569,7 +547,6 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
@@ -649,7 +626,6 @@
 
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
-      |-org.talend.babel.all_feature
       |-org.talend.emptyproject
       |-org.talend.rcp.branding.jetlxcmmty
       |-org.talend.rcp.branding.jetlxcmmty-feature
@@ -708,19 +684,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.administrator.quartz
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.mavenUrlHandler
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -729,7 +699,6 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
       |-org.talend.rcp.branding.dqsh
@@ -865,19 +834,13 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator
       |-org.talend.administrator-feature
-      |-org.talend.administrator.quartz
-      |-org.talend.ant.build
-      |-org.talend.gadget.admindashboard
       |-org.talend.jobserver.karaf.feature
-      |-org.talend.mavenUrlHandler
-      |-org.talend.oryx
+      |-org.talend.migration-feature
       |-org.talend.remote.jobserver.sigar
       |-org.talend.remote.server
       |-org.talend.soamanager
       |-org.talend.soamanager.commons
-      |-org.talend.test.build
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -886,10 +849,8 @@
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
-      |-HashTests
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.designer.components.thalesprovider
-      |-org.talend.model.tac
       |-org.talend.rcp.branding.dqsh
       |-org.talend.rcp.branding.dqsh-feature
       |-org.talend.rcp.branding.jetl
@@ -989,3 +950,4 @@
 
 
 *************************************************************
+
