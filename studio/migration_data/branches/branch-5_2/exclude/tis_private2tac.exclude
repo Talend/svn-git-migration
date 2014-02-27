@@ -1,5 +1,7 @@
 org.talend.administrator
+org.talend.administrator-feature
 org.talend.gadget.admindashboard
 org.talend.mavenUrlHandler
 org.talend.migration
+org.talend.migration-feature
 org.talend.oryx
