@@ -528,14 +528,14 @@
                 <not>
                     <length string="${tags.to.remove}" trim="true" length="0" />                    
                 </not>              
-            <then>
-                <!-- remove all calculated tags -->
-                <echo message="remove the following tags : ${tags.to.remove}"/>
-                <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
-            </then>
-            <else>
-                <echo message="no tabs to remove."/>
-            </else>
+                <then>
+                    <!-- remove all calculated tags -->
+                    <echo message="remove the following tags : ${tags.to.remove}"/>
+                    <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
+                </then>
+                <else>
+                    <echo message="no tabs to remove."/>
+                </else>
             </if>
 
         </sequential>
@@ -588,12 +588,23 @@
                     <pathconvert property="files.to.remove" refid="files.to.remove.res" pathsep=" ">
                           <map from="${destination.dir}" to=""/>
                     </pathconvert>
-                    <echo message="[@{branch}] remove this : ${files.to.remove}"/>
-                    <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
-                    <!-- remove the remaining folders cause git rm does not remove them -->
-                    <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
-                    <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot;" dir="${destination.dir}"/>
-                    <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
+                    <!-- only remove if necessary -->
+                    <if>
+                        <not>
+                            <length string="${files.to.remove}" trim="true" length="0" />                    
+                        </not>              
+                        <then>
+                            <echo message="[@{branch}] remove this : ${files.to.remove}"/>
+                            <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
+                            <!-- remove the remaining folders cause git rm does not remove them -->
+                            <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
+                            <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot;" dir="${destination.dir}"/>
+                            <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
+                        </then>
+                        <else>
+                            <echo message="no folder to remove."/>
+                        </else>
+                    </if>
                 </sequential>
             </for>
             <git-remove-history alreadyremoved="${all.removed.files}" gitrepo="@{gitrepo}" svnrepo="@{svnrepo}"/>
@@ -830,7 +841,7 @@
             <if>
                 <isset property="error.log.content"/>
             <then>
-                <echo message="Dumping the file error.log : ${line.separator}${error.log.content}"/>
+                <echo message="Dumping the file error.log : -------------------------------------------${line.separator}${error.log.content}${line.separator}end of error log dump------------------------------------"/>
             </then>
             <else>
                 <echo message="no error log found so enjoy :)."/>
