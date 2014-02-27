@@ -22,10 +22,6 @@ org.talend.rcp.branding.swtbot.test-feature
 org.talend.rcp.branding.talendplatform.bigdata-feature
 org.talend.rcp.branding.talendplatform.bpmdqee-feature
 org.talend.rcp.branding.talendplatform.bpmdqeempx-feature
-org.talend.rcp.branding.talendplatform.bpmee-feature
-org.talend.rcp.branding.talendplatform.bpmeempx-feature
-org.talend.rcp.branding.talendplatform.bpmpe-feature
-org.talend.rcp.branding.talendplatform.bpmte-feature
 org.talend.rcp.branding.talendplatform.cloudbpmeempx-feature
 org.talend.rcp.branding.talendplatform.cloudee-feature
 org.talend.rcp.branding.talendplatform.cloudeempx
