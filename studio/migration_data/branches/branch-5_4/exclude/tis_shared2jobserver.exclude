@@ -1,0 +1,10 @@
+org.talend.remote.client
+org.talend.remote.commons
+org.talend.remote.jobserver.client
+org.talend.remote.jobserver.commons
+org.talend.remote.runtime.client
+org.talend.remote.jobserver.client-feature
+org.talend.remote.jobserver.client.nl
+org.talend.remote.jobserver.commons.nl
+org.talend.remote.jobserver.commons.test
+org.talend.remote.runtime.client.test

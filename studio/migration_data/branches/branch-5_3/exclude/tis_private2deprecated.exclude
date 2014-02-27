@@ -1,2 +1,4 @@
 org.talend.ant.build
 org.talend.test.build
+org.talend.soamanager
+org.talend.soamanager.commons

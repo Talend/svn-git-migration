@@ -41,16 +41,6 @@ org.talend.rcp.branding.tisexpress-feature
 org.talend.rcp.branding.tisprof-feature
 org.talend.rcp.branding.tisprofrtx-feature
 org.talend.rcp.branding.tisteam-feature
-org.talend.remote.client
-org.talend.remote.commons
-org.talend.remote.jobserver.client
-org.talend.remote.jobserver.client-feature
-org.talend.remote.jobserver.client.nl
-org.talend.remote.jobserver.commons
-org.talend.remote.jobserver.commons.nl
-org.talend.remote.jobserver.commons.test
-org.talend.remote.runtime.client
-org.talend.remote.runtime.client.test
 org.talend.repository.documentation
 org.talend.repository.documentation.nl
 org.talend.repository.ebcdic
