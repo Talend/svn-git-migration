@@ -3,8 +3,8 @@ SVN 2 Git Migration
 This project contains the script and data files for performing complex migration from svn to git.
 When I say complex I mean many svn repos to many git repos with split and merge of folders.
 
-Required file structure
----
+#### Main script
+
 the main script can be found in 
 **studio/build.xml**
 
