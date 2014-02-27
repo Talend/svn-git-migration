@@ -31,13 +31,15 @@
     </path>
 
     <!-- refactor folders -->
-    <property name="main.plugins.subfolder" value="main/plugins"/>
-    <property name="main.features.subfolder" value="main/features"/>
+    <property name="main.subfolder" value="main"/>
+    <property name="main.plugins.subfolder" value="${main.subfolder}/plugins"/>
+    <property name="main.features.subfolder" value="${main.subfolder}/features"/>
     <property name="test.subfolder" value="test"/>
     <property name="test.plugins.subfolder" value="${test.subfolder}/plugins"/>
     <property name="test.features.subfolder" value="${test.subfolder}/features"/>
-    <property name="i18n.plugins.subfolder" value="i18n/plugins"/>
-    <property name="i18n.features.subfolder" value="i18n/features"/>
+    <property name="i18n.subfolder" value="i18n"/>
+    <property name="i18n.plugins.subfolder" value="${i18n.subfolder}/plugins"/>
+    <property name="i18n.features.subfolder" value="${i18n.subfolder}/features"/>
     <property name="sample.subfolder" value="sample"/>
 	
 
@@ -242,9 +244,10 @@
                     <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
                         <dirset-elem>
                             <include name="*"/>
-                            <exclude name="main"/>
-                            <exclude name="test"/>
-                            <exclude name="i18n"/>
+                            <exclude name="${main.subfolder}"/>
+                            <exclude name="${test.subfolder}"/>
+                            <exclude name="${i18n.subfolder}"/>
+                            <exclude name="${sample.subfolder}"/>
                         </dirset-elem>
                     </git-mv-set>
                     <!-- commit only if status is not empty -->
@@ -820,13 +823,16 @@
             </exec>
             <!-- log the error that occured if failonerror was false -->
             <if>
-                <not>
-                	<length string="${error.prop}" trim="true" length="0" />                    
-                </not>
+                <and>
+                    <equals arg1="failonerror" arg2="false"/><!-- because some git command with success output text to stderr :(-->
+                    <not>
+                    	<length string="${error.prop}" trim="true" length="0" />                    
+                    </not>
+                </and>
             	<then>
                     <echo message="previous git command failed (but keep going) : ${error.prop}"/>
                     <!-- also log in the error log  -->
-                    <echo file="${error.log.path}" append="true" message="git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
+                    <echo file="${error.log.path}" append="true" message="${line.separator}git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
             	</then>
             </if>
         </sequential>
