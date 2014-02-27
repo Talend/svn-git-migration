@@ -50,13 +50,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -155,7 +148,6 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
@@ -212,13 +204,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -318,7 +303,6 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
@@ -377,13 +361,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -480,7 +457,6 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
@@ -532,13 +508,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -632,8 +601,6 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-test.drools_training
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
@@ -684,13 +651,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -783,8 +743,6 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-test.drools_training
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
@@ -834,13 +792,6 @@
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
-      |-org.talend.administrator-feature
-      |-org.talend.jobserver.karaf.feature
-      |-org.talend.migration-feature
-      |-org.talend.remote.jobserver.sigar
-      |-org.talend.remote.server
-      |-org.talend.soamanager
-      |-org.talend.soamanager.commons
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
@@ -942,12 +893,9 @@
       |-org.talend.rcp.branding.sdi
       |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
-      |-test.drools_training
-      |-tuj
 
  <<END++++++SVN Repository:tos
 
 
 
 *************************************************************
-
