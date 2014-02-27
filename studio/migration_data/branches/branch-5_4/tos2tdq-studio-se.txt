@@ -2,3 +2,4 @@ org.talend.libraries.google.libphonumber
 org.talend.libraries.jung
 org.talend.libraries.windowKey
 org.talend.top.libraries-feature
+test.drools_training
