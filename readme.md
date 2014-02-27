@@ -18,3 +18,5 @@ You must create svn git clone in
 please be sure to follow the full Atlassian tuto including the clean phase
 
     java -Dfile.encoding=utf-8 -jar ${repo.root.folder}/svn-migration-scripts.jar clean-git --force
+
+more to come...
