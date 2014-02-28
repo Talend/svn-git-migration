@@ -56,7 +56,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
@@ -180,7 +179,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
@@ -307,7 +305,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test.all-feature
       |-org.talend.rcp.branding.swtbot.test-feature
@@ -429,7 +426,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test.all-feature
       |-org.talend.rcp.branding.swtbot.test-feature
@@ -545,7 +541,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test.all-feature
       |-org.talend.rcp.branding.swtbot.test-feature
@@ -659,7 +654,6 @@
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
-      |-development
       |-org.eclipse.swtbot.forms.finder
       |-org.talend.rcp.branding.swtbot.test.all-feature
       |-org.talend.rcp.branding.swtbot.test-feature
