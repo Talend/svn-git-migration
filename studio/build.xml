@@ -5,6 +5,7 @@
 	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/../.."/>
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/../svn-migration-scripts.jar"/>
     <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/../bfg-1.11.1.jar"/>
+    <property name="empty.file" value="${svn2gitMigration.dir.path}/empty.txt"/>
     <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
     <property name="commit.prefix" value="[GIT Migration]"/>
@@ -576,15 +577,23 @@
             <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
             <for param="branch" list="${list.of.branches}">
                 <sequential><!-- remove all root files and folders unecessary for the branch -->
-                    <local name="migration.date.file"/>
-                    <property name="migration.date.file" value="${migration.data.branches.folder.path}/@{branch}/@{svnrepo}2@{gitrepo}.txt"/>
-                    <echo message="using migration data file [${migration.date.file}]"/>
+                    <local name="migration.data.file"/>
+                    <property name="migration.data.file" value="${migration.data.branches.folder.path}/@{branch}/@{svnrepo}2@{gitrepo}.txt"/>
+                    <if><!-- if not data migration file exists then use the empty one -->
+                        <not>
+                            <available file="${migration.data.file}"/>
+                        </not>
+                        <then>
+                            <var name="migration.data.file" value="${empty.file}"/>
+                       </then>
+                    </if>
+                    <echo message="using migration data file [${migration.data.file}]"/>
                     <git argline="checkout @{branch}" dir="${destination.dir}"/>
                     <git argline="clean -fd -q" dir="${destination.dir}"/>
                     <compute-root-files-diff folder="${migration.workspace.path}/@{svnrepo}" resultid="files.to.remove.res">
                         <resources-compare>
-                            <fileset dir="${destination.dir}" includesfile="${migration.date.file}"/>
-                            <dirset dir="${destination.dir}" includesfile="${migration.date.file}"/>
+                            <fileset dir="${destination.dir}" includesfile="${migration.data.file}"/>
+                            <dirset dir="${destination.dir}" includesfile="${migration.data.file}"/>
                         </resources-compare>
                     </compute-root-files-diff>
                     <local name="files.to.remove"/>
@@ -869,9 +878,9 @@
 	      target: test.prepare.svn.git.repo              
 	     ================================= -->
     <target name="test.prepare.svn.git.repo" depends="clean.workspace">
-          <copy-original-to-workspace from="tis_private"/>
+          <copy-original-to-workspace from="tis_shared"/>
 
-        <prepare.svn.git.repo svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
+        <prepare.svn.git.repo svnrepo="tis_shared" gitrepo="tmdm-studio-ee"/>
         <dump-error-log/>
     </target>
 	
