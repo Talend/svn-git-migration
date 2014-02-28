@@ -46,45 +46,22 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jasperPro
-      |-org.talend.rcp.branding.jasperPro-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -137,16 +114,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jasper
-      |-org.talend.rcp.branding.jasper-feature
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
@@ -200,47 +170,22 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.talendplatform.bpmee-feature
-      |-org.talend.rcp.branding.talendplatform.bpmeempx-feature
-      |-org.talend.rcp.branding.talendplatform.bpmpe-feature
-      |-org.talend.rcp.branding.talendplatform.bpmte-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -294,14 +239,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
@@ -357,43 +297,23 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test.all-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -448,14 +368,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
@@ -504,45 +419,23 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetl.bigdata
-      |-org.talend.rcp.branding.jetl.bigdata-feature
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test.all-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -592,14 +485,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
@@ -647,45 +535,23 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetl.bigdata
-      |-org.talend.rcp.branding.jetl.bigdata-feature
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test.all-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -734,14 +600,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
@@ -788,54 +649,23 @@
 
  <<END++++++SVN Repository:tem
 
-
  >>START++++++SVN Repository:tis_private
   $Some projects missed in data files possibly:
       |-drools-guvnor-custom
+      |-org.talend.test.performance
       |-pom.xml
 
  <<END++++++SVN Repository:tis_private
-
 
  >>START++++++SVN Repository:tis_shared
   $Some projects missed in data files possibly:
       |-development
       |-org.eclipse.swtbot.forms.finder
-      |-org.talend.designer.components.thalesprovider
-      |-org.talend.rcp.branding.dqsh
-      |-org.talend.rcp.branding.dqsh-feature
-      |-org.talend.rcp.branding.jetl
-      |-org.talend.rcp.branding.jetl.bigdata
-      |-org.talend.rcp.branding.jetl.bigdata-feature
-      |-org.talend.rcp.branding.jetlexpress
-      |-org.talend.rcp.branding.jetlexpress-feature
-      |-org.talend.rcp.branding.jetl-feature
-      |-org.talend.rcp.branding.jetlplus
-      |-org.talend.rcp.branding.jetlplus-feature
-      |-org.talend.rcp.branding.kurtosys
-      |-org.talend.rcp.branding.kurtosys-feature
-      |-org.talend.rcp.branding.lynasetl
-      |-org.talend.rcp.branding.lynasetl-feature
-      |-org.talend.rcp.branding.tdq
-      |-org.talend.rcp.branding.tdqenterprise-feature
-      |-org.talend.rcp.branding.tdqenterprisempx-feature
-      |-org.talend.rcp.branding.tdqep
-      |-org.talend.rcp.branding.tdqep-feature
-      |-org.talend.rcp.branding.tdq-feature
-      |-org.talend.rcp.branding.tdqprof-feature
-      |-org.talend.rcp.branding.tdqprofrtx-feature
-      |-org.talend.rcp.branding.tdqteam-feature
-      |-org.talend.rcp.branding.thales
-      |-org.talend.rcp.branding.thales-feature
-      |-org.talend.rcp.branding.tod
-      |-org.talend.rcp.branding.tod-feature
-      |-org.talend.rcp.branding.wdci
-      |-org.talend.rcp.branding.wdci-feature
-      |-org.talend.thalestechnical-feature
+      |-org.talend.rcp.branding.swtbot.test.all-feature
+      |-org.talend.rcp.branding.swtbot.test-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tis_shared
-
 
  >>START++++++SVN Repository:tom
   $Some projects missed in data files possibly:
@@ -884,14 +714,9 @@
 
  <<END++++++SVN Repository:tom
 
-
  >>START++++++SVN Repository:tos
   $Some projects missed in data files possibly:
       |-org.talend.emptyproject
-      |-org.talend.rcp.branding.jetlxcmmty
-      |-org.talend.rcp.branding.jetlxcmmty-feature
-      |-org.talend.rcp.branding.sdi
-      |-org.talend.rcp.branding.sdi-feature
       |-pom.xml
 
  <<END++++++SVN Repository:tos
