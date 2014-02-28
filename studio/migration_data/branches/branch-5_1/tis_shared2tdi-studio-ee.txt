@@ -29,12 +29,17 @@ org.talend.metalanguage.jobscript.generator
 org.talend.metalanguage.jobscript.test
 org.talend.metalanguage.jobscript.ui
 org.talend.metalanguage.jobscript.ui.nl
+org.talend.rcp.branding.tisenterprise
 org.talend.rcp.branding.tisenterprise-feature
+org.talend.rcp.branding.tisenterprisempx
 org.talend.rcp.branding.tisenterprisempx-feature
 org.talend.rcp.branding.tisexpress
 org.talend.rcp.branding.tisexpress-feature
+org.talend.rcp.branding.tisprof
 org.talend.rcp.branding.tisprof-feature
+org.talend.rcp.branding.tisprofrtx
 org.talend.rcp.branding.tisprofrtx-feature
+org.talend.rcp.branding.tisteam
 org.talend.rcp.branding.tisteam-feature
 org.talend.repository.documentation
 org.talend.repository.documentation.nl

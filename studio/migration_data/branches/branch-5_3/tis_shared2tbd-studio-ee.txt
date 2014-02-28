@@ -4,6 +4,7 @@ org.talend.designer.components.mrprovider
 org.talend.designer.components.tismpprovider
 org.talend.designer.mapreduce
 org.talend.designer.mapreduce.test
+org.talend.rcp.branding.talendplatform.bigdata-feature
 org.talend.repository.hadoopcluster
 org.talend.repository.hadoopcluster.nl
 org.talend.repository.hbaseprovider

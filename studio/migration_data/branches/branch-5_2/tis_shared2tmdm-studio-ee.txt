@@ -8,7 +8,10 @@ org.talend.designer.esb.bpm.ui
 org.talend.generic.mdm-feature
 org.talend.mdm.bossp-feature
 org.talend.rcp.branding.generic.mdm
+org.talend.rcp.branding.talendplatform.bpmdqee-feature
+org.talend.rcp.branding.talendplatform.bpmdqeempx-feature
 org.talend.rcp.branding.talendplatform.bpmee-feature
 org.talend.rcp.branding.talendplatform.bpmeempx-feature
 org.talend.rcp.branding.talendplatform.bpmpe-feature
 org.talend.rcp.branding.talendplatform.bpmte-feature
+org.talend.rcp.branding.talendplatform.cloudbpmeempx-feature

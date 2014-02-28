@@ -1,6 +1,7 @@
 org.talend.cluster-feature
 org.talend.designer.components.clusterprovider
 org.talend.designer.components.tismpprovider
+org.talend.rcp.branding.talendplatform.bigdata-feature
 org.talend.repository.hbaseprovider
 org.talend.repository.hcatalog
 org.talend.repository.hcatalog.nl

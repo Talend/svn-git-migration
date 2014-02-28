@@ -9,6 +9,11 @@ org.talend.esbenterprise.tooling-feature
 org.talend.esb.platform-feature
 org.talend.libraries.camel.alldeps
 org.talend.libraries.esb.ext
+org.talend.rcp.branding.esbdqenterprise-feature
+org.talend.rcp.branding.esbdqenterprisempx-feature
+org.talend.rcp.branding.esbdqprofessional-feature
+org.talend.rcp.branding.esbdqteamedition-feature
 org.talend.rcp.branding.esbenterprise-feature
+org.talend.rcp.branding.talendplatform.esbbpm-feature
 org.talend.resources.export.route
 org.talend.slf4j-feature

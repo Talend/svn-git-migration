@@ -13,19 +13,11 @@ org.talend.libraries.jdom
 org.talend.libraries.jdtcompiler
 org.talend.libraries.sequence
 org.talend.rcp.branding.all-feature
-org.talend.rcp.branding.esbdqenterprise-feature
-org.talend.rcp.branding.esbdqenterprisempx-feature
-org.talend.rcp.branding.esbdqprofessional-feature
-org.talend.rcp.branding.esbdqteamedition-feature
 org.talend.rcp.branding.generic
 org.talend.rcp.branding.generic.cloud
 org.talend.rcp.branding.generic.test
 org.talend.rcp.branding.swtbot.test.all-feature
 org.talend.rcp.branding.swtbot.test-feature
-org.talend.rcp.branding.talendplatform.bigdata-feature
-org.talend.rcp.branding.talendplatform.bpmdqee-feature
-org.talend.rcp.branding.talendplatform.bpmdqeempx-feature
-org.talend.rcp.branding.talendplatform.cloudbpmeempx-feature
 org.talend.rcp.branding.talendplatform.cloudee-feature
 org.talend.rcp.branding.talendplatform.cloudeempx
 org.talend.rcp.branding.talendplatform.cloudeempx-feature
@@ -36,7 +28,6 @@ org.talend.rcp.branding.talendplatform.dsee-feature
 org.talend.rcp.branding.talendplatform.dseempx-feature
 org.talend.rcp.branding.talendplatform.dspe-feature
 org.talend.rcp.branding.talendplatform.dste-feature
-org.talend.rcp.branding.talendplatform.esbbpm-feature
 org.talend.rcp.branding.tuj
 org.talend.rcp.branding.tuj-feature
 org.talend.repository.brms
