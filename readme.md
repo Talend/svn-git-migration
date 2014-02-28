@@ -3,6 +3,13 @@ SVN 2 Git Migration
 This project contains the script and data files for performing complex migration from svn to git.
 When I say complex I mean many svn repos to many git repos with split and merge of folders.
 
+### Prerequisit
+You need to run this script in a Unix like OS (not Windows except if you fix the script or manage to install the following utilities).
+the script requires the following tools to be installed
+* git (with svn module)
+* ant (sudo apt-get install ant). Engine to run the script
+* curl (sudo apt-get install curl). Used to call bitbucket REST APIs to delete and create remote repositories.
+
 ### Main script
 
 the main script can be found in 
