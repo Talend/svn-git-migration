@@ -9,7 +9,6 @@ org.talend.designer.brms
 org.talend.designer.brms.nl
 org.talend.designer.components.tispeprovider
 org.talend.rcp.branding.all-feature
-org.talend.rcp.branding.swtbot.test-feature
 org.talend.rcp.branding.talendplatform.cloudee
 org.talend.rcp.branding.talendplatform.cloudee-feature
 org.talend.rcp.branding.talendplatform.cloudeempx
