@@ -17,32 +17,22 @@
 	
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="migration.data.branches.folder.path" value="${svn2gitMigration.dir.path}/migration_data/branches"/>
+    <property name="refactor.ant.file" value="${migration.data.folder.path}/refactor_ant.xml"/><!--if it does not exist then it will be ignored-->
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
-    <property name="list.of.branches.no.master" value="branch-5_0,branch-5_1,branch-5_2,branch-5_3,branch-5_4"/>
-    <property name="list.of.branches" value="${list.of.branches.no.master},master"/>
-	<property name="list.of.tags" value="release-5_0_0,release-5_0_1,release-5_0_2,release-5_0_3,release-5_1_0,release-5_1_1,release-5_1_2,release-5_1_3,release-5_2_0,release-5_2_1,release-5_2_2,release-5_2_3,release-5_3_0,release-5_3_1,release-5_3_2,release-5_4_0,release-5_4_1"/>
 
-	<property name="migration.workspace.path" value="${repo.root.folder}/migration_workspace"/>
-	<property name="final.repos.path" value="${repo.root.folder}/final_repos"/>
-	<path id="svn.git.repo.dirset">
-    	<dirset dir="${svn.git.repos.path}" >
-    	    <include name="*"/>
-    	</dirset>
+    <property name="migration.workspace.path" value="${repo.root.folder}/migration_workspace"/>
+    <property name="final.repos.path" value="${repo.root.folder}/final_repos"/>
+    <path id="svn.git.repo.dirset">
+        <dirset dir="${svn.git.repos.path}" >
+            <include name="*"/>
+        </dirset>
     </path>
 
-    <!-- refactor folders -->
-    <property name="main.subfolder" value="main"/>
-    <property name="main.plugins.subfolder" value="${main.subfolder}/plugins"/>
-    <property name="main.features.subfolder" value="${main.subfolder}/features"/>
-    <property name="test.subfolder" value="test"/>
-    <property name="test.plugins.subfolder" value="${test.subfolder}/plugins"/>
-    <property name="test.features.subfolder" value="${test.subfolder}/features"/>
-    <property name="i18n.subfolder" value="i18n"/>
-    <property name="i18n.plugins.subfolder" value="${i18n.subfolder}/plugins"/>
-    <property name="i18n.features.subfolder" value="${i18n.subfolder}/features"/>
-    <property name="sample.subfolder" value="sample"/>
-	
+    <!-- load specific migration properties-->
+    <property file="${migration.data.folder.path}/migration_ant.properties"/>
+    <import file="${refactor.ant.file}" optional="true"/>
+    
 
 <!-- - - - - - - - - - - - - - - - - - 
           target: init                      
@@ -185,8 +175,14 @@
     	            	  <migrate.single.svn.to.git svnrepo="${svn.git.name}" gitrepo="@{git.final.repo.name}"/>
     	               </sequential>
     		    </for>
-                <!-- refactor the final repo before pushing it -->
-                <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
+                <!-- refactor the final repo before pushing it if the refactor ant script exists -->
+    		    <if>
+    		        <avalaible file="${refactor.ant.file}" />
+    		        <then>
+    		            <!-- refactor the final repo before pushing it -->
+    		            <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
+    		        </then>
+  		        </if>
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
                 <!-- push the final repos-->
@@ -195,78 +191,6 @@
     	</for>
     </target>
 	
-	
-<!-- = = = = = = = = = = = = = = = = =
-          macrodef: refactor-final-repo
-          1) refactor plugins and features into main, test, i18n plugins and features folders.
-          2) commit the refactor       
-          3) remove the empty commits   
-         = = = = = = = = = = = = = = = = = -->
-    <macrodef name="refactor-final-repo">
-        <attribute name="path" description="path of the git repository to refactor" />
-        <sequential>
-            <for param="branch" list="${list.of.branches}">
-                <sequential>
-                    <git argline="checkout @{branch}" dir="@{path}"/>
-                    <!-- mv the sample projects -->
-                    <git-mv-set dir="@{path}" dest="${sample.subfolder}">
-                        <dirset-elem>
-                            <include name="test.mydistance"/>
-                            <include name="test.myudi"/>
-                        </dirset-elem>
-                    </git-mv-set>
-                    <!-- mv the test projects -->
-                    <git-mv-set dir="@{path}" dest="${test.subfolder}">
-                        <dirset-elem>
-                            <include name="test.dq.datamart"/>
-                        </dirset-elem>
-                    </git-mv-set>
-                    <!-- mv the test bundles -->
-                	<git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
-                		<dirset-elem>
-                            <include name="*.test"/>
-                		</dirset-elem>
-                	</git-mv-set>
-                    <!-- mv the test features (I don't know how to identify test features) -->
-                    <!-- mv the i18n plugins -->
-                    <git-mv-set dir="@{path}" dest="${i18n.plugins.subfolder}">
-                        <dirset-elem>
-                            <include name="*.nl"/>
-                        </dirset-elem>
-                    </git-mv-set>
-                    <!-- mv the i18n features (I don't know how to identify test features) -->
-                    <!-- mv the main features -->
-                    <git-mv-set dir="@{path}" dest="${main.features.subfolder}">
-                        <dirset-elem>
-                            <include name="*-feature"/>
-                        </dirset-elem>
-                    </git-mv-set>
-                    <!-- mv the main plugins (the rest of all root folders -->
-                    <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
-                        <dirset-elem>
-                            <include name="*"/>
-                            <exclude name="${main.subfolder}"/>
-                            <exclude name="${test.subfolder}"/>
-                            <exclude name="${i18n.subfolder}"/>
-                            <exclude name="${sample.subfolder}"/>
-                        </dirset-elem>
-                    </git-mv-set>
-                    <!-- commit only if status is not empty -->
-                    <git argline="status -s" dir="@{path}" output="git.status"/>
-                    <if>
-                        <not>
-                            <length string="${git.status}" trim="true" length="0" />                    
-                        </not>
-                        <then>
-                            <git argline="commit -qam &quot;${commit.prefix} Refactor main,test and i18n plugins and features for branch @{branch}&quot;" dir="@{path}"/>
-                        </then>
-                    </if>
-                </sequential>
-            </for>
-            <!--removes all empty commits-->
-            <git argline="filter-branch --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' -- --all" dir="@{path}"/>
-        </sequential>
-    </macrodef>
                     	
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-mv-set
@@ -1024,6 +948,8 @@
           target: test              
          ================================= -->
     <target name="test" >
+        <echo message="list.of.branches=${list.of.branches}"/>
+
         <return-property return.property="tempfile"/>
         <echo message="tempfile=${tempfile}"/>
         <var name="tempfile" unset="true"/>
@@ -1041,6 +967,8 @@
 
     </target>
    
+    
+
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: return-property          
          = = = = = = = = = = = = = = = = = -->
