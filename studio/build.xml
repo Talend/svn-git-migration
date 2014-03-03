@@ -746,23 +746,31 @@
             <local name="error.prop"/>
             <var name="@{output}" unset="true"/>
             
-            <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
-                  <arg line="@{argline}"/>
-            </exec>
-            <!-- log the error that occured if failonerror was false -->
-            <if>
-                <and>
-                    <equals arg1="failonerror" arg2="false"/><!-- because some git command with success output text to stderr :(-->
-                    <not>
-                    	<length string="${error.prop}" trim="true" length="0" />                    
-                    </not>
-                </and>
-            	<then>
-                    <echo message="previous git command failed (but keep going) : ${error.prop}"/>
-                    <!-- also log in the error log  -->
-                    <echo file="${error.log.path}" append="true" message="${line.separator}git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
-            	</then>
-            </if>
+            <trycatch>
+                <try>
+                    <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
+                          <arg line="@{argline}"/>
+                    </exec>
+                    <!-- log the error that occured if failonerror was false -->
+                    <if>
+                        <and>
+                            <equals arg1="failonerror" arg2="false"/><!-- because some git command with success output text to stderr :(-->
+                            <not>
+                            	<length string="${error.prop}" trim="true" length="0" />                    
+                            </not>
+                        </and>
+                    	<then>
+                            <echo message="previous git command failed (but keep going) : ${error.prop}"/>
+                            <!-- also log in the error log  -->
+                            <echo file="${error.log.path}" append="true" message="${line.separator}git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
+                    	</then>
+                    </if>
+                </try>
+                <catch><!-- in case of failure output the git command stderr and stdout -->
+                    <echo message="git command failed (stderr): --------------------------${line.separator}${error.prop}${line.separator}----------------end of (stderr)"/>
+                    <echo message="git command failed (stdout): --------------------------${line.separator}${@{output}}${line.separator}----------------end of (stdout)"/>
+                </catch>
+            </trycatch>
         </sequential>
     </macrodef>
 
@@ -984,13 +992,18 @@
              = = = = = = = = = = = = = = = = = -->
         <macrodef name="return-resources">
             <attribute name="return.resources.id" />
+            <attribute name="the.att" default="foo" />
             <sequential>
-                <local name="temfile"/>
+                <tstamp>
+                    <format property="@{the.att}" pattern="MM/dd/yyyy hh:mm aa"/>
+                </tstamp>                <local name="temfile"/>
                 <tempfile property="temfile"/>
                 <resources id="@{return.resources.id}">
                     <string value="${temfile}"/>
                 </resources>
                 <echo>test { @ {   = '{@{return.resources.id}}'</echo>
+                <echo>foo=${foo}</echo>
+                <echo>@the.att=${@{the.att}}</echo>
             </sequential>
         </macrodef>
  
