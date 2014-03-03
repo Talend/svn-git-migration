@@ -740,17 +740,27 @@
         <attribute name="dir" description="directory where to run the git command"/>
         <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
         <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
+        <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
         <sequential>
             <echo message="in folder [@{dir}]"/>
         	<echo message="git @{argline}"/>
             <local name="error.prop"/>
             <var name="@{output}" unset="true"/>
             
-            <trycatch>
+            <trycatch reference="exception.to.rethrown">
                 <try>
                     <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
                           <arg line="@{argline}"/>
                     </exec>
+                    <!-- log the stdout if desired  -->
+                    <if>
+                        <and>
+                            <equals arg1="@{showoutput}" arg2="true"/>
+                        </and>
+                        <then>
+                            <echo message="git command stdout : ${@{output}}"/>
+                        </then>
+                    </if>
                     <!-- log the error that occured if failonerror was false -->
                     <if>
                         <and>
@@ -769,6 +779,7 @@
                 <catch><!-- in case of failure output the git command stderr and stdout -->
                     <echo message="git command failed (stderr): --------------------------${line.separator}${error.prop}${line.separator}----------------end of (stderr)"/>
                     <echo message="git command failed (stdout): --------------------------${line.separator}${@{output}}${line.separator}----------------end of (stdout)"/>
+                    <throw refid="exception.to.rethrown"/>
                 </catch>
             </trycatch>
         </sequential>
