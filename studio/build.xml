@@ -663,12 +663,12 @@
         		    <!-- if the merge is the first (only one commit) the use the recusive default strategy else use the resolve strategy-->
                     <git argline="rev-list HEAD --count" dir="${final.git.repo.path}" output="commit.counts"/>
         		    <if>
-        		        <equals arg1="${commit.counts}" arg2="1"/>
+        		        <isset property="@{from}2@{to}.merge.strategy"/>
         		        <then>
-                            <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
+                            <git argline="merge -s ${@{from}2@{to}.merge.strategy} @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
         		        </then>
         		        <else>
-                            <git argline="merge -s resolve @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
+                            <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
         		        </else>
         		    </if>
         		</sequential>
