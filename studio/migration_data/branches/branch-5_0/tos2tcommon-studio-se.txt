@@ -90,3 +90,4 @@ org.talend.resources.nl
 org.talend.utils
 org.talend.utils-feature
 org.talend.utils.test
+pom.xml

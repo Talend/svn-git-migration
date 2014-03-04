@@ -16,7 +16,7 @@
     </taskdef>
 	
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
-    <property name="migration.data.branches.folder.path" value="${svn2gitMigration.dir.path}/migration_data/branches"/>
+    <property name="migration.data.branches.folder.path" value="${migration.data.folder.path}/branches"/>
     <property name="refactor.ant.file" value="${migration.data.folder.path}/refactor_ant.xml"/><!--if it does not exist then it will be ignored-->
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
@@ -201,22 +201,27 @@
     <macrodef name="git-mv-set">
         <attribute name="dir" description="root folder of the git repo"/>
         <attribute name="dest" description="destination folder relative to 'dir'"/>
-    	<element name="dirset-elem" description="element that will be used to select the folders to be moved"/>
+    	<element name="resset-elem" description="resource set element that will be used to select the folders or files to be moved"/>
         <sequential>
             <mkdir dir="@{dir}/@{dest}"/>
             <git argline="add @{dest}" dir="@{dir}/"/>  
-            <dirset dir="@{dir}" id="all.folders.to.move.set">
-                <dirset-elem/>
-            </dirset>
-            <local name="all.folders.to.move"/>
-            <pathconvert property="all.folders.to.move" refid="all.folders.to.move.set" pathsep=" "/>
+            <resources id="all.resources.to.move.set">
+                <fileset dir="@{dir}">
+                    <resset-elem/>
+                </fileset>
+                <dirset dir="@{dir}">
+                    <resset-elem/>
+                </dirset>
+            </resources>
+            <local name="all.resources.to.move"/>
+            <pathconvert property="all.resources.to.move" refid="all.resources.to.move.set" pathsep=" "/>            
             <if>
                 <not>
-                	<length string="${all.folders.to.move}" trim="true" length="0" />                    
+                	<length string="${all.resources.to.move}" trim="true" length="0" />                    
                 </not>
             	<then>
-                    <echo message="move to [@{dir}/@{dest}] the plugins : ${all.folders.to.move}"/>
-                    <git dir="@{dir}" argline="mv ${all.folders.to.move} @{dest}"/>
+                    <echo message="move to [@{dir}/@{dest}] the plugins : ${all.resources.to.move}"/>
+                    <git dir="@{dir}" argline="mv ${all.resources.to.move} @{dest}"/>
             	</then>
             </if>
         </sequential>
@@ -978,6 +983,19 @@
           target: test              
          ================================= -->
     <target name="test" >
+        <resources id="all.resources.to.move.set">
+            <fileset dir="/Applications/java/talend/git/final_repos/tcommon-studio-ee" id="all.files.to.move.set">
+                <include name="pom.xml"/>
+            </fileset>
+            <dirset dir="/Applications/java/talend/git/final_repos/tcommon-studio-ee" id="all.folders.to.move.set">
+                <include name="*.test"/>
+            </dirset>
+        </resources>
+        <local name="all.resources.to.move"/>
+        <pathconvert property="all.resources.to.move" refid="all.resources.to.move.set" pathsep=" "/>
+        <echo>all.resources.to.move=${all.resources.to.move}</echo>
+        
+        
         <echo message="list.of.branches=${list.of.branches}"/>
 
         <return-property return.property="tempfile"/>

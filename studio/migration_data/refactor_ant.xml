@@ -28,46 +28,46 @@
                     <git argline="checkout @{branch}" dir="@{path}"/>
                     <!-- mv the sample projects -->
                     <git-mv-set dir="@{path}" dest="${sample.subfolder}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="test.mydistance"/>
                             <include name="test.myudi"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- mv the test projects -->
                     <git-mv-set dir="@{path}" dest="${test.subfolder}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="test.dq.datamart"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- mv the test bundles -->
                     <git-mv-set dir="@{path}" dest="${test.plugins.subfolder}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="*.test"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- mv the test features (I don't know how to identify test features) -->
                     <!-- mv the i18n plugins -->
                     <git-mv-set dir="@{path}" dest="${i18n.plugins.subfolder}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="*.nl"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- mv the i18n features (I don't know how to identify test features) -->
                     <!-- mv the main features -->
                     <git-mv-set dir="@{path}" dest="${main.features.subfolder}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="*-feature"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- mv the main plugins (the rest of all root folders -->
                     <git-mv-set dest="${main.plugins.subfolder}" dir="@{path}">
-                        <dirset-elem>
+                        <resset-elem>
                             <include name="*"/>
                             <exclude name="${main.subfolder}"/>
                             <exclude name="${test.subfolder}"/>
                             <exclude name="${i18n.subfolder}"/>
                             <exclude name="${sample.subfolder}"/>
-                        </dirset-elem>
+                        </resset-elem>
                     </git-mv-set>
                     <!-- commit only if status is not empty -->
                     <git argline="status -s" dir="@{path}" output="git.status"/>
