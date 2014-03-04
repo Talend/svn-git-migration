@@ -758,7 +758,7 @@
                             <equals arg1="@{showoutput}" arg2="true"/>
                         </and>
                         <then>
-                            <echo message="git command stdout : ${@{output}}"/>
+                            <echo message="git command stdout : ${line.separator}${@{output}}"/>
                         </then>
                     </if>
                     <!-- log the error that occured if failonerror was false -->
