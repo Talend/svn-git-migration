@@ -177,11 +177,19 @@
     		    </for>
                 <!-- refactor the final repo before pushing it if the refactor ant script exists -->
     		    <if>
-    		        <available file="${refactor.ant.file}" />
+    		        <and>
+    		            <available file="${refactor.ant.file}" />
+    		            <not>
+    		                <equals arg1="@{git.final.repo.name}.skip.refactor" arg2="true"/>
+    		            </not>
+    		        </and>
     		        <then>
     		            <!-- refactor the final repo before pushing it -->
     		            <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
     		        </then>
+    		        <else>
+    		            <echo message="skip the refactoring of ${final.repos.path}"/>
+    		        </else>
   		        </if>
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
@@ -243,6 +251,7 @@
                         <include name="*@{repo}.txt"/>
                     </fileset>
                     <echo message="Checking [@{repo}] files from the migration data files:${toString:all.migration.files}"/>
+                    <local name="temp.file"/>
                     <tempfile property="temp.file"/>
                     <trycatch>
                         <try>
@@ -936,7 +945,7 @@
           target: test.refactor-final-repo              
          ================================= -->
     <target name="test.refactor-final-repo" >
-    	<property name="git.repo.dir"  value="${final.repos.path}/tcommon-studio-ee"/>
+    	<property name="git.repo.dir"  value="${final.repos.path}/tuj"/>
         <git argline="reset --hard" dir="${git.repo.dir}" />
         <git argline="clean -fd" dir="${git.repo.dir}" />
 
