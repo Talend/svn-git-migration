@@ -129,7 +129,7 @@
 <!-- ================================= 
           target: update.all.git.svn.repos              
          ================================= -->
-    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits">
+    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits" unless="skip.svn.upadte">
         <foreach target="update.git.svn.repo" param="svn.git.repo.path">
         	<path refid ="svn.git.repo.dirset"/>
     	</foreach>
@@ -661,7 +661,7 @@
                     <git argline="checkout @{branch.name}" dir="${final.git.repo.path}" />
         		    <!-- compute the merge strategy because of an unknow conflict I change strategy when first merging or when already merged something-->
         		    <!-- if the merge is the first (only one commit) the use the recusive default strategy else use the resolve strategy-->
-                    <git argline="git rev-list HEAD --count" dir="${final.git.repo.path}" output="commit.counts"/>
+                    <git argline="rev-list HEAD --count" dir="${final.git.repo.path}" output="commit.counts"/>
         		    <if>
         		        <equals arg1="${commit.counts}" arg2="1"/>
         		        <then>
