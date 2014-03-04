@@ -291,11 +291,6 @@
                                 <resources refid="all.files.to.check.res"/>
                                 <resources refid="all.existing.files.res"/>
                             </difference>
-                            <echo>
-                                all.files.to.check.res=${toString:all.files.to.check.res}
-                                all.existing.files.res=${toString:all.existing.files.res}
-                                diff.expected.existing.res=${toString:diff.expected.existing.res}
-                            </echo>
                             <if>
                                 <not>
                                     <length length="0">
@@ -304,6 +299,7 @@
                                 </not>
                                 <then>
                                     <echo message="Check of [@{repo}/@{branch}] failed : see error.log." level="error"/>
+                                    <echo message="here is the diff : ${toString:diff.expected.existing.res}" />
                                     <echo file="${error.log.path}" append="true" message="${line.separator}Check of repo @{repo} Failed on branch [@{branch}] because ${line.separator}expected files set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing files set :${toString:all.existing.files.res}${line.separator}here is the diff:${toString:diff.expected.existing.res}">
                                     </echo>
                                 </then>
