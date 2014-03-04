@@ -177,7 +177,7 @@
     		    </for>
                 <!-- refactor the final repo before pushing it if the refactor ant script exists -->
     		    <if>
-    		        <avalaible file="${refactor.ant.file}" />
+    		        <available file="${refactor.ant.file}" />
     		        <then>
     		            <!-- refactor the final repo before pushing it -->
     		            <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
