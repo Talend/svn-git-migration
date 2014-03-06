@@ -193,7 +193,7 @@
     		        <and>
     		            <available file="${refactor.ant.file}" />
     		            <not>
-    		                <equals arg1="@{git.final.repo.name}.skip.refactor" arg2="true"/>
+    		                <equals arg1="${@{git.final.repo.name}.skip.refactor}" arg2="true"/>
     		            </not>
     		        </and>
     		        <then>
