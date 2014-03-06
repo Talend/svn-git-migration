@@ -14,7 +14,7 @@
       </classpath>
     </taskdef>
 	
-    <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
+    <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/studio/migration_data"/>
     <property name="migration.data.branches.folder.path" value="${migration.data.folder.path}/branches"/>
     <property name="refactor.ant.file" value="${migration.data.folder.path}/refactor_ant.xml"/><!--if it does not exist then it will be ignored-->
     <property name="error.log.path" value="${migration.data.folder.path}/error.log"/>
@@ -55,6 +55,15 @@
                         <isset property="remote.git.password"/>
                     </not>
             	</or>
+             </condition>
+        </fail>
+        <fail message="You must specify a &quot;migration.data.folder.path&quot; property (using -D in the commandline)">
+            <condition>
+                <or>
+                    <not>
+                        <isset property="migration.data.folder.path"/>
+                    </not>
+                </or>
              </condition>
         </fail>
         <delete file="${error.log.path}"/>
