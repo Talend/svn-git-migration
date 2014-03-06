@@ -259,7 +259,7 @@
                                 <fileset refid="all.migration.files"/>
                             </concat>
                             <local name="all.files.to.check"/>
-                            <loadresource property="all.files.to.check">
+                            <loadresource property="all.files.to.check" failonerror="false"><!--the concat file may not exist if no migration files exists for this branch -->
                                 <file file="${temp.file}"/>
                             </loadresource>
                             <resources id="all.files.to.check.res">
