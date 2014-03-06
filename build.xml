@@ -32,11 +32,11 @@
     <property file="${migration.data.folder.path}/migration_ant.properties"/>
     <import file="${refactor.ant.file}" optional="true"/>
     
-
 <!-- - - - - - - - - - - - - - - - - - 
-          target: init                      
+          target: check.properties     
+          check initial properties that are required for this script.                 
          - - - - - - - - - - - - - - - - - -->
-    <target name="init" depends="compute.list.of.git.repos">
+    <target name="check.properties">
         <fail message="You must specify a &quot;repo.root.folder&quot; that contains a folder named [svn_git_repos] ">
             <condition>
                <not>
@@ -46,14 +46,14 @@
         </fail>
         <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; property ">
             <condition>
-            	<or>
-            	    <not>
-            	        <isset property="remote.git.username"/>
-            	    </not>
+                <or>
+                    <not>
+                        <isset property="remote.git.username"/>
+                    </not>
                     <not>
                         <isset property="remote.git.password"/>
                     </not>
-            	</or>
+                </or>
              </condition>
         </fail>
         <fail message="You must specify a &quot;migration.data.folder.path&quot; property (using -D in the commandline)">
@@ -65,6 +65,12 @@
                 </or>
              </condition>
         </fail>
+    </target>
+
+<!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="init" depends="check.properties,compute.list.of.git.repos">
         <delete file="${error.log.path}"/>
         <echo message="--------------------- STARTING SVN -> GIT MIGRATION --------------------"/>
         <echo message="root of svn-git, workspace and final folders for git repos is [${repo.root.folder}]"/>
