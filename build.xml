@@ -2,11 +2,10 @@
 <project name="svn2gitMigration" default="migration">
 	<property name="svn2gitMigration.file.path" value="${ant.file.svn2gitMigration}"/>
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
-	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/../.."/>
-    <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/../svn-migration-scripts.jar"/>
-    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/../bfg-1.11.1.jar"/>
+	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
+    <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
+    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.1.jar"/>
     <property name="not.existing.migration.data.file" value="${svn2gitMigration.dir.path}/not_existing_migration_data.txt"/>
-    <property name="error.log.path" value="${svn2gitMigration.dir.path}/error.log"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
     <property name="commit.prefix" value="[GIT Migration]"/>
 	<taskdef resource="net/sf/antcontrib/antlib.xml">
@@ -18,6 +17,7 @@
     <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/migration_data"/>
     <property name="migration.data.branches.folder.path" value="${migration.data.folder.path}/branches"/>
     <property name="refactor.ant.file" value="${migration.data.folder.path}/refactor_ant.xml"/><!--if it does not exist then it will be ignored-->
+    <property name="error.log.path" value="${migration.data.folder.path}/error.log"/>
     
     <property name="svn.git.repos.path" value="${repo.root.folder}/svn_git_repos"/>
 
