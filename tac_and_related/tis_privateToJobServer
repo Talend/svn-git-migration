@@ -4,3 +4,6 @@ org.talend.remote.server
 org.talend.remote.jobserver.server-feature
 org.talend.remote.jobserver.commons-feature
 org.talend.jobserver.karaf.feature
+org.talend.monitoring
+org.talend.monitoring.client
+org.talend.monitoring.server

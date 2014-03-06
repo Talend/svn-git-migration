@@ -1,6 +1,3 @@
-org.talend.monitoring
-org.talend.monitoring.client
-org.talend.monitoring.server
 org.talend.remote.client
 org.talend.remote.commons
 org.talend.remote.jobserver.client
