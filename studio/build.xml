@@ -290,7 +290,11 @@
                             <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
                             <local name="all.existing.dir"/>
                             <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
-                            <propertyregex property="all.existing.dir" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
+                            <propertyregex property="all.existing.dir.replaced" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
+                            <!-- all.existing.dir.replaced may not be set if nothing is found in the branch so set it to empty istead of unset -->
+                            <condition property="all.existing.dir" value="${all.existing.dir.replaced}" else="">
+                                <isset property="all.existing.dir.replaced"/>
+                            </condition>
                             <resources id="all.existing.files.res" >
                                 <tokens>
                                     <string value="${all.existing.dir}"/>
