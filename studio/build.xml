@@ -256,23 +256,17 @@
                     <trycatch>
                         <try>
                             <local name="all.files.to.check"/>
-                            <!-- if there is no migration files on this branch then we only need to create an empty list of fiels to be checked-->
-                            <if>
-                                <length length="0">
-                                    <resources refid="all.migration.files"/>
-                                </length>
-                                <then>
-                                    <property name="all.files.to.check" value=""/>
-                                </then>
-                                <else>
-                                    <concat destfile="${temp.file}">
-                                        <fileset refid="all.migration.files"/>
-                                    </concat>
-                                    <loadresource property="all.files.to.check" failonerror="false"><!--the concat file may not exist if no migration files exists for this branch -->
-                                        <file file="${temp.file}"/>
-                                    </loadresource>
-                                </else>
-                            </if>
+                            <local name="all.files.to.check.concat"/>
+                            <concat destfile="${temp.file}">
+                                <fileset refid="all.migration.files"/>
+                            </concat>
+                            <loadresource property="all.files.to.check.concat" failonerror="false">
+                                <file file="${temp.file}"/>
+                            </loadresource>
+                            <!-- if there is no migration files on this branch then all.files.to.check is unset instead of being empty -->
+                            <condition property="all.files.to.check" value="${all.files.to.check.concat}" else="">
+                                <isset property="all.files.to.check.concat"/>
+                            </condition>
                             <resources id="all.files.to.check.res">
                                 <union>
                                     <tokens>
@@ -289,6 +283,7 @@
                             <local name="all.existing.dir.path"/>
                             <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
                             <local name="all.existing.dir"/>
+                            <local name="all.existing.dir.replaced"/>
                             <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
                             <propertyregex property="all.existing.dir.replaced" input="${all.existing.dir.path}#" regexp="(.*?)/([^/]*?)#" replace="\2#"/>
                             <!-- all.existing.dir.replaced may not be set if nothing is found in the branch so set it to empty istead of unset -->
@@ -970,7 +965,7 @@
          ================================= -->
     <target name="test.check-final-repo">
         <delete file="${error.log.path}"/>
-        <check-final-repo repo="tcommon-studio-ee"/>
+        <check-final-repo repo="tbd-studio-se"/>
         <dump-error-log/>
     </target>
 
