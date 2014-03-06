@@ -113,14 +113,13 @@
 	<!-- main target to launche the svn to git migration -->
     <!-- is assumes that all the svn repositories are already cloned in local git prepositories -->
 	<target name="migration" depends="init,clean.final.repos" description="main migration script">
-	    <trycatch property="exception">
+	    <trycatch>
 	        <try>
 	           <runtarget  target="update.all.git.svn.repos"/>
 	           <runtarget  target="perform.each.repo.migration"/>
 	       </try>
 	       <finally>
 	           <dump-error-log/>
-               <echo>exception thrown : ${exception}</echo>
             </finally>
 	    </trycatch>
 	    
