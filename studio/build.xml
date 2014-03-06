@@ -255,13 +255,24 @@
                     <tempfile property="temp.file"/>
                     <trycatch>
                         <try>
-                            <concat destfile="${temp.file}">
-                                <fileset refid="all.migration.files"/>
-                            </concat>
                             <local name="all.files.to.check"/>
-                            <loadresource property="all.files.to.check" failonerror="false"><!--the concat file may not exist if no migration files exists for this branch -->
-                                <file file="${temp.file}"/>
-                            </loadresource>
+                            <!-- if there is no migration files on this branch then we only need to create an empty list of fiels to be checked-->
+                            <if>
+                                <length length="0">
+                                    <resources refid="all.migration.files"/>
+                                </length>
+                                <then>
+                                    <property name="all.files.to.check" value=""/>
+                                </then>
+                                <else>
+                                    <concat destfile="${temp.file}">
+                                        <fileset refid="all.migration.files"/>
+                                    </concat>
+                                    <loadresource property="all.files.to.check" failonerror="false"><!--the concat file may not exist if no migration files exists for this branch -->
+                                        <file file="${temp.file}"/>
+                                    </loadresource>
+                                </else>
+                            </if>
                             <resources id="all.files.to.check.res">
                                 <union>
                                     <tokens>
