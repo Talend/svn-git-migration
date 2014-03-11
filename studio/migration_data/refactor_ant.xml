@@ -81,8 +81,6 @@
                     </if>
                 </sequential>
             </for>
-            <!--removes all empty commits-->
-            <git argline="filter-branch -f --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' --tag-name-filter cat -- --all" dir="@{path}"/>
         </sequential>
     </macrodef>
    

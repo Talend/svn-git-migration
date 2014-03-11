@@ -177,6 +177,8 @@
     		<sequential>
     		    <antcall target="clean.workspace"/>
   	            <echo message="initialize the final repo : @{git.final.repo.name}"/>
+    		    <local name="final.repo.path"/>
+    		    <property name="final.repo.path" value="${final.repos.path}/@{git.final.repo.name}"/>
     		    <!-- initialize the final git repo-->
     		    <git-init-final-repo name="@{git.final.repo.name}"/>
                 <!-- migrate each source repos into it-->
@@ -198,16 +200,22 @@
     		        </and>
     		        <then>
     		            <!-- refactor the final repo before pushing it -->
-    		            <refactor-final-repo path="${final.repos.path}/@{git.final.repo.name}"/>
+    		            <refactor-final-repo path="${final.repo.path}"/>
     		        </then>
     		        <else>
-    		            <echo message="skip the refactoring of ${final.repos.path}"/>
+    		            <echo message="skip the refactoring of ${final.repo.path}"/>
     		        </else>
   		        </if>
+                <!--removes all empty commits-->
+                <git argline="filter-branch -f --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' --tag-name-filter cat -- --all" dir="@{final.repo.path}"/>
+                <!--this should remove object no related to any commit -->
+                <git argline="reflog expire --expire=now --all" dir="@{final.repo.path}"/>
+                <git argline="gc --prune=now --aggressive" dir="@{final.repo.path}"/>
+
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
                 <!-- push the final repos-->
-                <git-push-repo localrepo="${final.repos.path}/@{git.final.repo.name}" remoteRepo="@{git.final.repo.name}"/>
+                <git-push-repo localrepo="${final.repo.path}" remoteRepo="@{git.final.repo.name}"/>
     		</sequential>
     	</for>
     </target>
