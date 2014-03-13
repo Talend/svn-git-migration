@@ -207,10 +207,10 @@
     		        </else>
   		        </if>
                 <!--removes all empty commits-->
-                <git argline="filter-branch -f --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' --tag-name-filter cat -- --all" dir="@{final.repo.path}"/>
+                <git argline="filter-branch -f --commit-filter 'git_commit_non_empty_tree &quot;$@&quot;' --tag-name-filter cat -- --all" dir="${final.repo.path}"/>
                 <!--this should remove object no related to any commit -->
-                <git argline="reflog expire --expire=now --all" dir="@{final.repo.path}"/>
-                <git argline="gc --prune=now --aggressive" dir="@{final.repo.path}"/>
+                <git argline="reflog expire --expire=now --all" dir="${final.repo.path}"/>
+                <git argline="gc --prune=now --aggressive" dir="${final.repo.path}"/>
 
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
