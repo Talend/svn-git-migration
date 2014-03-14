@@ -545,7 +545,7 @@
                 <isset property="history.date.limit"/>
                 <then>
                     <echo message="setting git graft to remove history before the ${history.date.limit}"/>
-                    <exec executable="bash" dir="@{destination.dir}" failonerror="true">
+                    <exec executable="bash" dir="${destination.dir}" failonerror="true">
                           <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
                     </exec>
                 </then>
