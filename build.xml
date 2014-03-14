@@ -152,6 +152,8 @@
           target: update.git.svn.repo              
          ================================= -->
     <target name="update.git.svn.repo" description="update the local git repo from remote svn">
+        <echo message="removing grafts file if any"/>
+        <delete file="${svn.git.repo.path}/.git/info/grafts" failonerror="false"/>        
         <echo message="updating ${svn.git.repo.path}"/>
         <git argline="svn fetch" dir="${svn.git.repo.path}/" showoutput="true"/>	
         <echo message="fixing branches and tags..."/>
@@ -163,6 +165,17 @@
         </exec>
         <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
         <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
+        <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
+        <if>
+            <isset property="history.date.limit"/>
+            <then>
+                <echo message="setting git graft to remove history before the ${history.date.limit}"/>
+                <exec executable="bash" dir="${svn.git.repo.path}" failonerror="true">
+                      <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
+                </exec>
+            </then>
+        </if>
+        
     </target>
 	
 <!-- ================================= 
@@ -517,11 +530,12 @@
     <macrodef name="copy-original-to-workspace">
         <attribute name="from" description="repo name to be found in ${svn.git.repos.path}" />
         <sequential>
-            <!-- copy the @{from} repos -->
-            <echo message="copy [@{from}] from [${svn.git.repos.path}] to [${migration.workspace.path}]"/>
-        	<!-- native cp is much faster than the Ant one but it is not multiplatform and should not work on Windows-->
-            <exec executable="cp">
-                <arg line="-r ${svn.git.repos.path}/@{from} ${migration.workspace.path}/@{from}"/>
+            <!-- export @{from} repos -->
+            <echo message="export/import [@{from}] from [${svn.git.repos.path}]  to [${migration.workspace.path}]"/>
+            <!-- it used a bash command but may be splited into few commands independent from batch if other the nux OS-->
+            <mkdir dir="${migration.workspace.path}/@{from}"/>
+            <exec executable="bash" dir="${svn.git.repos.path}/@{from}" failonerror="true">
+                  <arg line=" -c 'git fast-export --all | (cd ${migration.workspace.path}/@{from} &amp;&amp; git init . &amp;&amp; git fast-import &amp;&amp; git checkout)'"/>
             </exec>
         </sequential>
     </macrodef>
@@ -540,17 +554,6 @@
             <var name="all.removed.files" value=""/>
             <local name="destination.dir"/>
             <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
-            <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
-            <if>
-                <isset property="history.date.limit"/>
-                <then>
-                    <echo message="setting git graft to remove history before the ${history.date.limit}"/>
-                    <exec executable="bash" dir="${destination.dir}" failonerror="true">
-                          <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
-                    </exec>
-                    <git argline="filter-branch --prune-empty --tag-name-filter cat -- --all" dir="${destination.dir}"/>
-                </then>
-            </if>
             <for param="branch" list="${list.of.branches}">
                 <sequential><!-- remove all root files and folders unecessary for the branch -->
                     <local name="migration.data.file"/>
