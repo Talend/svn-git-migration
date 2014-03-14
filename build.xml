@@ -548,6 +548,7 @@
                     <exec executable="bash" dir="${destination.dir}" failonerror="true">
                           <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
                     </exec>
+                    <git argline="filter-branch --prune-empty --tag-name-filter cat -- --all" dir="${destination.dir}"/>
                 </then>
             </if>
             <for param="branch" list="${list.of.branches}">
