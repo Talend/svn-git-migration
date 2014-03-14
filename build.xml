@@ -540,6 +540,16 @@
             <var name="all.removed.files" value=""/>
             <local name="destination.dir"/>
             <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
+            <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
+            <if>
+                <isset property="history.date.limit"/>
+                <then>
+                    <echo message="setting git graft to remove history before the ${history.date.limit}"/>
+                    <exec executable="bash" dir="@{destination.dir}" failonerror="true">
+                          <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
+                    </exec>
+                </then>
+            </if>
             <for param="branch" list="${list.of.branches}">
                 <sequential><!-- remove all root files and folders unecessary for the branch -->
                     <local name="migration.data.file"/>
