@@ -311,7 +311,11 @@
                             </resources>            
                             <!-- create a resource with all files that are found in the final repo from the migration data files-->
                             <dirset dir="${final.repos.path}/@{repo}" id="all.existing.dir.set">
-                                <include name="*/*/*"/>
+                                <include name="*/plugins/*"/>
+                                <include name="*/features/*"/>
+                                <include name="*/*"/>
+                                <exclude name="*/features"/>
+                                <exclude name="*/plugins"/>
                              </dirset>
                             <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
                             <local name="all.existing.dir.path"/>
@@ -971,8 +975,10 @@
         	<fileset dir="${svn2gitMigration.dir.path}" id="file.set.id">
         		<include name="*"/>
         	</fileset>
-            <dirset dir="${svn2gitMigration.dir.path}" id="dir.set.id">
-                <include name="*"/>
+            <dirset dir="/Applications/java/talend/git/final_repos/testrepos" id="dir.set.id">
+                <include name="*/plugins/*"/>
+                <include name="*/*"/>
+                <exclude name="*/plugins"/>
             </dirset>
     	</resources>
     	<echo >
@@ -1000,7 +1006,7 @@
          ================================= -->
     <target name="test.check-final-repo">
         <delete file="${error.log.path}"/>
-        <check-final-repo repo="tbd-studio-se"/>
+        <check-final-repo repo="tdq-studio-ee"/>
         <dump-error-log/>
     </target>
 
