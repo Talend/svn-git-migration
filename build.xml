@@ -651,6 +651,10 @@
                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
                         <arg line="--no-blob-protection --delete-folders '{${files.to.remove}}'"/>
                     </java>
+                    <!-- remove all blobs bigger than 1MB from history -->
+                    <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
+                        <arg line="--strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches}"/>
+                    </java>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
