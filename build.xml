@@ -310,16 +310,22 @@
                                 </union>                               
                             </resources>            
                             <!-- create a resource with all files that are found in the final repo from the migration data files-->
-                            <dirset dir="${final.repos.path}/@{repo}" id="all.existing.dir.set">
-                                <include name="*/plugins/*"/>
-                                <include name="*/features/*"/>
-                                <include name="*/*"/>
-                                <exclude name="*/features"/>
-                                <exclude name="*/plugins"/>
-                             </dirset>
+                            <resources id="all.existing.filedir.set">
+                                <dirset dir="${final.repos.path}/@{repo}">
+                                    <include name="*/plugins/*"/>
+                                    <include name="*/features/*"/>
+                                    <include name="*/*"/>
+                                    <exclude name="*/features"/>
+                                    <exclude name="*/plugins"/>
+                                 </dirset>
+                                 <fileset dir="${final.repos.path}/@{repo}">
+                                    <include name="*/plugins/*"/>
+                                    <include name="*/features/*"/>
+                                 </fileset>
+                            </resources> 
                             <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
                             <local name="all.existing.dir.path"/>
-                            <pathconvert property="all.existing.dir.path" refid="all.existing.dir.set" pathsep="#"/>
+                            <pathconvert property="all.existing.dir.path" refid="all.existing.filedir.set" pathsep="#"/>
                             <local name="all.existing.dir"/>
                             <local name="all.existing.dir.replaced"/>
                             <!-- this convert /a/b/ccc#/a/bbb#/eee# into ccc#bbb#eee#-->
@@ -1011,6 +1017,7 @@
     <target name="test.check-final-repo">
         <delete file="${error.log.path}"/>
         <check-final-repo repo="tdq-studio-ee"/>
+        <check-final-repo repo="tcommon-studio-se"/>
         <dump-error-log/>
     </target>
 
