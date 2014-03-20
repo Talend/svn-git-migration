@@ -357,6 +357,9 @@
                                     <echo file="${error.log.path}" append="true" message="${line.separator}Check of repo @{repo} Failed on branch [@{branch}] because ${line.separator}expected files set : ${toString:all.files.to.check.res} ${line.separator}does not match${line.separator}existing files set :${toString:all.existing.files.res}${line.separator}here is the diff:${toString:diff.expected.existing.res}">
                                     </echo>
                                 </then>
+                                <else>
+                                    <echo message="Check of [@{repo}/@{branch}] successful."/>
+                                </else>
                             </if>    
                         </try>
                         <finally>
@@ -1016,8 +1019,7 @@
          ================================= -->
     <target name="test.check-final-repo">
         <delete file="${error.log.path}"/>
-        <check-final-repo repo="tdq-studio-ee"/>
-        <check-final-repo repo="tcommon-studio-se"/>
+        <check-final-repo repo="${final.repo.to.be.checked}"/>
         <dump-error-log/>
     </target>
 
