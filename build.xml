@@ -662,7 +662,7 @@
                     </java>
                     <!-- remove all blobs bigger than 1MB from history -->
                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="--strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches}"/>
+                        <arg line="--strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches};${list.of.tags}"/>
                     </java>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
