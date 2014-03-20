@@ -27,6 +27,7 @@ org.talend.generic.di-feature
 org.talend.libraries.archiva
 org.talend.libraries.drools
 org.talend.libraries.jbpm
+org.talend.libraries.jdbc.saphana
 org.talend.libraries.jibx
 org.talend.libraries.tis.custom
 org.talend.metalanguage.jobscript
