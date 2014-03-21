@@ -597,7 +597,7 @@
                             <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
                             <!-- remove the remaining folders cause git rm does not remove them -->
                             <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
-                            <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}&quot; from [@{svnrepo}]" dir="${destination.dir}"/>
+                            <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}from [@{svnrepo}]&quot;" dir="${destination.dir}"/>
                             <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
                         </then>
                         <else>
