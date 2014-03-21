@@ -650,7 +650,7 @@
                     </java>
 -->
                     <!-- remove all blobs bigger than 1MB from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}" failonerror="false"/>
 <!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
                         <arg line="-XX-strip-blobs-bigger-than 1M -XX-protect-blobs-from ${list.of.branches},${list.of.tags}"/>
                     </java>
