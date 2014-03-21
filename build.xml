@@ -157,12 +157,8 @@
         <echo message="updating ${svn.git.repo.path}"/>
         <git argline="svn fetch" dir="${svn.git.repo.path}/" showoutput="true"/>	
         <echo message="fixing branches and tags..."/>
-        <exec executable="java" dir="${svn.git.repo.path}/">
-           <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} sync-rebase"/>
-        </exec>
-        <exec executable="java" dir="${svn.git.repo.path}/">
-           <arg line="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
-        </exec>
+        <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} sync-rebase"/>
+        <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
         <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
         <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
         <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
@@ -170,9 +166,7 @@
             <isset property="history.date.limit"/>
             <then>
                 <echo message="setting git graft to remove history before the ${history.date.limit}"/>
-                <exec executable="bash" dir="${svn.git.repo.path}" failonerror="true">
-                      <arg line=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
-                </exec>
+                <my-exec executable="bash" dir="${svn.git.repo.path}" failonerror="true" argline=" -c 'git rev-list --all --reverse --before &quot;${history.date.limit}&quot; | tail -n 1 > .git/info/grafts'"/>
             </then>
         </if>
         
@@ -422,9 +416,7 @@
                 </tokens>
             </resources>
         	<local name="all.branches"/>
-            <exec executable="git" dir="@{repoPath}/" outputproperty="all.branches">
-                <arg line="branch -a"/>
-            </exec>
+            <git dir="@{repoPath}/" output="all.branches" argline="branch -a"/>
             <resources id="all.local.branches.res">
             	<restrict>
                     <tokens>
@@ -503,9 +495,7 @@
                 </tokens>
             </resources>
             <local name="all.tags"/>
-            <exec executable="git" dir="@{repoPath}/" outputproperty="all.tags">
-                <arg line="tag"/>
-            </exec>
+            <git dir="@{repoPath}/" outputproperty="all.tags" argline="tag"/>
             <resources id="all.tags.res">
                 <tokens>
                     <string value="${all.tags}" />
@@ -547,9 +537,7 @@
             <echo message="export/import [@{from}] from [${svn.git.repos.path}]  to [${migration.workspace.path}]"/>
             <!-- it used a bash command but may be splited into few commands independent from batch if other the nux OS-->
             <mkdir dir="${migration.workspace.path}/@{from}"/>
-            <exec executable="bash" dir="${svn.git.repos.path}/@{from}" failonerror="true">
-                  <arg line=" -c 'git fast-export --all | (cd ${migration.workspace.path}/@{from} &amp;&amp; git init . &amp;&amp; git fast-import &amp;&amp; git checkout)'"/>
-            </exec>
+            <my-exec executable="bash" dir="${svn.git.repos.path}/@{from}" failonerror="true" argline=" -c 'git fast-export --all | (cd ${migration.workspace.path}/@{from} &amp;&amp; git init . &amp;&amp; git fast-import &amp;&amp; git checkout)'"/>
         </sequential>
     </macrodef>
 
@@ -593,10 +581,9 @@
                             <length string="${files.to.remove}" trim="true" length="0" />                    
                         </not>              
                         <then>
-                            <echo message="[@{branch}] remove this : ${files.to.remove}"/>
                             <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
                             <!-- remove the remaining folders cause git rm does not remove them -->
-                            <exec executable="rm" dir="${destination.dir}" ><arg line="-rf  ${files.to.remove}"/></exec>
+                            <my-exec executable="rm" dir="${destination.dir}" argline="-rf  ${files.to.remove}"/>
                             <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}from [@{svnrepo}]&quot;" dir="${destination.dir}"/>
                             <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
                         </then>
@@ -657,13 +644,17 @@
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
-                    <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="--no-blob-protection --delete-folders '{${files.to.remove}}'"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'"/>
+<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
+                        <arg line="-XX-no-blob-protection -XX-delete-folders '{${files.to.remove}}'"/>
                     </java>
+-->
                     <!-- remove all blobs bigger than 1MB from history -->
-                    <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="--strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
+<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
+                        <arg line="-XX-strip-blobs-bigger-than 1M -XX-protect-blobs-from ${list.of.branches},${list.of.tags}"/>
                     </java>
+-->
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
@@ -780,13 +771,9 @@
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
-            <exec executable="curl" resultproperty="curl.result">
-               <arg line="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
-           </exec>
+            <my-exec executable="curl" resultproperty="curl.result" argline="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
             <echo message="creating remote [@{name}] "/>
-            <exec executable="curl" failonerror="true">
-               <arg line="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
-           </exec>
+            <my-exec executable="curl" failonerror="true" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
         </sequential>
     </macrodef>
 	
@@ -802,9 +789,7 @@
         	<property name="repo.path" value="${final.repos.path}/@{name}"/>
             <echo message="initializing  [${repo.path}] "/>
             <git argline="init ${repo.path}/" dir="${svn2gitMigration.dir.path}" />
-            <exec executable="touch" dir="${repo.path}" failonerror="true">
-                <arg line=".gitignore"/>
-           </exec>
+            <my-exec executable="touch" dir="${repo.path}" failonerror="true" argline=".gitignore"/>
             <git argline="add .gitignore" dir="${repo.path}" />
             <git argline="commit -qam &quot;${commit.prefix} Initial commit for migration&quot;" dir="${repo.path}" />
             <for list="${list.of.branches.no.master}" param="branch.name">
@@ -825,14 +810,29 @@
         <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
         <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
         <sequential>
+            <my-exec executable="git" argline="@{argline}" dir="@{dir}" failonerror="@{failonerror}" output="@{output}" showoutput="@{showoutput}"/>
+        </sequential>
+    </macrodef>
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: my-exec          
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="my-exec">
+        <attribute name="executable" description="command to be executed"/>
+        <attribute name="argline" description="argument line passed to the git command"/>
+        <attribute name="dir" description="directory where to run the git command"/>
+        <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
+        <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
+        <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
+        <sequential>
             <echo message="in folder [@{dir}]"/>
-        	<echo message="git @{argline}"/>
+            <echo message="@{executable} @{argline}"/>
             <local name="error.prop"/>
             <var name="@{output}" unset="true"/>
             
             <trycatch reference="exception.to.rethrown">
                 <try>
-                    <exec executable="git" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
+                    <exec executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
                           <arg line="@{argline}"/>
                     </exec>
                     <!-- log the stdout if desired  -->
@@ -841,7 +841,7 @@
                             <equals arg1="@{showoutput}" arg2="true"/>
                         </and>
                         <then>
-                            <echo message="git command stdout : ${line.separator}${@{output}}"/>
+                            <echo message="@{executable} command stdout : ${line.separator}${@{output}}"/>
                         </then>
                     </if>
                     <!-- log the error that occured if failonerror was false -->
@@ -849,25 +849,24 @@
                         <and>
                             <equals arg1="failonerror" arg2="false"/><!-- because some git command with success output text to stderr :(-->
                             <not>
-                            	<length string="${error.prop}" trim="true" length="0" />                    
+                                <length string="${error.prop}" trim="true" length="0" />                    
                             </not>
                         </and>
-                    	<then>
-                            <echo message="previous git command failed (but keep going) : ${error.prop}"/>
+                        <then>
+                            <echo message="previous command [@{executable}] failed (but keep going) : ${error.prop}"/>
                             <!-- also log in the error log  -->
-                            <echo file="${error.log.path}" append="true" message="${line.separator}git commande failed [@{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
-                    	</then>
+                            <echo file="${error.log.path}" append="true" message="${line.separator}commande failed : [@{command} @{argline}] ${line.separator}on repos [@{dir}]${line.separator}with the error :${error.prop}."/>
+                        </then>
                     </if>
                 </try>
                 <catch><!-- in case of failure output the git command stderr and stdout -->
-                    <echo message="git command failed (stderr): --------------------------${line.separator}${error.prop}${line.separator}----------------end of (stderr)"/>
-                    <echo message="git command failed (stdout): --------------------------${line.separator}${@{output}}${line.separator}----------------end of (stdout)"/>
+                    <echo message="command [@{executable}] failed (stderr): --------------------------${line.separator}${error.prop}${line.separator}----------------end of (stderr)"/>
+                    <echo message="command [@{executable}] failed (stdout): --------------------------${line.separator}${@{output}}${line.separator}----------------end of (stdout)"/>
                     <throw refid="exception.to.rethrown"/>
                 </catch>
             </trycatch>
         </sequential>
-    </macrodef>
-
+    </macrodef>    
     <!-- = = = = = = = = = = = = = = = = =
           macrodef: dump-error-log          
          = = = = = = = = = = = = = = = = = -->
@@ -899,9 +898,9 @@
 	      target: test.prepare.svn.git.repo              
 	     ================================= -->
     <target name="test.prepare.svn.git.repo" depends="clean.workspace">
-          <copy-original-to-workspace from="tis_shared"/>
+          <copy-original-to-workspace from="tis_private"/>
 
-        <prepare.svn.git.repo svnrepo="tis_shared" gitrepo="tmdm-studio-ee"/>
+        <prepare.svn.git.repo svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         <dump-error-log/>
     </target>
 	
