@@ -771,7 +771,7 @@
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
-            <my-exec executable="curl" resultproperty="curl.result" argline="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
+            <my-exec executable="curl" argline="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
             <echo message="creating remote [@{name}] "/>
             <my-exec executable="curl" failonerror="true" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
         </sequential>
