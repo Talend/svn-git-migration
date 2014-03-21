@@ -820,7 +820,7 @@
     <macrodef name="my-exec">
         <attribute name="executable" description="command to be executed"/>
         <attribute name="argline" description="argument line passed to the git command"/>
-        <attribute name="dir" description="directory where to run the git command"/>
+        <attribute name="dir" default="${user.dir}" description="directory where to run the git command"/>
         <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
         <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
         <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
