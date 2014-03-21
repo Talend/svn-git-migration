@@ -13,6 +13,7 @@ org.talend.libraries.hadoop.apache.0.20.204
 org.talend.libraries.hadoop.apache.1.0.0
 org.talend.libraries.hadoop.cloudera.0.20.cdh3
 org.talend.libraries.hadoop.cloudera.cdh4
+org.talend.libraries.hadoop.cloudera.cdh5
 org.talend.libraries.hadoop.emc.pivotal.1.0
 org.talend.libraries.hadoop.hdp.1.0
 org.talend.libraries.hadoop.hdp.1.2
