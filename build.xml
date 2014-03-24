@@ -323,6 +323,17 @@
                                  <fileset dir="${final.repos.path}/@{repo}">
                                     <include name="*/plugins/*"/>
                                     <include name="*/features/*"/>
+                                    <include name="main*/*"/>
+                                    <include name="test/*"/>
+                                    <include name="sample/*"/>
+                                    <include name="i18n/*"/>
+                                    <include name="*"/>
+                                    <exclude name="*/features"/>
+                                    <exclude name="*/plugins"/>
+                                    <exclude name="main"/>
+                                    <exclude name="test"/>
+                                    <exclude name="sample"/>
+                                    <exclude name="i18n"/>
                                  </fileset>
                             </resources> 
                             <!-- convert direset to property to remove the full path and only keep the folders name using a regexp-->
