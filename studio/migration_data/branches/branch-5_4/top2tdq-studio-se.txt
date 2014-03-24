@@ -1,6 +1,5 @@
 net.sourceforge.sqlexplorer
 net.sourceforge.sqlexplorer.nl
-net.sourceforge.sqlexplorer.test
 org.eclipse.nebula.widgets.grid
 org.eclipse.nebula.widgets.nattable.core
 org.talend.cwm.compare

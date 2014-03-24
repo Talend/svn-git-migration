@@ -1,6 +1,5 @@
 net.sourceforge.sqlexplorer
 net.sourceforge.sqlexplorer.nl
-net.sourceforge.sqlexplorer.test
 org.talend.cwm.compare
 org.talend.cwm.compare.nl
 org.talend.cwm.compare.test
