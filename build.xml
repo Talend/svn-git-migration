@@ -158,7 +158,7 @@
         <git argline="svn fetch" dir="${svn.git.repo.path}/" showoutput="true"/>	
         <echo message="fixing branches and tags..."/>
         <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} sync-rebase"/>
-        <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force"/>
+        <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force" failonerror="false"/>
         <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
         <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
         <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
@@ -514,7 +514,7 @@
                 </tokens>
             </resources>
             <local name="all.tags"/>
-            <git dir="@{repoPath}/" outputproperty="all.tags" argline="tag"/>
+            <git dir="@{repoPath}/" output="all.tags" argline="tag"/>
             <resources id="all.tags.res">
                 <tokens>
                     <string value="${all.tags}" />
