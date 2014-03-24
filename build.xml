@@ -308,9 +308,17 @@
                                 <dirset dir="${final.repos.path}/@{repo}">
                                     <include name="*/plugins/*"/>
                                     <include name="*/features/*"/>
-                                    <include name="*/*"/>
+                                    <include name="main*/*"/>
+                                    <include name="test/*"/>
+                                    <include name="sample/*"/>
+                                    <include name="i18n/*"/>
+                                    <include name="*"/>
                                     <exclude name="*/features"/>
                                     <exclude name="*/plugins"/>
+                                    <exclude name="main"/>
+                                    <exclude name="test"/>
+                                    <exclude name="sample"/>
+                                    <exclude name="i18n"/>
                                  </dirset>
                                  <fileset dir="${final.repos.path}/@{repo}">
                                     <include name="*/plugins/*"/>
