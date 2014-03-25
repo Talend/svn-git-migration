@@ -29,6 +29,36 @@ please be sure to follow the full Atlassian tuto including the clean phase
     java -Dfile.encoding=utf-8 -jar talend-svn-git-migration/svn-migration-scripts.jar clean-git --force
 
 ###Preparing the migration data
+The main script takes a folder path as an input to know what to migrate and where to migrate it. this folder should look like this.
+
+    .
+    ├── branches
+    │   ├── branch-5_4                 (name of any branch we want to keep)
+    │   │   ├── tdq2tdq-studio-ee.txt  (data file)
+    │   ├── master                     (this branch must exists)
+    │   │   ├── tdq2tdq-studio-ee.txt
+    │   │   ├── tem2tmdm-studio-ee.txt
+    │   │   ├── tem2tmdm-studio-se.txt
+    ├── migration_ant.properties        (properties for the main migration script)
+    ├── refactor_ant.xml                (optional ant script for refactor)
+ 
+1. The folder *branches* must contain at least the *master* folder representing the master branch and any other folder will represent other branches that we wishes to keep in git.
+
+2. Data files are files containing the root folder and file that we want to keep. Those files follow the pattern : ` <svn_git_repo_name>2<git_repo_name>.txt`
+where
+
+ * *svn\_git\_repo\_name* is the name of the svn_git repository located in `${repo.root.folder}/svn_git_repos`
+ * *git\_repo\_name* is the name of the final git repository we want to place the files into.
+
+3. *migration\_ant.properties* is a java properties formatted file with a simple set of properties for the main script to work.
+here is an example
+
+    list.of.branches.no.master=branch-5_4  
+    list.of.branches=${list.of.branches.no.master},master  
+    list.of.tags=release-5_4_0,release-5_4_1  
+    tuj.skip.refactor=true  
+    history.date.limit=2011-09-05
+
 
 ###Launching the migration
     cd talend-svn-git-migration/studio
