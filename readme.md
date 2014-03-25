@@ -67,3 +67,14 @@ here is an example
 * you\_migration\_data\_folder : the folder that contain all the migration data files (see below)
 * you\_user\_name : is the user name used in bitbucket to create remote repositories (you can simply adapt the script to use Github if you wish)
 * your\_password : the password used to create the remote repository.
+
+
+###What does the script
+* Fetches the latest commit from the remote svn server.
+* create git tags and branches from the svn tags and branches.
+* creates a git graft file to remove old history is the property *history.date.limit* is set.
+* copies the required svn_repo into the `${repo.root.folder}/migration_workspace` for one single final git repo. It uses the migration data file to remove the no-required folders and files for each branches.
+* strips files bigger than 1M from history (but this is subject to change)
+* merges all the workspace repos into the final git repository `${repo.root.folder}/final_repos/<the_final_git_repo>`.
+* delete/create the remote git repository
+* pushes all branches and tags to the remote repository.
