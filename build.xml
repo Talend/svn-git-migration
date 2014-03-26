@@ -4,7 +4,7 @@
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
 	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
-    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.1.jar"/>
+    <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.2.jar"/>
     <property name="not.existing.migration.data.file" value="${svn2gitMigration.dir.path}/not_existing_migration_data.txt"/>
     <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
     <property name="commit.prefix" value="[GIT Migration]"/>
@@ -669,7 +669,7 @@
                     </java>
 -->
                     <!-- remove all blobs bigger than 1MB from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}" failonerror="false"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
 <!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
                         <arg line="-XX-strip-blobs-bigger-than 1M -XX-protect-blobs-from ${list.of.branches},${list.of.tags}"/>
                     </java>
@@ -790,9 +790,9 @@
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
-            <my-exec executable="curl" argline="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}"/>
+            <my-exec executable="curl" argline="-f -X DELETE -u ${remote.git.username}:${remote.git.password} https://api.bitbucket.org/2.0/repositories/talend/@{name}" failonerror="false"/>
             <echo message="creating remote [@{name}] "/>
-            <my-exec executable="curl" failonerror="true" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
+            <my-exec executable="curl" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
         </sequential>
     </macrodef>
 	
