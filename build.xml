@@ -76,6 +76,7 @@
         <echo message="root of svn-git, workspace and final folders for git repos is [${repo.root.folder}]"/>
         <echo message="migration data folder is [${migration.data.folder.path}]"/>
         <echo message="final git repos list is [${list.of.final.git.repos}]"/>
+        <echo message="list of branches to keep is [${list.of.branches}]"/>
         <echo message="error log may be create at [${error.log.path}]"/>
     </target>
 
@@ -142,7 +143,7 @@
 <!-- ================================= 
           target: update.all.git.svn.repos              
          ================================= -->
-    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits" unless="skip.svn.upadte">
+    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits" unless="skip.svn.update">
         <foreach target="update.git.svn.repo" param="svn.git.repo.path">
         	<path refid ="svn.git.repo.dirset"/>
     	</foreach>
@@ -159,8 +160,6 @@
         <echo message="fixing branches and tags..."/>
         <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} sync-rebase"/>
         <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force" failonerror="false"/>
-        <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
-        <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
         <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
         <if>
             <isset property="history.date.limit"/>
@@ -564,8 +563,9 @@
 	
 	<!-- = = = = = = = = = = = = = = = = =
           macrodef: prepare.svn.git.repo
-          1) loop on all branches to remove the unnecessary folders not matching the migration data pattern
-          2) removes all unused folders from the whole git history       
+          1) removes unecessary branches and tags
+          2) loop on all branches to remove the unnecessary folders not matching the migration data pattern
+          3) removes all unused folders from the whole git history       
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="prepare.svn.git.repo">
         <attribute name="svnrepo" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
@@ -574,6 +574,8 @@
             <var name="all.removed.files" value=""/>
             <local name="destination.dir"/>
             <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
+            <keep-branches list="${list.of.branches}" repoPath="${destination.dir}" />
+            <keep-tags list="${list.of.tags}" repoPath="${destination.dir}" />
             <for param="branch" list="${list.of.branches}">
                 <sequential><!-- remove all root files and folders unecessary for the branch -->
                     <local name="migration.data.file"/>
@@ -663,17 +665,9 @@
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'"/>
-<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="-XX-no-blob-protection -XX-delete-folders '{${files.to.remove}}'"/>
-                    </java>
--->
-                    <!-- remove all blobs bigger than 1MB from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
-<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="-XX-strip-blobs-bigger-than 1M -XX-protect-blobs-from ${list.of.branches},${list.of.tags}"/>
-                    </java>
--->
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-folders '{${files.to.remove}}' --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
+                    <!-- remove some binary files from history -->
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${list.of.tags}" failonerror="false"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
