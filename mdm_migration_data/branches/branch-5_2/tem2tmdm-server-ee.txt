@@ -4,7 +4,6 @@ org.talend.mdm.bonita.connector
 org.talend.mdm.connector.svn
 org.talend.mdm.core.enterprise
 org.talend.mdm.db.migration
-org.talend.mdm.engines.client
 org.talend.mdm.ext.service.schedule
 org.talend.mdm.izpack
 org.talend.mdm.jaas.existdb.jboss
@@ -28,6 +27,5 @@ org.talend.mdm.webapp.universemanager
 org.talend.mdm.webapp.usermanager
 org.talend.mdm.webapp.workflow.tasks
 org.talend.mdm.workflow
-org.talend.mdm.ws.enterprise
 talend.ext.libraries
 
