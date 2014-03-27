@@ -1,7 +1,5 @@
-org.talend.mdm.base
 org.talend.mdm.bulkload.client
 org.talend.mdm.calljob.plugin
-org.talend.mdm.commmon
 org.talend.mdm.commons.core
 org.talend.mdm.connector.core
 org.talend.mdm.connector.jdbc
@@ -9,6 +7,7 @@ org.talend.mdm.connector.logging
 org.talend.mdm.connector.smtp
 org.talend.mdm.core
 org.talend.mdm.core.open
+org.talend.mdm.core.plugin.base
 org.talend.mdm.datamodel.synchronization
 org.talend.mdm.ext.images.server
 org.talend.mdm.ext.publish.component
@@ -37,7 +36,6 @@ org.talend.mdm.webapp.stagingarea
 org.talend.mdm.webapp.updatereport
 org.talend.mdm.webapp.viewbrowser
 org.talend.mdm.webapp.welcomeportal
-org.talend.mdm.ws
 org.talend.mdm.xmldb
 org.talend.mdm.xmlserver.interfaces
 talend.mdm.libraries
