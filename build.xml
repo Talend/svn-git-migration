@@ -474,7 +474,10 @@
                             <stringtokenizer delims="\n, *" suppressdelims="true" />
                         </tokens>
                         <contains text="remotes/" casesensitive="no"/>
-                    </restrict>
+            		<not>
+            			  <contains text="remotes/tags" casesensitive="no"/>
+            		</not>                    
+		    </restrict>
             		<globmapper from="remotes/*" to="*"/>
             	</mappedresources>
             </resources>
@@ -936,7 +939,7 @@
     <target name="test.keep-branches" > <!-- depends="clean.workspace">-->
 <!--     	<copy-original-to-workspace from="tis_private"/>
 -->
-        <keep-branches list="${list.of.branches}" repopath="${svn.git.repos.path}/tis_private"/>
+        <keep-branches list="${list.of.branches}" repopath="${test.keep.branch.repo.path}"/>
         <dump-error-log/>
     </target>
 
@@ -946,7 +949,7 @@
     <target name="test.keep-tags" ><!--depends="clean.workspace">
         <copy-original-to-workspace from="tis_private"/>-->
 
-        <keep-tags list="${list.of.tags}" repopath="${svn.git.repos.path}/tis_private"/>
+        <keep-tags list="${list.of.tags}" repopath="${test.keep.tags.repo.path}"/>
         <dump-error-log/>
     </target>
 	
