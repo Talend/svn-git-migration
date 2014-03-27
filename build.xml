@@ -527,7 +527,7 @@
                 <resources refid="all.tags.res"/>
                 <intersect id="intersect"><resources refid="tags.to.keep.res"/><resources refid="all.tags.res"/></intersect>
             </difference>
-            <local name="local.branches.to.remove"/>
+            <local name="tags.to.remove"/>
             <pathconvert property="tags.to.remove" refid="tags.to.remove.res" pathsep=" "/>
             
             <if>
