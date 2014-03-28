@@ -668,9 +668,8 @@
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-folders '{${files.to.remove}}' --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
-                    <!-- remove some binary files from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${list.of.tags}" failonerror="false"/>
+                    <!-- remove files from history -->
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --delete-folders '{${files.to.remove}}' --protect-blobs-from ${list.of.branches},${list.of.tags}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
