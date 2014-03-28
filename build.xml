@@ -458,7 +458,6 @@
                 </not>        	    
         	<then>
                 <!-- remove all calculated local branches -->
-                <echo message="remove the following branches : ${local.branches.to.remove}"/>
                 <git dir="@{repoPath}" argline="branch -D ${local.branches.to.remove}"/>
         	</then>
         	<else>
@@ -487,7 +486,6 @@
                     <length string="${remote.branches.to.remove}" trim="true" length="0" />                    
                 </not>              
             <then>
-                <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
                 <git dir="@{repoPath}" argline="branch -rD ${remote.branches.to.remove}"/>
             </then>
             <else>
@@ -533,7 +531,6 @@
                 </not>              
                 <then>
                     <!-- remove all calculated tags -->
-                    <echo message="remove the following tags : ${tags.to.remove}"/>
                     <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
                 </then>
                 <else>
@@ -666,7 +663,8 @@
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
                     <!-- remove files from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --delete-folders '{${files.to.remove}}' --protect-blobs-from ${list.of.branches},${list.of.tags}" showoutput="true"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'" showoutput="true"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}'--protect-blobs-from ${list.of.branches}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
