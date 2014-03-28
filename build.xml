@@ -474,9 +474,6 @@
                             <stringtokenizer delims="\n, *" suppressdelims="true" />
                         </tokens>
                         <contains text="remotes/" casesensitive="no"/>
-            		<not>
-            			  <contains text="remotes/tags" casesensitive="no"/>
-            		</not>                    
 		    </restrict>
             		<globmapper from="remotes/*" to="*"/>
             	</mappedresources>
