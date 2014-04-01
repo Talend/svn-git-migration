@@ -40,6 +40,7 @@ org.talend.cwm.mip.editor/
 org.talend.cwm.mip.nl/
 org.talend.datatools.xml/
 org.talend.demo.bigdata.ce/
+org.talend.demo.bigdata.ce.nl/
 org.talend.designer.abstractmap/
 org.talend.designer.abstractmap.nl/
 org.talend.designer.alfrescooutput/
@@ -80,6 +81,7 @@ org.talend.designer.filemultischemas/
 org.talend.designer.fileoutputxml/
 org.talend.designer.fileoutputxml.nl/
 org.talend.designer.gefabstractmap/
+org.talend.designer.gefabstractmap.nl/
 org.talend.designer.hdfsbrowse/
 org.talend.designer.hdfsbrowse.nl/
 org.talend.designer.hl7/
@@ -90,6 +92,7 @@ org.talend.designer.mapper.nl/
 org.talend.designer.mapper.test/
 org.talend.designer.neo4j/
 org.talend.designer.pigmap/
+org.talend.designer.pigmap.nl/
 org.talend.designer.publish.core/
 org.talend.designer.routines.camelprovider/
 org.talend.designer.rowgenerator/
@@ -158,6 +161,7 @@ org.talend.libraries.hadoop.apache.0.20.204/
 org.talend.libraries.hadoop.apache.1.0.0/
 org.talend.libraries.hadoop.cloudera.0.20.cdh3/
 org.talend.libraries.hadoop.cloudera.cdh4/
+org.talend.libraries.hadoop.cloudera.cdh5/
 org.talend.libraries.hadoop.emc.pivotal.1.0/
 org.talend.libraries.hadoop.hdp.1.0/
 org.talend.libraries.hadoop.hdp.1.2/
@@ -186,7 +190,6 @@ org.talend.libraries.jdbc.jtds/
 org.talend.libraries.jdbc.mysql/
 org.talend.libraries.jdbc.paraccel/
 org.talend.libraries.jdbc.postgresql/
-org.talend.libraries.jdbc.saphana/
 org.talend.libraries.jdbc.sqlite3/
 org.talend.libraries.jdbc.teradata/
 org.talend.libraries.jersey/
@@ -206,7 +209,6 @@ org.talend.libraries.mondrian/
 org.talend.libraries.mongo/
 org.talend.libraries.mozilla/
 org.talend.libraries.neo4j/
-org.talend.libraries.novabpm/
 org.talend.libraries.palo/
 org.talend.libraries.pig/
 org.talend.libraries.s3/
@@ -268,8 +270,10 @@ org.talend.repository-feature/
 org.talend.repository.ftp/
 org.talend.repository.ftp.nl/
 org.talend.repository.items.importexport/
+org.talend.repository.items.importexport.nl/
 org.talend.repository.items.importexport.test/
 org.talend.repository.items.importexport.ui/
+org.talend.repository.items.importexport.ui.nl/
 org.talend.repository.json/
 org.talend.repository.json.nl/
 org.talend.repository.localprovider/
@@ -282,6 +286,7 @@ org.talend.repository.metadata.nl/
 org.talend.repository.metadata.test/
 org.talend.repository.nl/
 org.talend.repository.pigudf/
+org.talend.repository.pigudf.nl/
 org.talend.repository.services/
 org.talend.repository.services-feature/
 org.talend.repository.services.nl/

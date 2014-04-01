@@ -30,6 +30,8 @@ org.talend.dataquality.reporting.engine.nl/
 org.talend.dataquality.reporting.engine.test/
 org.talend.dataquality.reporting.nl/
 org.talend.dataquality.reporting.test/
+org.talend.dataquality.sampling/
+org.talend.dataquality.sampling.test/
 org.talend.designer.components.dqshprovider/
 org.talend.designer.components.libs.tdq/
 org.talend.designer.components.libs.tdq.test/

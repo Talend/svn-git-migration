@@ -95,6 +95,7 @@ org.talend.libraries.camel.alldeps/
 org.talend.libraries.drools/
 org.talend.libraries.esb.ext/
 org.talend.libraries.jbpm/
+org.talend.libraries.jdbc.saphana/
 org.talend.libraries.jdom/
 org.talend.libraries.jdtcompiler/
 org.talend.libraries.jibx/

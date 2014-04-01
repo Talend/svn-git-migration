@@ -1,9 +1,11 @@
 org.talend.demo.bigdata.ce
+org.talend.demo.bigdata.ce.nl
 org.talend.designer.components.bigdata
 org.talend.designer.hdfsbrowse
 org.talend.designer.hdfsbrowse.nl
 org.talend.designer.neo4j
 org.talend.designer.pigmap
+org.talend.designer.pigmap.nl
 org.talend.libraries.couchbase
 org.talend.libraries.couchdb
 org.talend.libraries.hadoop
@@ -36,6 +38,7 @@ org.talend.oozie.scheduler.test
 org.talend.rcp.branding.tos.bigdata
 org.talend.rcp.branding.tos.bigdata-feature
 org.talend.repository.pigudf
+org.talend.repository.pigudf.nl
 org.talend.tos.bigdata.core-feature
 org.talend.tos.bigdata.designer-feature
 org.talend.tos.bigdata-feature
