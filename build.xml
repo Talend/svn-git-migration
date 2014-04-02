@@ -6,7 +6,8 @@
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
     <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.2.jar"/>
     <property name="not.existing.migration.data.file" value="${svn2gitMigration.dir.path}/not_existing_migration_data.txt"/>
-    <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
+    <property name="talend.remote.git.base.url" value="ssh://git@bitbucket.org/talend"/><!-- github value is : git@github.com:Talend-->
+    
     <property name="commit.prefix" value="[GIT Migration]"/>
 	<taskdef resource="net/sf/antcontrib/antlib.xml">
       <classpath>
@@ -760,9 +761,17 @@
         <attribute name="remoteRepo" description="remote repository name"/>
         <sequential>
         	<local name="remote.repo.url"/>
-        	<property name="remote.repo.url" value="${talend.git.base.url}/@{remoteRepo}"/> 
+        	<property name="remote.repo.url" value="${talend.remote.git.base.url}/@{remoteRepo}"/> 
             <echo message="push the final repo : @{localrepo} to [@{remoteRepo}]"/>
-        	<git-create-remote-repo name="@{remoteRepo}"/>
+            <if>
+                <contains string="${remote.repo.url}" substring="bitbucket.org"/>
+                <then>
+                    <git-create-remote-repo-bitbucket name="@{remoteRepo}"/>
+                </then>
+                <else>
+                    <git-create-remote-repo-github name="@{remoteRepo}"/>
+                </else>
+            </if>
             <echo message="setting the remote url to repo [@{localrepo}] on
             	[${remote.repo.url}]"/>
             <git argline="remote add origin ${remote.repo.url}" dir="@{localrepo}/" />
@@ -774,10 +783,10 @@
     </macrodef>
 
     <!-- = = = = = = = = = = = = = = = = =
-          macrodef: git-create-remote-repo   
+          macrodef: git-create-remote-repo-bitbucket   
           this creates a remote repo on bitBucket right after deleting it, this will fail if creation fails       
          = = = = = = = = = = = = = = = = = -->
-    <macrodef name="git-create-remote-repo">
+    <macrodef name="git-create-remote-repo-bitbucket">
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
@@ -786,7 +795,22 @@
             <my-exec executable="curl" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
         </sequential>
     </macrodef>
-	
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-create-remote-repo-bitbucket   
+          this creates a remote repo on bitBucket right after deleting it, this will fail if creation fails       
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-create-remote-repo-github">
+        <attribute name="name" description="name of the repo"/>
+        <sequential>
+            <echo message="deleting remote [@{name}] "/>
+            <my-exec executable="curl" argline="curl -i -H 'Authorization: token ${github.authorisation.token}' -X DELETE https://api.github.com/repos/talend/@{name}" failonerror="false"/>
+            <echo message="creating remote [@{name}] "/>
+            <my-exec executable="curl" argline="curl -i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true}' https://api.github.com/orgs/talend/repos"/>
+        </sequential>
+    </macrodef>
+  
+    
     <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-init-final-repo   
           this initialise the final repo and creates an initial commit to have the master branch and be able to use it.   
@@ -895,7 +919,13 @@
         </sequential>
     </macrodef>
 
-	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: test.git-push-repo                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test.git-push-repo">
+            <git-push-repo localrepo="${test.git.push.repo.path}" remoteRepo="${test.git.push.repo.name}"/>
+    </target>
+
     <!-- ================================= 
           target: git-init-final-repo.test              
          ================================= -->
