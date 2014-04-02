@@ -664,7 +664,7 @@
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
                     <!-- remove files from history -->
                     <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'" showoutput="true"/>
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches}" showoutput="true"/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${list.of.tags}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
