@@ -45,16 +45,21 @@
                </not>
              </condition>
         </fail>
-        <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; property ">
+        <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; or &quot;github.authorisation.token&quot; property ">
             <condition>
-                <or>
+                <and>
+                    <or>
+                        <not>
+                            <isset property="remote.git.username"/>
+                        </not>
+                        <not>
+                            <isset property="remote.git.password"/>
+                        </not>
+                    </or>
                     <not>
-                        <isset property="remote.git.username"/>
+                        <isset property="github.authorisation.token"/>
                     </not>
-                    <not>
-                        <isset property="remote.git.password"/>
-                    </not>
-                </or>
+                </and>
              </condition>
         </fail>
         <fail message="You must specify a &quot;migration.data.folder.path&quot; property (using -D in the commandline)">
