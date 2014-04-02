@@ -60,9 +60,6 @@ org.talend.repository
 org.talend.repository-feature
 org.talend.repository.ftp
 org.talend.repository.ftp.nl
-org.talend.repository.localprovider
-org.talend.repository.localprovider.nl
-org.talend.repository.localprovider.test
 org.talend.repository.nl
 org.talend.repository.view.di
 org.talend.repository.view.di.nl
