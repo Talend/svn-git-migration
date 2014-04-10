@@ -809,9 +809,9 @@
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
-            <my-exec executable="curl" argline="curl -i -H 'Authorization: token ${github.authorisation.token}' -X DELETE https://api.github.com/repos/talend/@{name}" failonerror="false"/>
+            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -X DELETE https://api.github.com/repos/talend/@{name}" failonerror="false"/>
             <echo message="creating remote [@{name}] "/>
-            <my-exec executable="curl" argline="curl -i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true}' https://api.github.com/orgs/talend/repos"/>
+            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true}' https://api.github.com/orgs/talend/repos"/>
         </sequential>
     </macrodef>
   
