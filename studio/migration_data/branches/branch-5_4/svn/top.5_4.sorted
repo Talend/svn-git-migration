@@ -3,6 +3,7 @@ net.sourceforge.sqlexplorer.nl/
 net.sourceforge.sqlexplorer.test/
 org.eclipse.nebula.widgets.grid/
 org.eclipse.nebula.widgets.nattable.core/
+org.eclipse.nebula.widgets.nattable.core.nl/
 org.talend.cwm.compare/
 org.talend.cwm.compare.nl/
 org.talend.cwm.compare.test/

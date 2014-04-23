@@ -1,4 +1,5 @@
 org.deved.antlride.ui
+org.deved.antlride.ui.nl
 org.talend.datacleansing.bd-feature
 org.talend.datacleansing.core
 org.talend.datacleansing.core.nl

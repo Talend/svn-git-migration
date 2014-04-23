@@ -1,6 +1,7 @@
 org.eclipse.webdav
 org.guvnor.tools
 org.talend.designer.tdqmatching
+org.talend.designer.tdqmatching.nl
 org.talend.generic.dq-feature
 org.talend.rcp.branding.generic.dq
 org.talend.rcp.branding.tdq
