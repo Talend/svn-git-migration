@@ -18,6 +18,8 @@ org.talend.dataprofiler.datamart.test
 org.talend.dataprofiler.persistence
 org.talend.dataprofiler.persistence.nl
 org.talend.dataprofiler.persistence.test
+org.talend.dataquality.address
+org.talend.dataquality.address.test
 org.talend.dataquality.data.index
 org.talend.dataquality.data.resources
 org.talend.dataquality.hadoop
