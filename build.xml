@@ -618,9 +618,30 @@
                 </sequential>
             </for>
             <git-remove-history alreadyremoved="${all.removed.files}" gitrepo="@{gitrepo}" svnrepo="@{svnrepo}"/>
+            <git-rename-tags repopath="${destination.dir}" tagsuffix="@{svnrepo}"/>    
         </sequential>
     </macrodef>
 
+    
+ <!-- - - - - - - - - - - - - - - - - - 
+          target: git-rename-tags     
+          rename all repo_path tags by adding the tag_suffix to them           
+         - - - - - - - - - - - - - - - - - -->
+    <macrodef name="git-rename-tags">
+        <attribute name="repopath" description="absolute path on the git repository to use" />
+        <attribute name="tagsuffix" description="suffixe use to be placed after each tag name" />
+        <sequential>
+            <git argline="tag" dir="@{repopath}" output="all.tags"/>
+            <propertyregex property="all.tags.list" input="${all.tags}," regexp="\n" replace=","/>
+            <for param="tag.name" list="${all.tags.list}" >
+                <sequential>
+                    <git argline="tag @{tag.name}_@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
+                    <git argline="tag -d @{tag.name}" dir="@{repopath}"/>
+                </sequential>
+            </for>
+        </sequential>
+    </macrodef>
+   
 
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-remove-history
@@ -1091,6 +1112,14 @@
         <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         
     </target>
+    
+<!-- - - - - - - - - - - - - - - - - - 
+          target: test-git-rename-tags                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-git-rename-tags">
+        <git-rename-tags repopath="${test.repo.path}" tagsuffix="${test.tag.suffix}"/>    
+    </target>
+    
     
  <!-- ================================= 
           target: test              
