@@ -1,102 +1,0 @@
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
- ----> /media/TOOLS/Talend_git_test/tamc-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tbd-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tbd-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tcommon-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-fatal: pathspec 'pom.xml' did not match any files
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-Already up-to-date.
-fatal: pathspec 'pom.xml' did not match any files
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/tcommon-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-fatal: pathspec 'pom.xml' did not match any files
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/tdi-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tdi-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tdq-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Checking out files:  27% (242/885)   Checking out files:  28% (248/885)   Checking out files:  29% (257/885)   Checking out files:  30% (266/885)   Checking out files:  31% (275/885)   Checking out files:  32% (284/885)   Checking out files:  33% (293/885)   Checking out files:  34% (301/885)   Checking out files:  35% (310/885)   Checking out files:  36% (319/885)   Checking out files:  37% (328/885)   Checking out files:  38% (337/885)   Checking out files:  39% (346/885)   Checking out files:  40% (354/885)   Checking out files:  41% (363/885)   Checking out files:  42% (372/885)   Checking out files:  43% (381/885)   Checking out files:  44% (390/885)   Checking out files:  45% (399/885)   Checking out files:  46% (408/885)   Checking out files:  47% (416/885)   Checking out files:  48% (425/885)   Checking out files:  49% (434/885)   Checking out files:  50% (443/885)   Checking out files:  51% (452/885)   Checking out files:  52% (461/885)   Checking out files:  53% (470/885)   Checking out files:  54% (478/885)   Checking out files:  55% (487/885)   Checking out files:  56% (496/885)   Checking out files:  57% (505/885)   Checking out files:  58% (514/885)   Checking out files:  59% (523/885)   Checking out files:  60% (531/885)   Checking out files:  61% (540/885)   Checking out files:  62% (549/885)   Checking out files:  63% (558/885)   Checking out files:  64% (567/885)   Checking out files:  65% (576/885)   Checking out files:  66% (585/885)   Checking out files:  67% (593/885)   Checking out files:  68% (602/885)   Checking out files:  68% (603/885)   Checking out files:  69% (611/885)   Checking out files:  70% (620/885)   Checking out files:  71% (629/885)   Checking out files:  72% (638/885)   Checking out files:  73% (647/885)   Checking out files:  74% (655/885)   Checking out files:  75% (664/885)   Checking out files:  76% (673/885)   Checking out files:  77% (682/885)   Checking out files:  78% (691/885)   Checking out files:  79% (700/885)   Checking out files:  80% (708/885)   Checking out files:  81% (717/885)   Checking out files:  82% (726/885)   Checking out files:  83% (735/885)   Checking out files:  84% (744/885)   Checking out files:  85% (753/885)   Checking out files:  86% (762/885)   Checking out files:  87% (770/885)   Checking out files:  88% (779/885)   Checking out files:  89% (788/885)   Checking out files:  90% (797/885)   Checking out files:  91% (806/885)   Checking out files:  92% (815/885)   Checking out files:  93% (824/885)   Checking out files:  94% (832/885)   Checking out files:  95% (841/885)   Checking out files:  96% (850/885)   Checking out files:  97% (859/885)   Checking out files:  98% (868/885)   Checking out files:  99% (877/885)   Checking out files: 100% (885/885)   Checking out files: 100% (885/885), done.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-fatal: pathspec 'pom.xml' did not match any files
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-Already up-to-date.
-fatal: pathspec 'pom.xml' did not match any files
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/tdq-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/tesb-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tesb-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Checking out files:  49% (174/351)   Checking out files:  50% (176/351)   Checking out files:  51% (180/351)   Checking out files:  52% (183/351)   Checking out files:  53% (187/351)   Checking out files:  54% (190/351)   Checking out files:  54% (191/351)   Checking out files:  55% (194/351)   Checking out files:  55% (196/351)   Checking out files:  56% (197/351)   Checking out files:  57% (201/351)   Checking out files:  58% (204/351)   Checking out files:  58% (205/351)   Checking out files:  59% (208/351)   Checking out files:  60% (211/351)   Checking out files:  61% (215/351)   Checking out files:  61% (216/351)   Checking out files:  62% (218/351)   Checking out files:  63% (222/351)   Checking out files:  64% (225/351)   Checking out files:  65% (229/351)   Checking out files:  66% (232/351)   Checking out files:  66% (233/351)   Checking out files:  67% (236/351)   Checking out files:  68% (239/351)   Checking out files:  69% (243/351)   Checking out files:  69% (244/351)   Checking out files:  70% (246/351)   Checking out files:  71% (250/351)   Checking out files:  72% (253/351)   Checking out files:  73% (257/351)   Checking out files:  73% (258/351)   Checking out files:  74% (260/351)   Checking out files:  75% (264/351)   Checking out files:  76% (267/351)   Checking out files:  77% (271/351)   Checking out files:  78% (274/351)   Checking out files:  79% (278/351)   Checking out files:  80% (281/351)   Checking out files:  81% (285/351)   Checking out files:  82% (288/351)   Checking out files:  83% (292/351)   Checking out files:  84% (295/351)   Checking out files:  85% (299/351)   Checking out files:  86% (302/351)   Checking out files:  87% (306/351)   Checking out files:  88% (309/351)   Checking out files:  89% (313/351)   Checking out files:  90% (316/351)   Checking out files:  91% (320/351)   Checking out files:  92% (323/351)   Checking out files:  93% (327/351)   Checking out files:  94% (330/351)   Checking out files:  95% (334/351)   Checking out files:  96% (337/351)   Checking out files:  96% (340/351)   Checking out files:  97% (341/351)   Checking out files:  98% (344/351)   Checking out files:  99% (348/351)   Checking out files: 100% (351/351)   Checking out files: 100% (351/351), done.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tmdm-server-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tmdm-server-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/tmdm-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/tmdm-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-Already up-to-date.
-# On branch patch/v5.3.2
-nothing to commit (working directory clean)
-
- ----> /media/TOOLS/Talend_git_test/toem-studio-ee
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
-
- ----> /media/TOOLS/Talend_git_test/toem-studio-se
-fatal: A branch named 'patch/v5.3.2' already exists.
-Switched to branch 'patch/v5.3.2'
