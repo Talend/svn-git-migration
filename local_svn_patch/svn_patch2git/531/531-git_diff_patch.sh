@@ -50,7 +50,8 @@ __gitDiffStartSHA(){
 }
 
 #----------------------------------------------------------
-workingPath=$(pwd)
+workingPath=$(cd $(dirname $0); pwd)
+cd $workingPath
 
 #----------------------------------------------------------
 rep="datastewardship"

@@ -12,8 +12,10 @@ __doCMD(){
 	sh git_cmd.sh "$@" 2>&1 | tee -a $logFile
 	echo -e "\n\n ---------------------------------------------------------------------\n"  | tee -a $logFile
 }
+workRootPath=$(cd $(dirname $0); pwd)
+cd $workRootPath
 
-logFile="$0.log"
+logFile="$workRootPath/$0.log"
 
 if [ -d $logFile ]; then
 	rm -f $logFile

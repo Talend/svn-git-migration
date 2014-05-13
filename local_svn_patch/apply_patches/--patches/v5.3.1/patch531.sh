@@ -1,6 +1,6 @@
 #!/bin/sh
 
-curPath=$(pwd)
+curPath=$(cd $(dirname $0); pwd)
 gitRootPath="$curPath/../../"
 patchRootPath="$curPath"
 

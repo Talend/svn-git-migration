@@ -25,7 +25,8 @@ fi
 #
 cmd="$@"
 
-workRootPath=$(pwd)
+workRootPath=$(cd $(dirname $0); pwd)
+cd $workRootPath
 
 logFile=${workRootPath}/$0.log
 if [ -f ${logFile} ]; then

@@ -1,6 +1,7 @@
 #!/bin/sh
 
-workingPath=$(pwd)
+workingPath=$(cd $(dirname $0); pwd)
+cd $workingPath
 
 ignoreArray=(d3e6bfa 6a64abf 470f527 ab2ba84 b1b17a2 f9839e7 d188a16 08b29df 50f6a4d)
 	
