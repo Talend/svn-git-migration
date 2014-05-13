@@ -1,0 +1,26 @@
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+index d9baf0f..92497a3 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+@@ -956,7 +956,7 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+                     }
+                 }
+             } else if (dbJDBCMetadata.getDatabaseProductName() != null
+-                    && dbJDBCMetadata.getDatabaseProductName().startsWith("DB2/NT")) { //$NON-NLS-1$
++                    && dbJDBCMetadata.getDatabaseProductName().startsWith("DB2/")) { //$NON-NLS-1$
+                 for (String element : tableType) {
+                     if (element.equals("SYNONYM")) { //$NON-NLS-1$
+                         Statement stmt = extractMeta.getConn().createStatement();
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/dbs/IBMDB2ExtractManager.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/dbs/IBMDB2ExtractManager.java
+index 4a88211..0aaae0e 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/dbs/IBMDB2ExtractManager.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/dbs/IBMDB2ExtractManager.java
+@@ -40,7 +40,7 @@ import orgomg.cwm.resource.relational.NamedColumnSet;
+  */
+ public class IBMDB2ExtractManager extends ExtractManager {
+ 
+-    public static final String DATABASE_PRODUCT_NAME = "DB2/NT"; //$NON-NLS-1$
++    public static final String DATABASE_PRODUCT_NAME = "DB2/"; //$NON-NLS-1$
+ 
+     private static Logger log = Logger.getLogger(IBMDB2ExtractManager.class);
+ 

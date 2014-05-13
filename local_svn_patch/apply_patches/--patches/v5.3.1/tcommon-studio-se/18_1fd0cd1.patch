@@ -1,0 +1,121 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/general/Project.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/general/Project.java
+index 45bd9ba..294b19c 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/general/Project.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/general/Project.java
+@@ -38,6 +38,26 @@ public class Project {
+ 
+     // used for create project or sandbox project in remote
+     private boolean isSandboxProject;
++    
++    private boolean mainProject = true;
++
++    /**
++     * Getter for mainProject.
++     * 
++     * @return the mainProject
++     */
++    public boolean isMainProject() {
++        return this.mainProject;
++    }
++
++    /**
++     * Sets the mainProject.
++     * 
++     * @param mainProject the mainProject to set
++     */
++    public void setMainProject(boolean mainProject) {
++        this.mainProject = mainProject;
++    }
+ 
+     // end
+     /**
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/repository/RepositoryWorkUnit.java b/org.talend.core.runtime/src/main/java/org/talend/repository/RepositoryWorkUnit.java
+index 5a14ec5..96272d7 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/repository/RepositoryWorkUnit.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/repository/RepositoryWorkUnit.java
+@@ -38,6 +38,13 @@ public abstract class RepositoryWorkUnit<T> {
+     private boolean avoidUnloadResourcesBeforeRun;
+ 
+     private boolean unloadResourcesAfterRun;
++    
++    private boolean refreshRepository = true; // added for TDI-27085
++    
++    /**
++     * Usefull for some save only actions, where we're sure everything is up to date.
++     */
++    private boolean avoidSvnUpdate;
+ 
+     public Object getStartingPoint() {
+         return startingPoint;
+@@ -134,4 +141,40 @@ public abstract class RepositoryWorkUnit<T> {
+     public void setUnloadResourcesAfterRun(boolean unloadResourcesAfterRun) {
+         this.unloadResourcesAfterRun = unloadResourcesAfterRun;
+     }
++    
++    /**
++     * Getter for refreshRepository.
++     * 
++     * @return the refreshRepository
++     */
++    public boolean isRefreshRepository() {
++        return this.refreshRepository;
++    }
++
++    /**
++     * Sets the refreshRepository.
++     * 
++     * @param refreshRepository the refreshRepository to set
++     */
++    public void setRefreshRepository(boolean refreshRepository) {
++        this.refreshRepository = refreshRepository;
++    }
++    
++    /**
++     * Getter for avoidSvnUpdate.
++     * 
++     * @return the avoidSvnUpdate
++     */
++    public boolean isAvoidSvnUpdate() {
++        return this.avoidSvnUpdate;
++    }
++
++    /**
++     * Sets the avoidSvnUpdate.
++     * 
++     * @param avoidSvnUpdate the avoidSvnUpdate to set
++     */
++    public void setAvoidSvnUpdate(boolean avoidSvnUpdate) {
++        this.avoidSvnUpdate = avoidSvnUpdate;
++    }
+ }
+diff --git a/org.talend.core/src/main/java/org/talend/repository/editor/JobEditorInput.java b/org.talend.core/src/main/java/org/talend/repository/editor/JobEditorInput.java
+index e0b94e2..58360d1 100644
+--- a/org.talend.core/src/main/java/org/talend/repository/editor/JobEditorInput.java
++++ b/org.talend.core/src/main/java/org/talend/repository/editor/JobEditorInput.java
+@@ -163,6 +163,7 @@ public abstract class JobEditorInput extends RepositoryEditorInput {
+                     }
+                 };
+                 rwu.setAvoidUnloadResources(true);
++                rwu.setAvoidSvnUpdate(true);
+                 factory.executeRepositoryWorkUnit(rwu);
+                 // factory.save(getItem());
+                 // loadedProcess.setProperty(getItem().getProperty());
+diff --git a/org.talend.librariesmanager/src/main/java/org/talend/librariesmanager/model/service/JavaLibrariesService.java b/org.talend.librariesmanager/src/main/java/org/talend/librariesmanager/model/service/JavaLibrariesService.java
+index c725866..cfe3f11 100644
+--- a/org.talend.librariesmanager/src/main/java/org/talend/librariesmanager/model/service/JavaLibrariesService.java
++++ b/org.talend.librariesmanager/src/main/java/org/talend/librariesmanager/model/service/JavaLibrariesService.java
+@@ -342,9 +342,11 @@ public class JavaLibrariesService extends AbstractLibrariesService {
+     public void cleanTempProLib() {
+         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+         IProject prj = root.getProject(JavaUtils.JAVA_PROJECT_NAME);
+-        IPath libPath = prj.getLocation().append(JavaUtils.JAVA_LIB_DIRECTORY);
+-        if (libPath.toFile().exists()) {
+-            FilesUtils.emptyFolder(libPath.toFile());
++        if (prj.exists()) {
++            IPath libPath = prj.getLocation().append(JavaUtils.JAVA_LIB_DIRECTORY);
++            if (libPath.toFile().exists()) {
++                FilesUtils.emptyFolder(libPath.toFile());
++            }
+         }
+     }
+ 

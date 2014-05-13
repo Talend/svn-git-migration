@@ -1,0 +1,75 @@
+
+>>>./datastewardship/01_ba2a3b3.patch
+ org.talend.datastewardship   ---> 
+
+>>>./tem/01_9a9f940.patch
+ org.talend.mdm.core.enterprise   ---> tmdm-server-ee
+
+>>>./tis_shared/01_d6f090d.patch
+ org.talend.core.tis   ---> tdi-studio-ee
+
+>>>./tis_shared/02_28497c5.patch
+ org.talend.repository.remoteprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/03_43857f8.patch
+ org.talend.designer.cdc   ---> tdi-studio-ee
+
+>>>./tis_shared/04_3289f53.patch
+ org.talend.amc   ---> tamc-ee
+
+>>>./tom/01_3aa19f4.patch
+ org.talend.mdm.commmon   ---> tmdm-server-se
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/02_19885a7.patch
+ org.talend.mdm.repository.validate   ---> tmdm-studio-se
+
+>>>./tom/03_c28f9d8.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/04_69b16b7.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tos/01_26929b4.patch
+ org.talend.designer.core   ---> tdi-studio-se
+
+>>>./tos/02_b2c204c.patch
+ org.talend.camel.designer   ---> tesb-studio-se
+ org.talend.core   ---> tcommon-studio-se
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.designer.codegen   ---> tdi-studio-se
+
+>>>./tos/03_c8dbd16.patch
+ org.talend.metadata.managment   ---> tcommon-studio-se
+
+>>>./tos/04_31db999.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+
+>>>./tos/05_938d4a9.patch
+ org.talend.metadata.managment   ---> tcommon-studio-se
+ org.talend.sqlbuilder   ---> tdi-studio-se
+
+>>>./tos/06_9857b6c.patch
+ org.talend.designer.runprocess   ---> tdi-studio-se
+
+>>>./tos/07_aac4b54.patch
+ org.talend.designer.core   ---> tdi-studio-se
+
+>>>./tos/08_268bec6.patch
+ org.talend.core   ---> tcommon-studio-se
+ org.talend.libraries.apache.cxf   ---> tcommon-studio-se
+ org.talend.repository   ---> tdi-studio-se
+
+>>>./tos/09_1ad13f3.patch
+ org.talend.model   ---> tcommon-studio-se
+
+>>>./tos/10_59bade7.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+
+>>>./tos/11_28c2acf.patch
+ org.talend.commons.runtime   ---> tcommon-studio-se
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.designer.core   ---> tdi-studio-se
+ org.talend.metadata.managment   ---> tcommon-studio-se
+ org.talend.model   ---> tcommon-studio-se
+ org.talend.repository.metadata   ---> tcommon-studio-se

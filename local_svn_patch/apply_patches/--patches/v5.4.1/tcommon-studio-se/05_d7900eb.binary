@@ -1,0 +1,12 @@
+diff --git a/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar b/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar
+new file mode 100644
+index 0000000..d9a1665
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar differ
+diff --git a/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar b/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar
+new file mode 100644
+index 0000000..63a8a06
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar differ
+diff --git a/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar b/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar
+new file mode 100644
+index 0000000..8ca96d5
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar differ

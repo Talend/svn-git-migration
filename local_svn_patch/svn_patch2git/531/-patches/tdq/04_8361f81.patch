@@ -1,0 +1,100 @@
+diff --git a/org.talend.dataprofiler.core.tdq/src/org/talend/dataprofiler/core/tdq/action/LocalReportDocGenerator.java b/org.talend.dataprofiler.core.tdq/src/org/talend/dataprofiler/core/tdq/action/LocalReportDocGenerator.java
+index 18d2137..fdb5643 100644
+--- a/org.talend.dataprofiler.core.tdq/src/org/talend/dataprofiler/core/tdq/action/LocalReportDocGenerator.java
++++ b/org.talend.dataprofiler.core.tdq/src/org/talend/dataprofiler/core/tdq/action/LocalReportDocGenerator.java
+@@ -114,14 +114,20 @@ public class LocalReportDocGenerator extends ReportDocGenerator {
+     }
+ 
+     @Override
+-    public ReturnCode generate() {
++    public ReturnCode generate() throws Exception {
+         // ADD msjian TDQ-7707 2013-8-1: won't invoke any remote repository action such as svn commit(same to TDQ-7508)
+         IRepositoryFactory localRepository = RepositoryFactoryProvider
+                 .getRepositoriyById(RepositoryConstants.REPOSITORY_LOCAL_ID);
+         IRepositoryFactory oldRepository = ProxyRepositoryFactory.getInstance().getRepositoryFactoryFromProvider();
+         ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(localRepository);
+-        ReturnCode rc = super.generate();
+-        ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(oldRepository);
++        ReturnCode rc = new ReturnCode(false);
++        try {
++            rc = super.generate();
++        } catch (Exception e) {
++            throw e;
++        } finally {
++            ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(oldRepository);
++        }
+         // TDQ-7707~
+ 
+         // ADD msjian TDQ-4234: save the ExecutionInformations into report object
+diff --git a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
+index dbb2cf6..c62cddf 100644
+--- a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
++++ b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
+@@ -158,17 +158,20 @@ public abstract class ReportDocGenerator {
+     /**
+      * DOC bZhou Comment method "generate".
+      * 
+-     * @return
+-     * 
+-     * @throws AnalysisExecutionException
+-     * 
++     * @return ReturnCode
++     * @throws Exception
+      */
+-    public ReturnCode generate() {
++    public ReturnCode generate() throws Exception {
++        ReturnCode rc = new ReturnCode(false);
++
+         if (report == null) {
+-            log.error(Messages.getString("GenerateReportDocAction.notFoundReport") + reportFile.getFullPath()); //$NON-NLS-1$
++            rc.setMessage(Messages.getString("GenerateReportDocAction.notFoundReport")); //$NON-NLS-1$
++            handleException(rc.getMessage());
++            return rc;
+         }
+ 
+-        ReturnCode rc = validateReport(this.report);
++        // check report settings.
++        rc = validateReport(this.report);
+         if (!rc.isOk()) {
+             handleException(rc.getMessage());
+             return rc;
+@@ -190,7 +193,9 @@ public abstract class ReportDocGenerator {
+                 try {
+                     HibernateUtil.getInstance().reLoadCofiguration(dbManager);
+                 } catch (Throwable e) {
+-                    rc.setReturnCode(e.getMessage(), false);
++                    rc.setMessage(e.getMessage());
++                    handleException(rc.getMessage());
++                    return rc;
+                 } finally {
+                     HibernateUtil.getInstance().shutdown();
+                 }
+@@ -258,8 +263,17 @@ public abstract class ReportDocGenerator {
+                 if (anaMap.isMustRefresh()) {
+                     Analysis analysis = anaMap.getAnalysis();
+ 
+-                    // MOD xqliu TDQ-6252 check the connection used by the analysis
++                    // TODO all the check should be the same with when run analysis.
++                    // ADD msjian TDQ-7707 2013-8-7: check the analysis has analysed elements
+                     DataManager datamanager = analysis.getContext().getConnection();
++                    if (datamanager == null || analysis.getContext().getAnalysedElements().size() == 0) {
++                        rc.setOk(false);
++                        rc.setMessage(Messages.getString("ReportDocGenerator.runAnalysisError", analysis.getName()));//$NON-NLS-1$ 
++                        break;
++                    }
++                    // TDQ-7707~
++
++                    // MOD xqliu TDQ-6252 check the connection used by the analysis
+                     org.talend.core.model.metadata.builder.connection.Connection analysisDataProvider = ConnectionUtils
+                             .getConnectionFromDatamanager(datamanager);
+                     ReturnCode connectionAvailable = ConnectionUtils.isConnectionAvailable(analysisDataProvider);
+diff --git a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/i18n/messages.properties b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/i18n/messages.properties
+index 3ec5762..312942d 100644
+--- a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/i18n/messages.properties
++++ b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/i18n/messages.properties
+@@ -14,4 +14,4 @@ DQReportDBHelper.exeSql=Executing SQL: {0}
+ ReportDBHelper.cannotInit=Can't initialized the db connection.
+ ReportDocGenerator.error.analysisLockedByOthers=The analysis "{0}" is locked by others, please uncheck the "refresh" option to generate the report without running it.
+ ReportDocGenerator.runAnalysis=Run analysis error
+-
++ReportDocGenerator.runAnalysisError=No column are assigned to this analysis "{0}".

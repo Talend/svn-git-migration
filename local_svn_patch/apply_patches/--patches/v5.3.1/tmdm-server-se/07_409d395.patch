@@ -1,0 +1,13 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+index 7bb732c..c16443f 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+@@ -623,7 +623,7 @@ public class HibernateStorage implements Storage {
+             for (DataRecord currentDataRecord : records) {
+                 TypeMapping mapping = mappingRepository.getMappingFromUser(currentDataRecord.getType());
+                 Wrapper o = (Wrapper) currentDataRecord.convert(converter, mapping);
+-                if (session.isReadOnly(o)) { // A read only instance for an update?
++                if (session.contains(o) && session.isReadOnly(o)) { // A read only instance for an update?
+                     session.setReadOnly(o, false);
+                 }
+                 o.timestamp(System.currentTimeMillis());

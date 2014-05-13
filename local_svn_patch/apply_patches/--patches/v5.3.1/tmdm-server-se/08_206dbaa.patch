@@ -1,0 +1,36 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/save/DOMDocument.java b/org.talend.mdm.core/src/com/amalto/core/save/DOMDocument.java
+index 834a0ba..3017f54 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/save/DOMDocument.java
++++ b/org.talend.mdm.core/src/com/amalto/core/save/DOMDocument.java
+@@ -23,6 +23,7 @@ import org.apache.xml.serialize.XMLSerializer;
+ import org.w3c.dom.Element;
+ import org.w3c.dom.Node;
+ 
++import javax.xml.XMLConstants;
+ import javax.xml.parsers.DocumentBuilder;
+ import java.io.StringWriter;
+ 
+@@ -73,6 +74,9 @@ public class DOMDocument implements MutableDocument {
+     public String exportToString() {
+         try {
+             OutputFormat format = new OutputFormat(domDocument);
++            // TMDM-6900 Ensure the xsi prefix is declared in exported document when save uses a DOM document.
++            domDocument.getDocumentElement().setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
++                    "xmlns:xsi", XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI); //$NON-NLS-1$
+             format.setOmitXMLDeclaration(true);
+             StringWriter stringOut = new StringWriter();
+             XMLSerializer serial = new XMLSerializer(stringOut, format);
+diff --git a/org.talend.mdm.core/test/com/amalto/core/save/DocumentSaveTest.java b/org.talend.mdm.core/test/com/amalto/core/save/DocumentSaveTest.java
+index 4eacfa0..467943d 100644
+--- a/org.talend.mdm.core/test/com/amalto/core/save/DocumentSaveTest.java
++++ b/org.talend.mdm.core/test/com/amalto/core/save/DocumentSaveTest.java
+@@ -1077,8 +1077,7 @@ public class DocumentSaveTest extends TestCase {
+         saver = context.createSaver();
+         saver.save(session, context);
+         assertEquals("change the value successfully!", saver.getBeforeSavingMessage());
+-
+-        String expectedUserXml = "<Agency><Id>5258f292-5670-473b-bc01-8b63434682f3</Id><Name>beforeSaving_Agency</Name></Agency>";
++        String expectedUserXml = "<Agency xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><Id>5258f292-5670-473b-bc01-8b63434682f3</Id><Name>beforeSaving_Agency</Name></Agency>";
+         assertEquals(expectedUserXml, context.getUserDocument().exportToString());
+         MutableDocument updateReportDocument = context.getUpdateReportDocument();
+         assertNotNull(updateReportDocument);

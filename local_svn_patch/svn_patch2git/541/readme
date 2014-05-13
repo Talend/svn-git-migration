@@ -1,0 +1,4 @@
+- Use "git_svn_clone.sh <branchWorkFolder> Branch_v541_r111943" first to clone each repositories.
+- If need update, do "git_svn_fetch.sh  <branchWorkFolder>" for each.
+- If need the log, do "git_hist.sh  <branchWorkFolder>" for each.
+- The "541-git_diff_patch.sh" will extract git patches into "-patches" folder.

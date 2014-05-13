@@ -1,0 +1,389 @@
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
+index b9c5659..886ea1a 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
+@@ -355,15 +355,18 @@ public class ColumnAnalysisSqlExecutor extends ColumnAnalysisExecutor {
+                         // ~12675
+                     }
+                     final EList<CharactersMapping> charactersMapping = indicatorDefinition.getCharactersMapping();
+-                    colName = dbms().getPatternFinderFunction(colName, charactersMapping);
+-                    if (colName == null) {
++                    String colNameWithFunction = dbms().getPatternFinderFunction(colName, charactersMapping);
++                    if (colNameWithFunction == null) {
+                         // no replacement found, try the default one
+-                        colName = dbms().getPatternFinderDefaultFunction(colName);
+-                        if (colName == null) {
++                        colNameWithFunction = dbms().getPatternFinderDefaultFunction(colName);
++                        if (colNameWithFunction == null) {
+                             return traceError(Messages.getString(
+                                     "ColumnAnalysisSqlExecutor.NOREPLACEMENTFOUNDFORDBTYPE", language, indicator.getName()));//$NON-NLS-1$
+                         }
+                     }
++                    // MOD for TDQ-8600 If the thread can come here mean that tempColName is not null so give the value
++                    // to colName
++                    colName = colNameWithFunction;
+                     // ~
+                 } else if (indicatorEclass.equals(IndicatorsPackage.eINSTANCE.getSoundexFreqIndicator())
+                         || indicatorEclass.equals(IndicatorsPackage.eINSTANCE.getSoundexLowFreqIndicator())) {
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
+index a15cb65..fc34fcc 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
+@@ -14,9 +14,6 @@ package org.talend.dq.analysis.explore;
+ 
+ import org.talend.core.model.metadata.builder.database.dburl.SupportDBUrlType;
+ 
+-
+-
+-
+ /**
+  * return the where clause for benford law indicator, but for different DB type, the clause is different.
+  */
+@@ -24,7 +21,7 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+ 
+     @Override
+     protected String getInstantiatedClause() {
+-        if (entity.getKey().toString().equals("invalid")) {//$NON-NLS-1$ //$NON-NLS-2$
++        if (entity.getKey().toString().equals("invalid")) {//$NON-NLS-1$ 
+             return getInvalidClause();
+         }
+         Object value = "'" + entity.getKey() + "%'"; //$NON-NLS-1$ //$NON-NLS-2$
+@@ -62,6 +59,8 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+             return columnName + " is null or LEFT(" + columnName + ",1) not" + dbmsLanguage.like() + "'%[0-9]%'";//$NON-NLS-1$ //$NON-NLS-2$
+         } else if (isInformix()) {
+             return columnName + " is null or SUBSTR(" + columnName + ",0,1) not in ('0','1','2','3','4','5','6','7','8','9')";//$NON-NLS-1$ //$NON-NLS-2$
++        } else if (isNetezza()) {
++            return columnName + " is null or Substring(" + columnName + ",1,1) not in ('0','1','2','3','4','5','6','7','8','9')";//$NON-NLS-1$ //$NON-NLS-2$ 
+         }
+ 
+         return columnName + " is null or " + columnName + value;
+@@ -80,6 +79,18 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+     }
+ 
+     /**
++     * DOC yyin Comment method "isInformix".
++     * 
++     * @return
++     */
++    private boolean isNetezza() {
++        if (dbmsLanguage.getDbmsName().startsWith(SupportDBUrlType.NETEZZADEFAULTURL.getLanguage())) {
++            return true;
++        }
++        return false;
++    }
++
++    /**
+      * DOC yyin Comment method "isSqlServer".
+      * 
+      * @return
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
+index 77ec4f9..96bc815 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
+@@ -24,9 +24,7 @@ import orgomg.cwm.objectmodel.core.Expression;
+  */
+ public class SoundexFrequencyExplorer extends FrequencyStatisticsExplorer {
+ 
+-    private static final String REGEX = "SELECT.*\\s*MAX\\((.*)\\)\\s*, SOUNDEX\\(.*\\)\\s*, COUNT\\(\\*\\)\\s*(AS|as)?\\s*\\w*\\s*, COUNT\\(DISTINCT .*\\)\\s*(AS|as)?\\s*\\w*\\s* FROM"; //$NON-NLS-1$
+-
+-    private static final String SOUNDEX_PREFIX = "SOUNDEX";//$NON-NLS-1$
++    private static final String REGEX = "SELECT.*\\s*MAX\\((.*)\\)\\s*, (SOUNDEX|NYSIIS)\\(.*\\)\\s*, COUNT\\(\\*\\)\\s*(AS|as)?\\s*\\w*\\s*, COUNT\\(DISTINCT .*\\)\\s*(AS|as)?\\s*\\w*\\s* FROM"; //$NON-NLS-1$ 
+ 
+     @Override
+     protected String getFreqRowsStatement() {
+@@ -64,8 +62,9 @@ public class SoundexFrequencyExplorer extends FrequencyStatisticsExplorer {
+         // ~11005
+ 
+         // MOD mzhao bug 9740 2009-11-10
+-        String clause = entity.isLabelNull() || function == null ? columnName + dbmsLanguage.isNull() : SOUNDEX_PREFIX + "("//$NON-NLS-1$ 
+-                + function + ")" + dbmsLanguage.equal() + SOUNDEX_PREFIX + "('" + entity.getKey() + "')"; //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
++        String clause = entity.isLabelNull() || function == null ? columnName + dbmsLanguage.isNull() : dbmsLanguage
++                .getSoundexPrefix() + "("//$NON-NLS-1$  
++                + function + ")" + dbmsLanguage.equal() + dbmsLanguage.getSoundexPrefix() + "('" + entity.getKey() + "')"; //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$         return clause;
+         return clause;
+     }
+ 
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
+index c93c364..70ce3a7 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
+@@ -136,6 +136,8 @@ public class DbmsLanguage {
+ 
+     private String functionName = ""; //$NON-NLS-1$ 
+ 
++    private final String SOUNDEX_PREFIX = "SOUNDEX";//$NON-NLS-1$ 
++
+     /**
+      * DbmsLanguage constructor for generic ANSI SQL (independent of any DBMS).
+      */
+@@ -185,6 +187,10 @@ public class DbmsLanguage {
+         return quotedSqlIdentifier;
+     }
+ 
++    public String getSoundexPrefix() {
++        return this.SOUNDEX_PREFIX;
++    }
++
+     public String and() {
+         return surroundWithSpaces(SqlPredicate.AND.getLiteral());
+     }
+@@ -384,21 +390,54 @@ public class DbmsLanguage {
+      * @return an SQL expression which can be used as pattern finder or null
+      */
+     public String getPatternFinderFunction(String colName, EList<CharactersMapping> charactersMapping) {
+-        String resultingExpressionWithDefaultLang = null;
+-        for (CharactersMapping charactersMap : charactersMapping) {
++        CharactersMapping charactersMap = adaptCharactersMapping(charactersMapping);
++
++        if (charactersMap == null) {
++            return null;
++        }
++        return this.getPatternFinderFunction(colName, charactersMap.getCharactersToReplace(),
++                charactersMap.getReplacementCharacters());
++    }
++
++    /**
++     * 
++     * Get CharactersMapping from charactersMappingList, if not found, use the default "SQL" CharactersMapping.
++     * 
++     * @param charactersMappingList all of charactersMapping
++     * @return if there is CharactersMapping return it else if there is default "SQL" CharactersMapping else return
++     * null.
++     */
++    private CharactersMapping adaptCharactersMapping(EList<CharactersMapping> charactersMappingList) {
++        CharactersMapping defaultCharactersMapping = null;
++        for (CharactersMapping charactersMap : charactersMappingList) {
+             if (this.is(charactersMap.getLanguage())) {
+-                final String charactersToReplace = charactersMap.getCharactersToReplace();
+-                final String replacementCharacters = charactersMap.getReplacementCharacters();
+-                if (StringUtils.isEmpty(charactersToReplace) || StringUtils.isEmpty(replacementCharacters)
+-                        || charactersToReplace.length() != replacementCharacters.length()) {
+-                    // go to next character mapping
++                if (validCharactersMapping(charactersMap)) {
++                    return charactersMap;
++                } else {
++                    // current CharactersMapping is invalid so needn't care about default language case
+                     continue;
+                 }
+-                return this.getPatternFinderFunction(colName, charactersToReplace, replacementCharacters);
++
++            } else if (defaultCharactersMapping == null && DbmsLanguageFactory.isAllDatabaseType(charactersMap.getLanguage())) {
++                if (validCharactersMapping(charactersMap)) {
++                    defaultCharactersMapping = charactersMap;
++                }
++
++                // else go to next character mapping
+             }
+ 
+         }
+-        return resultingExpressionWithDefaultLang;
++        return defaultCharactersMapping;
++    }
++
++    private boolean validCharactersMapping(CharactersMapping charactersMap) {
++        final String charactersToReplace = charactersMap.getCharactersToReplace();
++        final String replacementCharacters = charactersMap.getReplacementCharacters();
++        if (!StringUtils.isEmpty(charactersToReplace) && !StringUtils.isEmpty(replacementCharacters)
++                && charactersToReplace.length() == replacementCharacters.length()) {
++            return true;
++        }
++        return false;
+     }
+ 
+     /**
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
+index ec0f465..45fdbd4 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
+@@ -145,6 +145,8 @@ public final class DbmsLanguageFactory {
+             dbmsLanguage = new InfomixDbmsLanguage(dbmsSubtype, dbVersion);
+         } else if (isHive(dbmsSubtype)) {
+             dbmsLanguage = new HiveDbmsLanguage(dbmsSubtype, dbVersion);
++        } else if (isNetezza(dbmsSubtype)) {
++            dbmsLanguage = new NetezzaDbmsLanguage(dbmsSubtype, dbVersion);
+         } else {
+             dbmsLanguage = new DbmsLanguage(dbmsSubtype, dbVersion);
+         }
+@@ -266,6 +268,16 @@ public final class DbmsLanguageFactory {
+         return compareDbmsLanguage(DbmsLanguage.HIVE, dbms);
+     }
+ 
++    /**
++     * judge whether the dmbs is Netezza
++     * 
++     * @param dbmsSubtype
++     * @return
++     */
++    private static boolean isNetezza(String dbms) {
++        return compareDbmsLanguage(DbmsLanguage.NETEZZA, dbms);
++    }
++
+     // ~11005
+ 
+     public static boolean isAllDatabaseType(String dbms) {
+@@ -304,6 +316,10 @@ public final class DbmsLanguageFactory {
+             return StringUtils.upperCase(lang1).startsWith(StringUtils.upperCase(lang2))
+                     || StringUtils.upperCase(lang2).startsWith(StringUtils.upperCase(lang1));
+         }
++        // MOD 2014-02-10 for TDQ-8600 Column Analysis fails with Netezza
++        if (StringUtils.contains(lang1, DbmsLanguage.NETEZZA) && StringUtils.contains(lang2, DbmsLanguage.NETEZZA)) {
++            return true;
++        }
+         return StringUtils.equalsIgnoreCase(lang1, lang2);
+     }
+ 
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
+index 8edd659..abd89ce 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
+@@ -26,6 +26,8 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     private static final String MYSQL_IDENTIFIER_QUOTE = "`"; //$NON-NLS-1$
+ 
++    private final String NYSIIS_PREFIX = "NYSIIS";//$NON-NLS-1$ 
++
+     /**
+      * DOC klliu NetezzaDbmsLanguage constructor comment.
+      */
+@@ -50,7 +52,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     public String getPatternFinderDefaultFunction(String expression) {
+-        return StringUtils.repeat("REPLACE(", 59) + expression //$NON-NLS-1$
++        return StringUtils.repeat("TRANSLATE(", 59) + expression //$NON-NLS-1$
+                 + ",'B','A'),'C','A'),'D','A'),'E','A'),'F','A'),'G','A'),'H','A')" //$NON-NLS-1$
+                 + ",'I','A'),'J','A'),'K','A'),'L','A'),'M','A'),'N','A'),'O','A')" //$NON-NLS-1$
+                 + ",'P','A'),'Q','A'),'R','A'),'S','A'),'T','A'),'U','A'),'V','A')" //$NON-NLS-1$
+@@ -63,13 +65,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+ 
+     @Override
+     protected String getPatternFinderFunction(String expression, String charsToReplace, String replacementChars) {
+-        assert charsToReplace != null && replacementChars != null && charsToReplace.length() == replacementChars.length();
+-        for (int i = 0; i < charsToReplace.length(); i++) {
+-            final char charToReplace = charsToReplace.charAt(i);
+-            final char replacement = replacementChars.charAt(i);
+-            expression = replaceOneChar(expression, charToReplace, replacement);
+-        }
+-        return expression;
++        return translateUsingPattern(expression, charsToReplace, replacementChars);
+     }
+ 
+     /*
+@@ -79,7 +75,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     public String replaceNullsWithString(String colName, String replacement) {
+-        return " IFNULL(" + colName + "," + replacement + ")"; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
++        return " ISNULL(" + colName + "," + replacement + ")"; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+     }
+ 
+     /*
+@@ -100,7 +96,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     protected String extract(DateGrain dateGrain, String colName) {
+-        return dateGrain.getName() + surroundWith('(', colName, ')');
++        return "DATE_PART" + surroundWith('(', surroundWith('\'', dateGrain.getLiteral(), '\'') + "," + colName, ')'); //$NON-NLS-1$ //$NON-NLS-2$ 
+     }
+ 
+     /*
+@@ -156,6 +152,16 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+     /*
+      * (non-Javadoc)
+      * 
++     * @see org.talend.dq.dbms.DbmsLanguage#getSoundexPrefix()
++     */
++    @Override
++    public String getSoundexPrefix() {
++        return NYSIIS_PREFIX;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
+      * @see org.talend.cwm.management.api.DbmsLanguage#getSelectRemarkOnTable(java.lang.String)
+      */
+     @Override
+diff --git a/org.talend.dataprofiler.core/plugin.xml b/org.talend.dataprofiler.core/plugin.xml
+index 4d2e288..778d231 100644
+--- a/org.talend.dataprofiler.core/plugin.xml
++++ b/org.talend.dataprofiler.core/plugin.xml
+@@ -1581,7 +1581,13 @@
+            id="org.talend.dataprofiler.core.migration.impl.UpdateMeanAggrDefinitionTask"
+            name="Update Mean AggrDefinition Task"
+            version="5.3.1">
+-     </workspacetask>  
++    </workspacetask> 
++     <workspacetask 
++           class="org.talend.dataprofiler.core.migration.impl.AddNetezzaExpressionInIndicatorsTask" 
++           id="org.talend.dataprofiler.core.migration.impl.AddNetezzaExpressionInIndicatorsTask" 
++           name="Add the expressions for Netezza db in related indicators" 
++           version="5.3.1"> 
++      </workspacetask>  
+      
+   </extension>
+   <extension
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
+index 5bfd8ca..89fdbb7 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
+@@ -68,7 +68,12 @@ public enum PatternLanguageType {
+              PatternToExcelEnum.InformixRegexp),
+     // MOD by bzhou, currently, we won't support MDM on using pattern.
+     // MOD by zshen, this will effect for the indicatorDefinition so add new method to return differents result.
+-    MDM(12, SupportDBUrlType.MDM.getLanguage(), SupportDBUrlType.MDM.getLanguage(), PatternToExcelEnum.MDMRegexp),
++    MDM(14, SupportDBUrlType.MDM.getLanguage(), SupportDBUrlType.MDM.getLanguage(), PatternToExcelEnum.MDMRegexp),
++    NETEZZA(
++            15,
++            SupportDBUrlType.NETEZZADEFAULTURL.getLanguage(),
++            SupportDBUrlType.NETEZZADEFAULTURL.getLanguage(),
++            PatternToExcelEnum.NETEZZARegexp),
+ 
+     // ADD by msjian 2011-7-20 22517: no such function: CHAR_LENGTH for SQLite
+     SQLITE3(
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
+index 9b61b36..812bda7 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
+@@ -31,7 +31,8 @@ public enum PatternToExcelEnum {
+     SybaseRegexp(11, "Sybase_Regexp"), //$NON-NLS-1$
+     IngresRegexp(12, "Ingres_Regexp"), //$NON-NLS-1$
+     InformixRegexp(13, "Informix_Regexp"), //$NON-NLS-1$
+-    MDMRegexp(18, "MDM_Informix_Regexp"), //$NON-NLS-1$
++    MDMRegexp(24, "MDM_Informix_Regexp"), //$NON-NLS-1$ 
++    NETEZZARegexp(25, "NETEZZA_Regexp"), //$NON-NLS-1$ 
+     SQLite3Regexp(14, "SQLite3_Regexp"), //$NON-NLS-1$
+     Teradata(15, "Teradata_Regexp"), //$NON-NLS-1$
+     JavaRegexp(16, "Java_Regexp"), //$NON-NLS-1$
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
+index eebd7e2..bd9a76c 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
+@@ -470,8 +470,12 @@ public class PatternTestView extends ViewPart {
+                         createDbmsLanguage.setFunctionName(getFunctionName());
+                     }
+                     // ~19119
+-                    String selectRegexpTestString = createDbmsLanguage.getSelectRegexpTestString(testText.getText(),
+-                            regularText.getText());
++                    String selectRegexpTestString = null;
++                    if (null != createDbmsLanguage) {
++                        createDbmsLanguage.setFunctionName(getFunctionName());
++                        selectRegexpTestString = createDbmsLanguage.getSelectRegexpTestString(testText.getText(),
++                                regularText.getText());
++                    }
+                     TypedReturnCode<java.sql.Connection> rcConn = JavaSqlFactory.createConnection(tddataprovider);
+                     try {
+                         if (!rcConn.isOk()) {
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
+index 9678a2a..4495fb3 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
+@@ -290,6 +290,8 @@ public class CsvFileTableViewer extends Composite {
+                 return true;
+             } else if (PatternToExcelEnum.MDMRegexp.getLiteral().equalsIgnoreCase(header)) {
+                 return true;
++            } else if (PatternToExcelEnum.NETEZZARegexp.getLiteral().equalsIgnoreCase(header)) {
++                return true;
+             } else if (PatternToExcelEnum.SQLite3Regexp.getLiteral().equalsIgnoreCase(header)) {
+                 return true;
+             } else if (PatternToExcelEnum.Teradata.getLiteral().equalsIgnoreCase(header)) {

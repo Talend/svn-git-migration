@@ -1,0 +1,118 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
+index 5d229be..b2cc042 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
+@@ -24,6 +24,7 @@ import org.talend.core.model.properties.Property;
+ import org.talend.core.ui.branding.IBrandingService;
+ import org.talend.designer.runprocess.IRunProcessService;
+ import org.talend.repository.ProjectManager;
++import org.talend.repository.model.RepositoryNode;
+ 
+ /**
+  * An util tools for java version resources. Detailled comment <br/>
+@@ -112,5 +113,21 @@ public class JavaResourcesHelper {
+         itemGroupPrefixName += '.' + itemName;
+         return itemGroupPrefixName.trim().toLowerCase();
+     }
++    
++    public static String getJobClassPackageName(Item processItem){
++    	Property itemProperty = processItem.getProperty();
++    	String itemLabel = itemProperty.getLabel();
++    	String itemVersion = itemProperty.getVersion();
++    	String packageName = getProjectFolderName(processItem)+ "." + getJobFolderName(itemLabel, itemVersion);
++    	return packageName;
++    }
++    
++    public static String getJobClassName(Item processItem){
++    	return getJobClassPackageName(processItem) +"."+ processItem.getProperty().getLabel();
++    }
++    
++    public static String getJobClassName(RepositoryNode jobNode){
++    	return getJobClassName(jobNode.getObject().getProperty().getItem());
++    }
+ 
+ }
+diff --git a/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java b/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
+index b7f0652..fd06d45 100644
+--- a/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
++++ b/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
+@@ -22,6 +22,7 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
+ import org.talend.commons.exception.PersistenceException;
+ import org.talend.core.model.repository.ERepositoryObjectType;
+ import org.talend.core.model.repository.IRepositoryViewObject;
++import org.talend.core.model.utils.JavaResourcesHelper;
+ import org.talend.core.repository.constants.FileConstants;
+ import org.talend.core.repository.model.ProxyRepositoryFactory;
+ import org.talend.designer.publish.core.models.BundleModel;
+@@ -103,8 +104,7 @@ public class ExportServiceAction implements IRunnableWithProgress {
+                         if(jobNode==null) {
+                         	continue;
+                         }
+-                        String jobName = jobNode.getObject().getLabel();
+-                        operations.put(operationName, jobName);
++                        operations.put(operationName, JavaResourcesHelper.getJobClassName(jobNode));
+                         nodes.add(jobNode);
+                     }
+                 }
+diff --git a/org.talend.repository/resources/job-rest-template.xml b/org.talend.repository/resources/job-rest-template.xml
+index cba466a..5a11985 100644
+--- a/org.talend.repository/resources/job-rest-template.xml
++++ b/org.talend.repository/resources/job-rest-template.xml
+@@ -84,7 +84,7 @@
+ 			<value>routines.system.api.TalendJob</value>
+ 		</interfaces>
+ 		<service-properties>
+-			<entry key="name" value="${endpoint.jobName}" />
++			<entry key="name" value="${endpoint.jobClassName}" />
+ 			<entry key="type" value="job" />
+ 		</service-properties>
+ 	</service>
+diff --git a/org.talend.repository/resources/job-template.xml b/org.talend.repository/resources/job-template.xml
+index 2e84315..840be93 100644
+--- a/org.talend.repository/resources/job-template.xml
++++ b/org.talend.repository/resources/job-template.xml
+@@ -36,7 +36,7 @@
+ #end
+ 		</interfaces>
+ 		<service-properties>
+-			<entry key="name" value="${job.name}" />
++			<entry key="name" value="${job.className}" />
+ 			<entry key="type" value="job" />
+ #if ($job.isESBJobFactory)
+ 			<entry key="multithreading" value="true" />
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/esb/JobJavaScriptOSGIForESBManager.java b/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/esb/JobJavaScriptOSGIForESBManager.java
+index 4e1e0f4..3839d72 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/esb/JobJavaScriptOSGIForESBManager.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/esb/JobJavaScriptOSGIForESBManager.java
+@@ -146,7 +146,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
+                 }
+                 itemToBeExport.add(processItem);
+                 jobName = processItem.getProperty().getLabel();
+-                jobClassName = getPackageName(processItem) + PACKAGE_SEPARATOR + jobName;
++                jobClassName = JavaResourcesHelper.getJobClassName(processItem);
+ 
+                 String jobVersion = processItem.getProperty().getVersion();
+                 if (!isMultiNodes() && getSelectedJobVersion() != null) {
+@@ -414,13 +414,6 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
+         return EmfModelUtils.getComponentByName(processItem, "tRESTRequest");
+     }
+ 
+-    private static String getPackageName(ProcessItem processItem) {
+-        return JavaResourcesHelper.getProjectFolderName(processItem)
+-                + PACKAGE_SEPARATOR
+-                + JavaResourcesHelper.getJobFolderName(processItem.getProperty().getLabel(), processItem.getProperty()
+-                        .getVersion());
+-    }
+-
+     private boolean isRoute() {
+         return ROUTE.equals(itemType);
+     }
+@@ -725,7 +718,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
+         String requireBundle = ""; //$NON-NLS-1$
+         String delim = ""; //$NON-NLS-1$
+         for (ProcessItem pi : itemToBeExport) {
+-            exportPackage.append(delim).append(getPackageName(pi));
++        	exportPackage.append(delim).append(JavaResourcesHelper.getJobClassPackageName(pi));
+             delim = ","; //$NON-NLS-1$
+             // Add Route Resource Export packages
+             // http://jira.talendforge.org/browse/TESB-6227

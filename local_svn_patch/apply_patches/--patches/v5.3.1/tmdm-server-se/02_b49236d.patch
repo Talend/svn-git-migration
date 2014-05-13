@@ -1,0 +1,851 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
+index 52f9fee..8b0477a 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
+@@ -1,38 +1,43 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+-import com.amalto.core.storage.StorageType;
+-import com.amalto.core.storage.datasource.RDBMSDataSource;
++import java.io.ByteArrayInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.StringWriter;
++import java.util.Map;
++
++import javax.xml.parsers.DocumentBuilder;
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.parsers.ParserConfigurationException;
++import javax.xml.xpath.XPath;
++import javax.xml.xpath.XPathConstants;
++import javax.xml.xpath.XPathExpression;
++import javax.xml.xpath.XPathExpressionException;
++import javax.xml.xpath.XPathFactory;
++
+ import org.apache.commons.lang.NotImplementedException;
+ import org.apache.log4j.Logger;
+ import org.apache.xml.serialize.OutputFormat;
+ import org.apache.xml.serialize.XMLSerializer;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+ import org.w3c.dom.Attr;
+ import org.w3c.dom.Document;
+ import org.w3c.dom.Element;
+ import org.w3c.dom.Node;
+ import org.xml.sax.SAXException;
+ 
+-import javax.xml.parsers.DocumentBuilder;
+-import javax.xml.parsers.DocumentBuilderFactory;
+-import javax.xml.parsers.ParserConfigurationException;
+-import javax.xml.xpath.*;
+-import java.io.ByteArrayInputStream;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.StringWriter;
+-import java.util.Map;
++import com.amalto.core.storage.StorageType;
++import com.amalto.core.storage.datasource.RDBMSDataSource;
+ 
+ @SuppressWarnings("UnusedDeclaration")
+ // Dynamically called! Do not remove!
+@@ -42,13 +47,11 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+     private static final XPath pathFactory = XPathFactory.newInstance().newXPath();
+ 
+-    public DefaultStorageClassLoader(ClassLoader parent,
+-                                     String storageName,
+-                                     RDBMSDataSource.DataSourceDialect dialect,
+-                                     StorageType type) {
++    public DefaultStorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource dialect, StorageType type) {
+         super(parent, storageName, dialect, type);
+     }
+ 
++    @Override
+     public InputStream generateEhCacheConfig() {
+         try {
+             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+@@ -70,6 +73,7 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+         }
+     }
+ 
++    @Override
+     public InputStream generateHibernateMapping() {
+         if (resolver == null) {
+             throw new IllegalStateException("Expected table resolver to be set before this method is called.");
+@@ -87,7 +91,8 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+                 ComplexTypeMetadata typeMetadata = knownTypes.get(classNameToClass.getKey());
+                 if (typeMetadata != null && typeMetadata.getSuperTypes().isEmpty()) {
+                     Element classElement = typeMetadata.accept(mappingGenerator);
+-                    if (classElement != null) { // Class element might be null if mapping is not applicable for this type
++                    if (classElement != null) { // Class element might be null if mapping is not applicable for this
++                                                // type
+                         document.getDocumentElement().appendChild(classElement);
+                     }
+                 }
+@@ -104,16 +109,17 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+     public MappingGenerator getMappingGenerator(Document document, TableResolver resolver) {
+         switch (type) {
+-            case MASTER:
+-            case SYSTEM:
+-                return new MappingGenerator(document, resolver, dialect);
+-            case STAGING:
+-                return new MappingGenerator(document, resolver, dialect, false);
+-            default:
+-                throw new NotImplementedException("No support for storage type '" + type + "'.");
++        case MASTER:
++        case SYSTEM:
++            return new MappingGenerator(document, resolver, dialect);
++        case STAGING:
++            return new MappingGenerator(document, resolver, dialect, false);
++        default:
++            throw new NotImplementedException("No support for storage type '" + type + "'.");
+         }
+     }
+ 
++    @Override
+     public InputStream generateHibernateConfig() {
+         try {
+             Document document = generateHibernateConfiguration(dataSource);
+@@ -127,7 +133,8 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+         }
+     }
+ 
+-    public Document generateHibernateConfiguration(RDBMSDataSource rdbmsDataSource) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
++    public Document generateHibernateConfiguration(RDBMSDataSource rdbmsDataSource) throws ParserConfigurationException,
++            SAXException, IOException, XPathExpressionException {
+         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+         factory.setNamespaceAware(true);
+         factory.setExpandEntityReferences(false);
+@@ -155,7 +162,7 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+         setPropertyValue(document, "hibernate.connection.driver_class", driverClass); //$NON-NLS-1$
+         setPropertyValue(document, "hibernate.dialect", dialect); //$NON-NLS-1$
+         setPropertyValue(document, "hibernate.connection.password", password); //$NON-NLS-1$
+-        
++
+         if (connectionPoolMinSize > 0 && connectionPoolMaxSize > 0 && connectionPoolMaxSize >= connectionPoolMinSize) {
+             setPropertyValue(document, "hibernate.c3p0.min_size", String.valueOf(connectionPoolMinSize)); //$NON-NLS-1$
+             setPropertyValue(document, "hibernate.c3p0.max_size", String.valueOf(connectionPoolMaxSize)); //$NON-NLS-1$
+@@ -167,7 +174,8 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+         Node sessionFactoryElement = document.getElementsByTagName("session-factory").item(0); //$NON-NLS-1$
+         if (rdbmsDataSource.supportFullText()) {
+-            addProperty(document, sessionFactoryElement, "hibernate.search.default.directory_provider", "org.hibernate.search.store.FSDirectoryProvider"); //$NON-NLS-1$ //$NON-NLS-2$
++            addProperty(document, sessionFactoryElement,
++                    "hibernate.search.default.directory_provider", "org.hibernate.search.store.FSDirectoryProvider"); //$NON-NLS-1$ //$NON-NLS-2$
+             addProperty(document, sessionFactoryElement, "hibernate.search.default.indexBase", indexBase + '/' + storageName); //$NON-NLS-1$
+             addProperty(document, sessionFactoryElement, "hibernate.search.default.sourceBase", indexBase + '/' + storageName); //$NON-NLS-1$
+             addProperty(document, sessionFactoryElement, "hibernate.search.default.source", ""); //$NON-NLS-1$ //$NON-NLS-2$
+@@ -176,14 +184,14 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+         if (dataSource.getCacheDirectory() != null && !dataSource.getCacheDirectory().isEmpty()) {
+             /*
+-            <!-- Second level cache -->
+-            <property name="hibernate.cache.use_second_level_cache">true</property>
+-            <property name="hibernate.cache.provider_class">net.sf.ehcache.hibernate.EhCacheProvider</property>
+-            <property name="hibernate.cache.use_query_cache">true</property>
+-            <property name="net.sf.ehcache.configurationResourceName">ehcache.xml</property>
++             * <!-- Second level cache --> <property name="hibernate.cache.use_second_level_cache">true</property>
++             * <property name="hibernate.cache.provider_class">net.sf.ehcache.hibernate.EhCacheProvider</property>
++             * <property name="hibernate.cache.use_query_cache">true</property> <property
++             * name="net.sf.ehcache.configurationResourceName">ehcache.xml</property>
+              */
+             addProperty(document, sessionFactoryElement, "hibernate.cache.use_second_level_cache", "true"); //$NON-NLS-1$ //$NON-NLS-2$
+-            addProperty(document, sessionFactoryElement, "hibernate.cache.provider_class", "net.sf.ehcache.hibernate.EhCacheProvider"); //$NON-NLS-1$ //$NON-NLS-2$
++            addProperty(document, sessionFactoryElement,
++                    "hibernate.cache.provider_class", "net.sf.ehcache.hibernate.EhCacheProvider"); //$NON-NLS-1$ //$NON-NLS-2$
+             addProperty(document, sessionFactoryElement, "hibernate.cache.use_query_cache", "true"); //$NON-NLS-1$ //$NON-NLS-2$
+             addProperty(document, sessionFactoryElement, "net.sf.ehcache.configurationResourceName", "ehcache.xml"); //$NON-NLS-1$ //$NON-NLS-2$
+         } else {
+@@ -213,13 +221,13 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+     protected String getDialect(RDBMSDataSource.DataSourceDialect dialectType) {
+         switch (dialectType) {
+-            case H2:
+-                // Default Hibernate configuration for Hibernate forgot some JDBC type mapping.
+-                return H2CustomDialect.class.getName();
+-            case MYSQL:
+-                return "org.hibernate.dialect.MySQLDialect"; //$NON-NLS-1$
+-            default:
+-                throw new IllegalArgumentException("Not supported database type '" + dialectType + "'");
++        case H2:
++            // Default Hibernate configuration for Hibernate forgot some JDBC type mapping.
++            return H2CustomDialect.class.getName();
++        case MYSQL:
++            return "org.hibernate.dialect.MySQLDialect"; //$NON-NLS-1$
++        default:
++            throw new IllegalArgumentException("Not supported database type '" + dialectType + "'");
+         }
+     }
+ 
+@@ -248,7 +256,8 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+     }
+ 
+     private static void setPropertyValue(Document document, String propertyName, String value) throws XPathExpressionException {
+-        XPathExpression compile = pathFactory.compile("hibernate-configuration/session-factory/property[@name='" + propertyName + "']"); //$NON-NLS-1$ //$NON-NLS-2$
++        XPathExpression compile = pathFactory
++                .compile("hibernate-configuration/session-factory/property[@name='" + propertyName + "']"); //$NON-NLS-1$ //$NON-NLS-2$
+         Node node = (Node) compile.evaluate(document, XPathConstants.NODE);
+         if (node != null) {
+             node.setTextContent(value);
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+index f4f6ba6..4598833 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+@@ -14,6 +14,7 @@ import com.amalto.core.metadata.MetadataUtils;
+ import com.amalto.core.query.optimization.*;
+ import com.amalto.core.query.user.*;
+ import org.apache.log4j.Level;
++import org.hibernate.cfg.Environment;
+ import org.talend.mdm.commmon.metadata.*;
+ import com.amalto.core.storage.Storage;
+ import com.amalto.core.storage.StorageResults;
+@@ -319,7 +320,7 @@ public class HibernateStorage implements Storage {
+                     if (LOGGER.isDebugEnabled()) {
+                         LOGGER.debug("Oracle database is being used. Limit table name length to 30.");
+                     }
+-                    tableResolver = new StorageTableResolver(databaseIndexedFields, 30);
++                    tableResolver = new OracleStorageTableResolver(databaseIndexedFields, 30);
+                     break;
+                 case MYSQL:
+                     if (LOGGER.isDebugEnabled()) {
+@@ -369,7 +370,11 @@ public class HibernateStorage implements Storage {
+                     CacheManager.create(ehCacheConfig);
+                 }
+                 configuration.configure(StorageClassLoader.HIBERNATE_CONFIG);
+-                batchSize = Integer.parseInt(configuration.getProperty("hibernate.jdbc.batch_size")); //$NON-NLS-1$
++                batchSize = Integer.parseInt(configuration.getProperty(Environment.STATEMENT_BATCH_SIZE));
++                Properties properties = configuration.getProperties();
++                if (dataSource.getDialectName() == RDBMSDataSource.DataSourceDialect.ORACLE_10G) {
++                    properties.setProperty(Environment.DEFAULT_SCHEMA, dataSource.getUserName());
++                }
+                 // Logs DDL *before* initialization in case initialization (useful for debugging).
+                 if (LOGGER.isTraceEnabled()) {
+                     traceDDL();
+@@ -591,7 +596,7 @@ public class HibernateStorage implements Storage {
+                 o.timestamp(System.currentTimeMillis());
+ 
+                 DataRecordMetadata recordMetadata = currentDataRecord.getRecordMetadata();
+-                o.taskId(recordMetadata.getTaskId());
++                    o.taskId(recordMetadata.getTaskId());
+                 Map<String, String> recordProperties = recordMetadata.getRecordProperties();
+                 for (Map.Entry<String, String> currentProperty : recordProperties.entrySet()) {
+                     String key = currentProperty.getKey();
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/MappingGenerator.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/MappingGenerator.java
+index 0b700f6..2928eaa 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/MappingGenerator.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/MappingGenerator.java
+@@ -42,13 +42,15 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+ 
+     private static final String TEXT_TYPE_NAME = "text"; //$NON-NLS-1$
+ 
+-    private static final String RESERVED_SQL_KEYWORDS = "reservedSQLKeywords.txt";
++    private static final String RESERVED_SQL_KEYWORDS = "reservedSQLKeywords.txt"; //$NON-NLS-1$
+ 
+     private final Document document;
+ 
+     private final TableResolver resolver;
+ 
+-    private final RDBMSDataSource.DataSourceDialect dialect;
++    private final RDBMSDataSource dataSource;
++
++    private final Stack<String> tableNames = new Stack<String>();
+ 
+     private static Set<String> reservedKeyWords;
+ 
+@@ -64,14 +66,17 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+ 
+     private boolean generateConstrains;
+ 
+-    public MappingGenerator(Document document, TableResolver resolver, RDBMSDataSource.DataSourceDialect dialect) {
+-        this(document, resolver, dialect, true);
++    public MappingGenerator(Document document, TableResolver resolver, RDBMSDataSource dataSource) {
++        this(document, resolver, dataSource, true);
+     }
+ 
+-    public MappingGenerator(Document document, TableResolver resolver, RDBMSDataSource.DataSourceDialect dialect, boolean generateConstrains) {
++    public MappingGenerator(Document document,
++                            TableResolver resolver,
++                            RDBMSDataSource dataSource,
++                            boolean generateConstrains) {
+         this.document = document;
+         this.resolver = resolver;
+-        this.dialect = dialect;
++        this.dataSource = dataSource;
+         this.generateConstrains = generateConstrains;
+         // Loads reserved SQL keywords.
+         synchronized (MappingGenerator.class) {
+@@ -97,7 +102,7 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+                             reservedKeyWordsList.close();
+                         }
+                     } catch (IOException e) {
+-                        LOGGER.error("Error occurred when ");
++                        LOGGER.error("Error occurred when closing reserved keyword list.", e);
+                     }
+                 }
+             }
+@@ -170,141 +175,144 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+             return null;
+         }
+ 
+-        String table = resolver.get(complexType);
+-        String generatedClassName = ClassCreator.getClassName(complexType.getName());
+-
+-        Element classElement = document.createElement("class"); //$NON-NLS-1$
+-        Attr className = document.createAttribute("name");  //$NON-NLS-1$
+-        className.setValue(generatedClassName);
+-        classElement.getAttributes().setNamedItem(className);
+-        Attr classTable = document.createAttribute("table"); //$NON-NLS-1$
+-        classTable.setValue(formatSQLName(table, resolver.getNameMaxLength()));
+-        classElement.getAttributes().setNamedItem(classTable);
+-
+-        // <cache usage="read-write" include="non-lazy"/>
+-        Element cacheElement = document.createElement("cache"); //$NON-NLS-1$
+-        Attr usageAttribute = document.createAttribute("usage"); //$NON-NLS-1$
+-        usageAttribute.setValue("read-write"); //$NON-NLS-1$
+-        cacheElement.getAttributes().setNamedItem(usageAttribute);
+-        Attr includeAttribute = document.createAttribute("include"); //$NON-NLS-1$
+-        includeAttribute.setValue("non-lazy"); //$NON-NLS-1$
+-        cacheElement.getAttributes().setNamedItem(includeAttribute);
+-        Attr regionAttribute = document.createAttribute("region"); //$NON-NLS-1$
+-        regionAttribute.setValue("region"); //$NON-NLS-1$
+-        cacheElement.getAttributes().setNamedItem(regionAttribute);
+-        classElement.appendChild(cacheElement);
+-
+-        Collection<FieldMetadata> keyFields = complexType.getKeyFields();
+-        List<FieldMetadata> allFields = new ArrayList<FieldMetadata>(complexType.getFields());
+-
+-        // Process key fields first (Hibernate DTD enforces IDs to be declared first in <class/> element).
+-        Element idParentElement = classElement;
+-        if (keyFields.size() > 1) {
+-            /*
+-            <composite-id>
+-                        <key-property column="x_enterprise" name="x_enterprise"/>
+-                        <key-property column="x_id" name="x_id"/>
+-                    </composite-id>
+-             */
+-            compositeId = true;
+-            idParentElement = document.createElement("composite-id"); //$NON-NLS-1$
+-            classElement.appendChild(idParentElement);
+-
+-            Attr classAttribute = document.createAttribute("class"); //$NON-NLS-1$
+-            classAttribute.setValue(generatedClassName + "_ID"); //$NON-NLS-1$
+-            idParentElement.getAttributes().setNamedItem(classAttribute);
+-
+-            Attr mappedAttribute = document.createAttribute("mapped"); //$NON-NLS-1$
+-            mappedAttribute.setValue("true"); //$NON-NLS-1$
+-            idParentElement.getAttributes().setNamedItem(mappedAttribute);
+-        }
+-        for (FieldMetadata keyField : keyFields) {
+-            idParentElement.appendChild(keyField.accept(this));
+-            boolean wasRemoved = allFields.remove(keyField);
+-            if (!wasRemoved) {
+-                LOGGER.error("Field '" + keyField.getName() + "' was expected to be removed from processed fields.");
++        tableNames.push(resolver.get(complexType));
++        Element classElement;
++        {
++            String generatedClassName = ClassCreator.getClassName(complexType.getName());
++            classElement = document.createElement("class");
++            Attr className = document.createAttribute("name");  //$NON-NLS-1$
++            className.setValue(generatedClassName);
++            classElement.getAttributes().setNamedItem(className);
++            Attr classTable = document.createAttribute("table"); //$NON-NLS-1$
++            classTable.setValue(formatSQLName(tableNames.peek(), resolver.getNameMaxLength()));
++            classElement.getAttributes().setNamedItem(classTable);
++
++            // <cache usage="read-write" include="non-lazy"/>
++            Element cacheElement = document.createElement("cache"); //$NON-NLS-1$
++            Attr usageAttribute = document.createAttribute("usage"); //$NON-NLS-1$
++            usageAttribute.setValue("read-write"); //$NON-NLS-1$
++            cacheElement.getAttributes().setNamedItem(usageAttribute);
++            Attr includeAttribute = document.createAttribute("include"); //$NON-NLS-1$
++            includeAttribute.setValue("non-lazy"); //$NON-NLS-1$
++            cacheElement.getAttributes().setNamedItem(includeAttribute);
++            Attr regionAttribute = document.createAttribute("region"); //$NON-NLS-1$
++            regionAttribute.setValue("region"); //$NON-NLS-1$
++            cacheElement.getAttributes().setNamedItem(regionAttribute);
++            classElement.appendChild(cacheElement);
++
++            Collection<FieldMetadata> keyFields = complexType.getKeyFields();
++            List<FieldMetadata> allFields = new ArrayList<FieldMetadata>(complexType.getFields());
++
++            // Process key fields first (Hibernate DTD enforces IDs to be declared first in <class/> element).
++            Element idParentElement = classElement;
++            if (keyFields.size() > 1) {
++                /*
++                <composite-id>
++                            <key-property column="x_enterprise" name="x_enterprise"/>
++                            <key-property column="x_id" name="x_id"/>
++                        </composite-id>
++                 */
++                compositeId = true;
++                idParentElement = document.createElement("composite-id"); //$NON-NLS-1$
++                classElement.appendChild(idParentElement);
++
++                Attr classAttribute = document.createAttribute("class"); //$NON-NLS-1$
++                classAttribute.setValue(generatedClassName + "_ID"); //$NON-NLS-1$
++                idParentElement.getAttributes().setNamedItem(classAttribute);
++
++                Attr mappedAttribute = document.createAttribute("mapped"); //$NON-NLS-1$
++                mappedAttribute.setValue("true"); //$NON-NLS-1$
++                idParentElement.getAttributes().setNamedItem(mappedAttribute);
+             }
+-        }
+-        compositeId = false;
+-        // Generate a discriminator (if needed).
+-        if (!complexType.getSubTypes().isEmpty() && !complexType.isInstantiable()) {
+-            // <discriminator column="PAYMENT_TYPE" type="string"/>
+-            Element discriminator = document.createElement("discriminator"); //$NON-NLS-1$
+-            Attr name = document.createAttribute("column"); //$NON-NLS-1$
+-            name.setValue(DISCRIMINATOR_NAME);
+-            discriminator.setAttributeNode(name);
+-            Attr type = document.createAttribute("type"); //$NON-NLS-1$
+-            type.setValue("string"); //$NON-NLS-1$
+-            discriminator.setAttributeNode(type);
+-            classElement.appendChild(discriminator);
+-        }
+-        // Process this type fields
+-        for (FieldMetadata currentField : allFields) {
+-            Element child = currentField.accept(this);
+-            if (child == null) {
+-                throw new IllegalArgumentException("Field type " + currentField.getClass().getName() + " is not supported.");
++            for (FieldMetadata keyField : keyFields) {
++                idParentElement.appendChild(keyField.accept(this));
++                boolean wasRemoved = allFields.remove(keyField);
++                if (!wasRemoved) {
++                    LOGGER.error("Field '" + keyField.getName() + "' was expected to be removed from processed fields.");
++                }
+             }
+-            classElement.appendChild(child);
+-        }
+-        // Sub types
+-        if (!complexType.getSubTypes().isEmpty()) {
+-            if (complexType.isInstantiable()) {
+-                /*
+-                    <union-subclass name="CreditCardPayment" table="CREDIT_PAYMENT">
+-                           <property name="creditCardType" column=""/>
+-                           ...
+-                       </union-subclass>
+-                    */
+-                for (ComplexTypeMetadata subType : complexType.getSubTypes()) {
+-                    Element unionSubclass = document.createElement("union-subclass"); //$NON-NLS-1$
+-                    Attr name = document.createAttribute("name"); //$NON-NLS-1$
+-                    name.setValue(ClassCreator.getClassName(subType.getName()));
+-                    unionSubclass.setAttributeNode(name);
+-
+-                    Attr tableName = document.createAttribute("table"); //$NON-NLS-1$
+-                    tableName.setValue(formatSQLName(resolver.get(subType), resolver.getNameMaxLength()));
+-                    unionSubclass.setAttributeNode(tableName);
+-
+-                    Collection<FieldMetadata> subTypeFields = subType.getFields();
+-                    for (FieldMetadata subTypeField : subTypeFields) {
+-                        if (!complexType.hasField(subTypeField.getName()) && !subTypeField.isKey()) {
+-                            unionSubclass.appendChild(subTypeField.accept(this));
+-                        }
+-                    }
+-                    classElement.appendChild(unionSubclass);
++            compositeId = false;
++            // Generate a discriminator (if needed).
++            if (!complexType.getSubTypes().isEmpty() && !complexType.isInstantiable()) {
++                // <discriminator column="PAYMENT_TYPE" type="string"/>
++                Element discriminator = document.createElement("discriminator"); //$NON-NLS-1$
++                Attr name = document.createAttribute("column"); //$NON-NLS-1$
++                name.setValue(DISCRIMINATOR_NAME);
++                discriminator.setAttributeNode(name);
++                Attr type = document.createAttribute("type"); //$NON-NLS-1$
++                type.setValue("string"); //$NON-NLS-1$
++                discriminator.setAttributeNode(type);
++                classElement.appendChild(discriminator);
++            }
++            // Process this type fields
++            for (FieldMetadata currentField : allFields) {
++                Element child = currentField.accept(this);
++                if (child == null) {
++                    throw new IllegalArgumentException("Field type " + currentField.getClass().getName() + " is not supported.");
+                 }
+-            } else {
+-                /*
+-                <subclass name="CreditCardPayment" discriminator-value="CREDIT">
+-                        <property name="creditCardType" column="CCTYPE"/>
+-                        ...
+-                    </subclass>
+-                 */
+-                boolean wasGeneratingConstraints = generateConstrains;
+-                generateConstrains = false;
+-                try {
++                classElement.appendChild(child);
++            }
++            // Sub types
++            if (!complexType.getSubTypes().isEmpty()) {
++                if (complexType.isInstantiable()) {
++                    /*
++                        <union-subclass name="CreditCardPayment" table="CREDIT_PAYMENT">
++                               <property name="creditCardType" column=""/>
++                               ...
++                           </union-subclass>
++                        */
+                     for (ComplexTypeMetadata subType : complexType.getSubTypes()) {
+-                        Element subclass = document.createElement("subclass"); //$NON-NLS-1$
++                        Element unionSubclass = document.createElement("union-subclass"); //$NON-NLS-1$
+                         Attr name = document.createAttribute("name"); //$NON-NLS-1$
+                         name.setValue(ClassCreator.getClassName(subType.getName()));
+-                        subclass.setAttributeNode(name);
+-                        Attr discriminator = document.createAttribute("discriminator-value"); //$NON-NLS-1$
+-                        discriminator.setValue(ClassCreator.PACKAGE_PREFIX + subType.getName());
+-                        subclass.setAttributeNode(discriminator);
++                        unionSubclass.setAttributeNode(name);
++
++                        Attr tableName = document.createAttribute("table"); //$NON-NLS-1$
++                        tableName.setValue(formatSQLName(resolver.get(subType), resolver.getNameMaxLength()));
++                        unionSubclass.setAttributeNode(tableName);
+ 
+                         Collection<FieldMetadata> subTypeFields = subType.getFields();
+                         for (FieldMetadata subTypeField : subTypeFields) {
+                             if (!complexType.hasField(subTypeField.getName()) && !subTypeField.isKey()) {
+-                                subclass.appendChild(subTypeField.accept(this));
++                                unionSubclass.appendChild(subTypeField.accept(this));
+                             }
+                         }
+-                        classElement.appendChild(subclass);
++                        classElement.appendChild(unionSubclass);
++                    }
++                } else {
++                    /*
++                    <subclass name="CreditCardPayment" discriminator-value="CREDIT">
++                            <property name="creditCardType" column="CCTYPE"/>
++                            ...
++                        </subclass>
++                     */
++                    boolean wasGeneratingConstraints = generateConstrains;
++                    generateConstrains = false;
++                    try {
++                        for (ComplexTypeMetadata subType : complexType.getSubTypes()) {
++                            Element subclass = document.createElement("subclass"); //$NON-NLS-1$
++                            Attr name = document.createAttribute("name"); //$NON-NLS-1$
++                            name.setValue(ClassCreator.getClassName(subType.getName()));
++                            subclass.setAttributeNode(name);
++                            Attr discriminator = document.createAttribute("discriminator-value"); //$NON-NLS-1$
++                            discriminator.setValue(ClassCreator.PACKAGE_PREFIX + subType.getName());
++                            subclass.setAttributeNode(discriminator);
++
++                            Collection<FieldMetadata> subTypeFields = subType.getFields();
++                            for (FieldMetadata subTypeField : subTypeFields) {
++                                if (!complexType.hasField(subTypeField.getName()) && !subTypeField.isKey()) {
++                                    subclass.appendChild(subTypeField.accept(this));
++                                }
++                            }
++                            classElement.appendChild(subclass);
++                        }
++                    } finally {
++                        generateConstrains = wasGeneratingConstraints;
+                     }
+-                } finally {
+-                    generateConstrains = wasGeneratingConstraints;
+                 }
+             }
+         }
++        tableNames.pop();
+ 
+         return classElement;
+     }
+@@ -500,7 +508,8 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+         if (isDoingColumns) {
+             Element column = document.createElement("column"); //$NON-NLS-1$
+             Attr columnName = document.createAttribute("name"); //$NON-NLS-1$
+-            columnName.setValue(formatSQLName(compositeKeyPrefix + "_" + fieldName, resolver.getNameMaxLength())); //$NON-NLS-1$
++            String columnNameValue = formatSQLName(compositeKeyPrefix + "_" + fieldName, resolver.getNameMaxLength());
++            columnName.setValue(columnNameValue); //$NON-NLS-1$
+             column.getAttributes().setNamedItem(columnName);
+             if (generateConstrains) {
+                 Attr notNull = document.createAttribute("not-null"); //$NON-NLS-1$
+@@ -512,7 +521,7 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+                     LOGGER.debug("Creating index for field '" + field.getName() + "'.");
+                 }
+                 Attr indexName = document.createAttribute("index"); //$NON-NLS-1$
+-                indexName.setValue(formatSQLName(field.getContainingType().getName() + '_' + fieldName + "_index", resolver.getNameMaxLength())); //$NON-NLS-1$
++                setIndexName(field, columnNameValue, indexName);
+                 column.getAttributes().setNamedItem(indexName);
+             }
+             parentElement.appendChild(column);
+@@ -547,13 +556,14 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+                 Attr propertyName = document.createAttribute("name"); //$NON-NLS-1$
+                 propertyName.setValue(fieldName);
+                 Attr columnName = document.createAttribute("column"); //$NON-NLS-1$
+-                columnName.setValue(formatSQLName(fieldName, resolver.getNameMaxLength()));
++                String columnNameValue = formatSQLName(fieldName, resolver.getNameMaxLength());
++                columnName.setValue(columnNameValue);
+                 if (resolver.isIndexed(field)) { // Create indexes for fields that should be indexed.
+                     if (LOGGER.isDebugEnabled()) {
+                         LOGGER.debug("Creating index for field '" + field.getName() + "'.");
+                     }
+                     Attr indexName = document.createAttribute("index"); //$NON-NLS-1$
+-                    indexName.setValue(formatSQLName(field.getContainingType().getName() + '_' + fieldName + "_index", resolver.getNameMaxLength())); //$NON-NLS-1$
++                    setIndexName(field, columnNameValue, indexName);
+                     propertyElement.getAttributes().setNamedItem(indexName);
+                 } else {
+                     if (LOGGER.isDebugEnabled()) {
+@@ -576,7 +586,7 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+                     notNull.setValue("false"); //$NON-NLS-1$
+                     propertyElement.getAttributes().setNamedItem(notNull);
+                 }
+-                addFieldTypeAttribute(field, propertyElement, dialect);
++                addFieldTypeAttribute(field, propertyElement, dataSource.getDialectName());
+                 propertyElement.getAttributes().setNamedItem(propertyName);
+                 propertyElement.getAttributes().setNamedItem(columnName);
+                 return propertyElement;
+@@ -637,7 +647,7 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+                 Attr elementColumn = document.createAttribute("column"); //$NON-NLS-1$
+                 elementColumn.setValue("value"); //$NON-NLS-1$
+                 element.getAttributes().setNamedItem(elementColumn);
+-                addFieldTypeAttribute(field, element, dialect);
++                addFieldTypeAttribute(field, element, dataSource.getDialectName());
+                 // Not null warning
+                 if (field.isMandatory()) {
+                     LOGGER.warn("Field '" + field.getName() + "' is mandatory and a collection. Constraint can not be expressed in database schema.");
+@@ -656,6 +666,16 @@ public class MappingGenerator extends DefaultMetadataVisitor<Element> {
+         }
+     }
+ 
++    private void setIndexName(FieldMetadata field, String fieldName, Attr indexName) {
++        String prefix = field.getContainingType().getName();
++        if (!tableNames.isEmpty()) {
++            prefix = tableNames.peek();
++        }
++        indexName.setValue(formatSQLName(prefix + '_'
++                + fieldName + "_index", //$NON-NLS-1$
++                resolver.getNameMaxLength()));
++    }
++
+     private static void addFieldTypeAttribute(FieldMetadata field,
+                                               Element propertyElement,
+                                               RDBMSDataSource.DataSourceDialect dialect) {
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/OracleStorageTableResolver.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/OracleStorageTableResolver.java
+new file mode 100644
+index 0000000..1fba288
+--- /dev/null
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/OracleStorageTableResolver.java
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++ *
++ * This source code is available under agreement available at
++ * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++ *
++ * You should have received a copy of the agreement
++ * along with this program; if not, write to Talend SA
++ * 9 rue Pages 92150 Suresnes, France
++ */
++
++package com.amalto.core.storage.hibernate;
++
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++
++import java.util.Set;
++
++public class OracleStorageTableResolver extends StorageTableResolver {
++
++    public OracleStorageTableResolver(Set<FieldMetadata> indexedFields, int maxLength) {
++        super(indexedFields, maxLength);
++    }
++
++    @Override
++    public boolean isIndexed(FieldMetadata field) {
++        // Oracle seems to already index FK, no need to recreate index (and this also cause error ORA-01408).
++        return !field.isKey() && !(field instanceof ReferenceFieldMetadata) && super.isIndexed(field);
++    }
++}
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
+index 7677254..75e89cd 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
+@@ -1,22 +1,15 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import com.amalto.core.storage.StorageType;
+-import com.amalto.core.storage.datasource.DataSource;
+-import com.amalto.core.storage.datasource.RDBMSDataSource;
+-import org.apache.log4j.Logger;
+-import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+-
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.net.MalformedURLException;
+@@ -27,6 +20,13 @@ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.TreeMap;
+ 
++import org.apache.log4j.Logger;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++
++import com.amalto.core.storage.StorageType;
++import com.amalto.core.storage.datasource.DataSource;
++import com.amalto.core.storage.datasource.RDBMSDataSource;
++
+ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     public static final String MAPPING_PUBLIC_ID = "-//Hibernate/Hibernate Mapping DTD 3.0//EN"; //$NON-NLS-1$
+@@ -51,7 +51,7 @@ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     final StorageType type;
+ 
+-    final RDBMSDataSource.DataSourceDialect dialect;
++    final RDBMSDataSource dialect;
+ 
+     RDBMSDataSource dataSource;
+ 
+@@ -59,10 +59,7 @@ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     private boolean isClosed;
+ 
+-    StorageClassLoader(ClassLoader parent,
+-                       String storageName,
+-                       RDBMSDataSource.DataSourceDialect dialect,
+-                       StorageType type) {
++    StorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource dialect, StorageType type) {
+         super(parent);
+         this.storageName = storageName;
+         this.dialect = dialect;
+@@ -104,21 +101,23 @@ public abstract class StorageClassLoader extends ClassLoader {
+         assertNotClosed();
+         if (EHCACHE_XML_CONFIG.equals(name)) {
+             try {
+-                return new URL("http", "fakehost", 0, '/' + EHCACHE_XML_CONFIG, new URLStreamHandler() { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+-                    @Override
+-                    protected URLConnection openConnection(URL u) throws IOException {
+-                        return new URLConnection(u) {
+-                            @Override
+-                            public void connect() throws IOException {
+-                            }
++                return new URL("http", "fakehost", 0, '/' + EHCACHE_XML_CONFIG, new URLStreamHandler() { //$NON-NLS-1$ //$NON-NLS-2$ 
+ 
+                             @Override
+-                            public InputStream getInputStream() throws IOException {
+-                                return generateEhCacheConfig();
++                            protected URLConnection openConnection(URL u) throws IOException {
++                                return new URLConnection(u) {
++
++                                    @Override
++                                    public void connect() throws IOException {
++                                    }
++
++                                    @Override
++                                    public InputStream getInputStream() throws IOException {
++                                        return generateEhCacheConfig();
++                                    }
++                                };
+                             }
+-                        };
+-                    }
+-                });
++                        });
+             } catch (MalformedURLException e) {
+                 return null;
+             }
+@@ -182,7 +181,8 @@ public abstract class StorageClassLoader extends ClassLoader {
+     public void setDataSourceConfiguration(DataSource dataSource) {
+         assertNotClosed();
+         if (!(dataSource instanceof RDBMSDataSource)) {
+-            throw new IllegalArgumentException("Expected an instance of " + RDBMSDataSource.class.getName() + " but was " + dataSource);
++            throw new IllegalArgumentException("Expected an instance of " + RDBMSDataSource.class.getName() + " but was "
++                    + dataSource);
+         }
+         this.dataSource = (RDBMSDataSource) dataSource;
+     }
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/TypeMapping.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/TypeMapping.java
+index a78290e..3aab912 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/TypeMapping.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/TypeMapping.java
+@@ -152,11 +152,7 @@ public abstract class TypeMapping {
+             if (value != null && targetSQLType != null && "clob".equalsIgnoreCase(targetSQLType)) { //$NON-NLS-1$
+                 try {
+                     Reader characterStream = ((Clob) value).getCharacterStream();
+-                    try {
+-                        return new String(IOUtils.toCharArray(characterStream));
+-                    } finally {
+-                        characterStream.close();
+-                    }
++                    return new String(IOUtils.toCharArray(characterStream)); // No need to close (Hibernate seems to handle this).
+                 } catch (Exception e) {
+                     throw new RuntimeException("Unexpected read from clob exception", e);
+                 }
+diff --git a/org.talend.mdm.webapp.core/src/com/amalto/webapp/core/util/DataModelAccessor.java b/org.talend.mdm.webapp.core/src/com/amalto/webapp/core/util/DataModelAccessor.java
+index a4998ca..d9855ee 100644
+--- a/org.talend.mdm.webapp.core/src/com/amalto/webapp/core/util/DataModelAccessor.java
++++ b/org.talend.mdm.webapp.core/src/com/amalto/webapp/core/util/DataModelAccessor.java
+@@ -16,9 +16,7 @@ import java.io.ByteArrayInputStream;
+ import java.io.InputStream;
+ import java.rmi.RemoteException;
+ import java.util.Arrays;
+-import java.util.HashMap;
+ import java.util.List;
+-import java.util.Map;
+ 
+ import org.apache.log4j.Logger;
+ import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+@@ -38,8 +36,6 @@ public class DataModelAccessor {
+     
+     private static final Logger LOG = Logger.getLogger(DataModelAccessor.class);
+     
+-    private Map<String,String> xsdSchemaMap = new HashMap<String,String>();
+-    
+     private static DataModelAccessor accessor;    
+     
+     public static synchronized DataModelAccessor getInstance(){    
+@@ -51,21 +47,15 @@ public class DataModelAccessor {
+     
+     public String getDataModelXSD(String dataModelName) throws RemoteException, XtentisWebappException {
+         if (dataModelName != null && !dataModelName.isEmpty()) {
+-            if (xsdSchemaMap.get(dataModelName) == null) {
+-                WSDataModel dataModel = Util.getPort().getDataModel(new WSGetDataModel(new WSDataModelPK(dataModelName)));            
+-                if (dataModel != null) {
+-                    xsdSchemaMap.put(dataModelName, dataModel.getXsdSchema());
+-                    return dataModel.getXsdSchema();
+-                } else {
+-                    return null;
+-                }
++            WSDataModel dataModel = Util.getPort().getDataModel(new WSGetDataModel(new WSDataModelPK(dataModelName)));            
++            if (dataModel != null) {
++                return dataModel.getXsdSchema();
+             } else {
+-                return xsdSchemaMap.get(dataModelName);
+-            }  
++                return null;
++            }
+         } else {
+             return null;
+         }
+-      
+     }
+ 
+     public boolean checkReadAccess(String dataModelName, String conceptName) {

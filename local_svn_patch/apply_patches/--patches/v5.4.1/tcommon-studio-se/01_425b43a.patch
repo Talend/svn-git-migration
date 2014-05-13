@@ -1,0 +1,93 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/AbstractRoutineSynchronizer.java b/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/AbstractRoutineSynchronizer.java
+index db77a44..1fb10b1 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/AbstractRoutineSynchronizer.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/AbstractRoutineSynchronizer.java
+@@ -160,7 +160,12 @@ public abstract class AbstractRoutineSynchronizer implements ITalendSynchronizer
+ 
+     @Override
+     public void syncRoutine(RoutineItem routineItem, boolean copyToTemp) throws SystemException {
+-        if (!isRoutineUptodate(routineItem) || !getFile(routineItem).exists()) {
++        syncRoutine(routineItem, copyToTemp, false);
++
++    }
++
++    public void syncRoutine(RoutineItem routineItem, boolean copyToTemp, boolean forceUpdate) throws SystemException {
++        if (routineItem != null && (forceUpdate || !isRoutineUptodate(routineItem) || !getFile(routineItem).exists())) {
+             doSyncRoutine(routineItem, copyToTemp);
+             setRoutineAsUptodate(routineItem);
+         }
+@@ -175,7 +180,11 @@ public abstract class AbstractRoutineSynchronizer implements ITalendSynchronizer
+ 
+     @Override
+     public void syncBean(Item beanItem, boolean copyToTemp) throws SystemException {
+-        if (!isBeanUptodate(beanItem) || !getFile(beanItem).exists()) {
++        syncBean(beanItem, copyToTemp, false);
++    }
++
++    public void syncBean(Item beanItem, boolean copyToTemp, boolean forceUpdate) throws SystemException {
++        if (beanItem != null && (forceUpdate || !isBeanUptodate(beanItem) || !getFile(beanItem).exists())) {
+             doSyncBean(beanItem, copyToTemp);
+             setBeanAsUptodate(beanItem);
+         }
+@@ -315,4 +324,16 @@ public abstract class AbstractRoutineSynchronizer implements ITalendSynchronizer
+         // TODO Auto-generated method stub
+ 
+     }
++    
++    @Override
++    public void syncAllRoutinesForLogOn() throws SystemException {
++    }
++    
++    @Override
++    public void syncAllBeansForLogOn() throws SystemException {
++    }
++
++    @Override
++    public void syncAllPigudfForLogOn() throws SystemException {
++    }
+ }
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/ITalendSynchronizer.java b/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/ITalendSynchronizer.java
+index a297241..c81ac9e 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/ITalendSynchronizer.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/designer/codegen/ITalendSynchronizer.java
+@@ -37,10 +37,16 @@ public interface ITalendSynchronizer {
+     public final static String BEAN_TEMPLATE = "__BEAN_TEMPLATE__"; //$NON-NLS-1$
+ 
+     public void syncAllRoutines() throws SystemException;
++    
++    public void syncAllRoutinesForLogOn() throws SystemException;
+ 
+     public void syncAllPigudf() throws SystemException;
++    
++    public void syncAllPigudfForLogOn() throws SystemException;
+ 
+     public void syncAllBeans() throws SystemException;
++    
++    public void syncAllBeansForLogOn() throws SystemException;
+ 
+     public void syncRoutine(RoutineItem routineItem, boolean copyToTemp) throws SystemException;
+ 
+diff --git a/org.talend.core/src/main/java/org/talend/core/CoreService.java b/org.talend.core/src/main/java/org/talend/core/CoreService.java
+index 743e47a..f70c194 100644
+--- a/org.talend.core/src/main/java/org/talend/core/CoreService.java
++++ b/org.talend.core/src/main/java/org/talend/core/CoreService.java
+@@ -285,8 +285,8 @@ public class CoreService implements ICoreService {
+         if (GlobalServiceRegister.getDefault().isServiceRegistered(ICodeGeneratorService.class)) {
+             ICodeGeneratorService codeGenService = (ICodeGeneratorService) GlobalServiceRegister.getDefault().getService(
+                     ICodeGeneratorService.class);
+-            codeGenService.createRoutineSynchronizer().syncAllRoutines();
+-            codeGenService.createRoutineSynchronizer().syncAllPigudf();
++            codeGenService.createRoutineSynchronizer().syncAllRoutinesForLogOn();
++            codeGenService.createRoutineSynchronizer().syncAllPigudfForLogOn();
+         }
+ 
+     }
+@@ -298,7 +298,7 @@ public class CoreService implements ICoreService {
+                     ICodeGeneratorService.class);
+             ITalendSynchronizer talendSynchronizer = codeGenService.createCamelBeanSynchronizer();
+             if (talendSynchronizer != null) {
+-                talendSynchronizer.syncAllBeans();
++                talendSynchronizer.syncAllBeansForLogOn();
+             }
+         }
+ 

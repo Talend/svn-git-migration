@@ -1,0 +1,38 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScatteredTypeMapping.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScatteredTypeMapping.java
+index 5e91ba5..417ef88 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScatteredTypeMapping.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScatteredTypeMapping.java
+@@ -173,11 +173,10 @@ class ScatteredTypeMapping extends TypeMapping {
+ 
+     public DataRecord setValues(Wrapper from, DataRecord to) {
+         StorageClassLoader contextClassLoader = (StorageClassLoader) Thread.currentThread().getContextClassLoader();
+-        ComplexTypeMetadata typeFromClass = contextClassLoader.getTypeFromClass(from.getClass());
+-        for (FieldMetadata field : typeFromClass.getFields()) {
+-            FieldMetadata userField = getUser(field);
+-            String fieldName = field.getName();
+-            Object value = readValue(from, field, userField);
++        for (FieldMetadata userField : to.getType().getFields()) {
++            FieldMetadata databaseField = getDatabase(userField);
++            String fieldName = databaseField.getName();
++            Object value = readValue(from, databaseField, userField);
+             if (userField != null) {
+                 if (userField instanceof ContainedTypeFieldMetadata) {
+                     if (!userField.isMany()) {
+@@ -203,7 +202,7 @@ class ScatteredTypeMapping extends TypeMapping {
+                         if (wrapper != null) {
+                             TypeMapping mapping = mappings.getMappingFromUser(contextClassLoader.getTypeFromClass(wrapper.getClass()));
+                             DataRecord referencedRecord = new DataRecord(mapping.getUser(), UnsupportedDataRecordMetadata.INSTANCE);
+-                            for (FieldMetadata fkField : ((ReferenceFieldMetadata) field).getReferencedType().getFields()) {
++                            for (FieldMetadata fkField : ((ReferenceFieldMetadata) databaseField).getReferencedType().getFields()) {
+                                 if (mapping.getUser(fkField) != null) {
+                                     referencedRecord.set(mapping.getUser(fkField), wrapper.get(fkField.getName()));
+                                 }
+@@ -223,7 +222,7 @@ class ScatteredTypeMapping extends TypeMapping {
+                                 if (wrapper != null) {
+                                     TypeMapping mapping = mappings.getMappingFromUser(contextClassLoader.getTypeFromClass(wrapper.getClass()));
+                                     DataRecord referencedRecord = new DataRecord(mapping.getUser(), UnsupportedDataRecordMetadata.INSTANCE);
+-                                    for (FieldMetadata fkField : ((ReferenceFieldMetadata) field).getReferencedType().getFields()) {
++                                    for (FieldMetadata fkField : ((ReferenceFieldMetadata) databaseField).getReferencedType().getFields()) {
+                                         if (mapping.getUser(fkField) != null) {
+                                             referencedRecord.set(mapping.getUser(fkField), wrapper.get(fkField.getName()));
+                                         }

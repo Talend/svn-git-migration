@@ -1,0 +1,17 @@
+diff --git a/org.talend.core.repository/src/main/java/org/talend/core/repository/model/AbstractEMFRepositoryFactory.java b/org.talend.core.repository/src/main/java/org/talend/core/repository/model/AbstractEMFRepositoryFactory.java
+index d7db1d7..4390e6b 100644
+--- a/org.talend.core.repository/src/main/java/org/talend/core/repository/model/AbstractEMFRepositoryFactory.java
++++ b/org.talend.core.repository/src/main/java/org/talend/core/repository/model/AbstractEMFRepositoryFactory.java
+@@ -780,10 +780,10 @@ public abstract class AbstractEMFRepositoryFactory extends AbstractRepositoryFac
+             throws PersistenceException {
+         List<IRepositoryViewObject> serializableAllVersion = null;
+         Object fullFolder = getFullFolder(project, type, relativeFolder);
+-        serializableAllVersion = getSerializableFromFolder(project, fullFolder, id, type, false, false, false, true);
++        serializableAllVersion = getSerializableFromFolder(project, fullFolder, id, type, false, false, true, true);
+         if (serializableAllVersion.isEmpty()) {
+             // look in all folders
+-            serializableAllVersion = getSerializable(project, id, true, false);
++            serializableAllVersion = getSerializable(project, id, false, false);
+         }
+         int size = serializableAllVersion.size();
+ 

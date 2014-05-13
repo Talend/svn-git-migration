@@ -1,0 +1,61 @@
+diff --git a/org.talend.designer.components.tdqprovider/components/tMatchGroupIn/tMatchGroupIn_end.javajet b/org.talend.designer.components.tdqprovider/components/tMatchGroupIn/tMatchGroupIn_end.javajet
+index 46ef5a2..64feacb 100644
+--- a/org.talend.designer.components.tdqprovider/components/tMatchGroupIn/tMatchGroupIn_end.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tMatchGroupIn/tMatchGroupIn_end.javajet
+@@ -21,6 +21,11 @@ if (inConns == null || inConns.size() == 0){
+ } else{
+   connNameMain = inConns.get(0).getName();
+ }
++List<? extends IConnection> outConns = node.getOutgoingSortedConnections();
++
++if (outConns == null || outConns.size() == 0){
++  return "";
++}
+ %>
+ blockRows_<%=connNameMain%>.clear();
+ blockRows_<%=connNameMain%> = null;
+diff --git a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_begin.javajet b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_begin.javajet
+index 7fd05d6..fb688b3 100644
+--- a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_begin.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_begin.javajet
+@@ -38,7 +38,7 @@ List<IMetadataColumn> columns = table.getListColumns();
+ String connNameOut = null;
+ List<? extends IConnection> outConns = node.getOutgoingSortedConnections().get(0).getTarget().getOutgoingSortedConnections();
+ 
+-if (outConns == null && outConns.size() == 0){
++if (outConns == null || outConns.size() == 0){
+   return "";
+ } else {
+   connNameOut = outConns.get(0).getName();
+diff --git a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_end.javajet b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_end.javajet
+index e4abd38..999fb85 100644
+--- a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_end.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_end.javajet
+@@ -20,5 +20,10 @@ if (inConns == null || inConns.size() == 0){
+ } else{
+   connNameMain = inConns.get(0).getName();
+ }
++List<? extends IConnection> outConns = node.getOutgoingSortedConnections().get(0).getTarget().getOutgoingSortedConnections();
++
++if (outConns == null || outConns.size() == 0){
++  return "";
++}
+ %>
+ tHash_Lookup_<%=connNameMain%>.endPut();
+\ No newline at end of file
+diff --git a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_main.javajet b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_main.javajet
+index 706ffd0..6b9519b 100644
+--- a/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_main.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tMatchGroupOut/tMatchGroupOut_main.javajet
+@@ -31,7 +31,10 @@ if (inConns == null || inConns.size() == 0){
+ IMetadataTable table = inConn.getMetadataTable();
+ boolean bSortOnDisk = "true".equals(ElementParameterParser.getValue(node, "__STORE_ON_DISK__")); 
+ List<Map<String, String>> listBlocking = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__BLOCKING_DEFINITION__");
+-
++List<? extends IConnection> outConns = node.getOutgoingSortedConnections().get(0).getTarget().getOutgoingSortedConnections();
++if(outConns==null || outConns.size()==0){
++    return "";
++}
+ //if (bSortOnDisk){
+ %>
+  // <%=cid%>Struct <%=connNameMain%>_HashRow =  tHash_Lookup_<%=connNameMain%>.getNextFreeRow();

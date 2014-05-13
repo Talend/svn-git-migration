@@ -1,0 +1,232 @@
+
+>>>./datastewardship/01_ce4dc51.patch
+ org.talend.datastewardship   ---> 
+
+>>>./datastewardship/02_f10bc91.patch
+ org.talend.datastewardship   ---> 
+
+>>>./tdq/01_a3294c9.patch
+ org.talend.datacleansing.core.ui   ---> tdq-studio-ee
+ org.talend.dataprofiler.core.tdq   ---> tdq-studio-ee
+ org.talend.designer.components.tdqprovider   ---> tdq-studio-ee
+
+>>>./tdq/02_8c9eb4a.patch
+ org.talend.dataquality.reporting.engine   ---> tdq-studio-ee
+ org.talend.designer.components.tdqprovider   ---> tdq-studio-ee
+
+>>>./tdq/03_b488342.patch
+ org.talend.designer.components.tdqprovider   ---> tdq-studio-ee
+
+>>>./tdq/04_8361f81.patch
+ org.talend.dataprofiler.core.tdq   ---> tdq-studio-ee
+ org.talend.dataquality.reporting.engine   ---> tdq-studio-ee
+
+>>>./tdq/05_7bb9525.patch
+ org.talend.designer.components.tdqprovider   ---> tdq-studio-ee
+
+>>>./tdq/06_152ae30.patch
+ org.talend.dataquality.reporting   ---> tdq-studio-ee
+
+>>>./tdq/07_318580d.patch
+ org.talend.dataprofiler.persistence   ---> tdq-studio-ee
+ org.talend.dataquality.reporting   ---> tdq-studio-ee
+ org.talend.dataquality.reporting.engine   ---> tdq-studio-ee
+ org.talend.designer.components.tdqprovider   ---> tdq-studio-ee
+
+>>>./tdq/08_91601b9.patch
+ org.talend.datacleansing.core.ui   ---> tdq-studio-ee
+
+>>>./tem/01_7afe572.patch
+ org.talend.mdm.core.enterprise   ---> tmdm-server-ee
+ org.talend.mdm.webapp.hierarchy   ---> tmdm-server-ee
+
+>>>./tem/02_28df036.patch
+ org.talend.mdm.core.enterprise   ---> tmdm-server-ee
+
+>>>./tem/03_333c648.patch
+ org.talend.mdm.core.enterprise   ---> tmdm-server-ee
+
+>>>./tem/04_64c0705.patch
+ org.talend.mdm.webapp.hierarchy   ---> tmdm-server-ee
+
+>>>./tis_private/01_517258f.patch
+ org.talend.commandline   ---> tcommon-studio-ee
+
+>>>./tis_private/02_fcc264e.patch
+ org.talend.commandline   ---> tcommon-studio-ee
+
+>>>./tis_private/03_334bc81.patch
+ org.talend.commandline.audit   ---> tcommon-studio-ee
+ org.talend.commandline.client   ---> tcommon-studio-ee
+
+>>>./tis_shared/01_1934523.patch
+ org.talend.designer.cdc   ---> tdi-studio-ee
+
+>>>./tis_shared/02_a5c97fc.patch
+ org.talend.repository.svnprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/03_28b023d.patch
+ org.talend.repository.hl7   ---> tdi-studio-ee
+
+>>>./tis_shared/04_356c2dd.patch
+ org.talend.core.tis   ---> tdi-studio-ee
+ org.talend.repository.svnprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/05_afd9195.patch
+ org.talend.repository.hl7   ---> tdi-studio-ee
+
+>>>./tis_shared/06_f2403ca.patch
+ org.talend.core.tis   ---> tdi-studio-ee
+
+>>>./tis_shared/07_f21a9d1.patch
+ org.talend.designer.component.preview   ---> tdi-studio-ee
+
+>>>./tis_shared/08_33ba2b8.patch
+ org.talend.repository.svnprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/09_bc17764.patch
+ org.talend.repository.remoteprovider   ---> tcommon-studio-ee
+ org.talend.repository.svnprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/10_dbbcb18.patch
+ org.talend.repository.svnprovider   ---> tcommon-studio-ee
+
+>>>./tis_shared/11_2b8d4bc.patch
+ org.talend.designer.jobtemplate   ---> tdi-studio-ee
+
+>>>./tis_shared/12_c8f72f4.patch
+ org.talend.designer.publish   ---> tesb-studio-ee
+
+>>>./tom/01_5c7ffad.patch
+ org.talend.mdm.commons.core   ---> tmdm-server-se
+ org.talend.mdm.core   ---> tmdm-server-se
+ org.talend.mdm.core.open   ---> tmdm-server-se
+ org.talend.mdm.webapp.base   ---> tmdm-server-se
+ org.talend.mdm.webapp.browserecords   ---> tmdm-server-se
+ org.talend.mdm.webapp.core   ---> tmdm-server-se
+ org.talend.mdm.webapp.journal   ---> tmdm-server-se
+ org.talend.mdm.webapp.openmdm   ---> tmdm-server-se
+ org.talend.mdm.webapp.recyclebin   ---> tmdm-server-se
+ org.talend.mdm.webapp.viewbrowser   ---> tmdm-server-se
+
+>>>./tom/02_b49236d.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+ org.talend.mdm.webapp.core   ---> tmdm-server-se
+
+>>>./tom/03_867c310.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/04_9d253dc.patch
+ org.talend.mdm.webapp.browserecords   ---> tmdm-server-se
+
+>>>./tom/05_f5bf314.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/06_f2fe37c.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/07_409d395.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/08_206dbaa.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./tom/09_fb2ad2f.patch
+ org.talend.mdm.core   ---> tmdm-server-se
+
+>>>./top/01_53acfc1.patch
+ org.talend.cwm.management   ---> tdq-studio-se
+ org.talend.dataprofiler.core   ---> tdq-studio-se
+
+>>>./top/02_121e86e.patch
+ org.talend.cwm.management   ---> tdq-studio-se
+
+>>>./top/03_0fab819.patch
+ org.talend.dataprofiler.core   ---> tdq-studio-se
+
+>>>./top/04_fe3e5b9.patch
+ org.talend.cwm.management   ---> tdq-studio-se
+ org.talend.dataprofiler.core   ---> tdq-studio-se
+
+>>>./top/05_b173342.patch
+ org.talend.dataprofiler.core   ---> tdq-studio-se
+
+>>>./top/06_39a66d5.patch
+ org.talend.cwm.management   ---> tdq-studio-se
+ org.talend.dataprofiler.core   ---> tdq-studio-se
+
+>>>./tos/01_dffa571.patch
+ org.talend.designer.webservice   ---> tdi-studio-se
+
+>>>./tos/02_0dffb00.patch
+ org.talend.common.ui.runtime   ---> tcommon-studio-se
+ org.talend.migrationTool   ---> tcommon-studio-se
+ org.talend.repository.localprovider   ---> tcommon-studio-se
+
+>>>./tos/03_e91ff12.patch
+ org.talend.designer.core   ---> tdi-studio-se
+ org.talend.designer.hl7   ---> tdi-studio-se
+
+>>>./tos/04_12942e4.patch
+ org.talend.repository.localprovider   ---> tcommon-studio-se
+
+>>>./tos/05_0636938.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.metadata.managment   ---> tcommon-studio-se
+
+>>>./tos/06_93405ea.patch
+ org.talend.datatools.xml   ---> tcommon-studio-se
+ org.talend.repository.metadata   ---> tcommon-studio-se
+
+>>>./tos/07_53bdf9d.patch
+ org.talend.designer.components.localprovider   ---> tdi-studio-se
+
+>>>./tos/08_a9dbd4b.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.repository   ---> tdi-studio-se
+
+>>>./tos/09_6c08a07.patch
+ org.talend.core.repository   ---> tcommon-studio-se
+
+>>>./tos/10_7ef6a0a.patch
+ org.talend.repository   ---> tdi-studio-se
+
+>>>./tos/11_322d032.patch
+ org.talend.designer.core   ---> tdi-studio-se
+
+>>>./tos/12_97ab52c.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+
+>>>./tos/13_b3ccfbd.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+
+>>>./tos/14_949a180.patch
+ org.talend.commons.runtime   ---> tcommon-studio-se
+ org.talend.metadata.managment   ---> tcommon-studio-se
+
+>>>./tos/15_ceec617.patch
+ org.talend.designer.core   ---> tdi-studio-se
+
+>>>./tos/16_1eef67c.patch
+ org.talend.core.repository   ---> tcommon-studio-se
+
+>>>./tos/17_74fe35a.patch
+ org.talend.utils   ---> tcommon-studio-se
+
+>>>./tos/18_1fd0cd1.patch
+ org.talend.core   ---> tcommon-studio-se
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.librariesmanager   ---> tcommon-studio-se
+
+>>>./tos/19_1fbd3a4.patch
+ org.talend.core.runtime   ---> tcommon-studio-se
+ org.talend.repository   ---> tdi-studio-se
+ org.talend.repository.services   ---> tesb-studio-se
+
+>>>./tos/20_98f5792.patch
+ org.talend.camel.designer   ---> tesb-studio-se
+ org.talend.repository   ---> tdi-studio-se
+ org.talend.repository.services   ---> tesb-studio-se
+
+>>>./tos/21_465341c.patch
+ org.talend.repository   ---> tdi-studio-se

@@ -1,0 +1,48 @@
+diff --git a/org.talend.designer.webservice/src/main/java/org/talend/designer/webservice/ui/tree/WebServiceTreeLabelProvider.java b/org.talend.designer.webservice/src/main/java/org/talend/designer/webservice/ui/tree/WebServiceTreeLabelProvider.java
+index 57edbcf..c89597e 100644
+--- a/org.talend.designer.webservice/src/main/java/org/talend/designer/webservice/ui/tree/WebServiceTreeLabelProvider.java
++++ b/org.talend.designer.webservice/src/main/java/org/talend/designer/webservice/ui/tree/WebServiceTreeLabelProvider.java
+@@ -31,6 +31,7 @@ public class WebServiceTreeLabelProvider extends LabelProvider implements ITable
+      * 
+      * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnImage(java.lang.Object, int)
+      */
++    @Override
+     public Image getColumnImage(Object element, int columnIndex) {
+         return null;
+     }
+@@ -40,6 +41,7 @@ public class WebServiceTreeLabelProvider extends LabelProvider implements ITable
+      * 
+      * @see org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang.Object, int)
+      */
++    @Override
+     public String getColumnText(Object element, int columnIndex) {
+         if (element instanceof ParameterInfo) {
+             ParameterInfo para = (ParameterInfo) element;
+@@ -60,11 +62,6 @@ public class WebServiceTreeLabelProvider extends LabelProvider implements ITable
+             } else if (columnIndex == 1) {
+                 if (para.getArraySize() != 0) {
+                     return para.getIndex() == null ? "*" : para.getIndex();
+-                } else if (para.getParameterInfos().size() > 1) {
+-                    String index = para.getIndex() == null ? "*" : para.getIndex();
+-                    para.setArraySize(-1);
+-                    para.setIndex("*");
+-                    return index;
+                 } else {
+                     return null;
+                 }
+@@ -79,6 +76,7 @@ public class WebServiceTreeLabelProvider extends LabelProvider implements ITable
+      * 
+      * @see org.eclipse.jface.viewers.ITableColorProvider#getBackground(java.lang.Object, int)
+      */
++    @Override
+     public Color getBackground(Object element, int columnIndex) {
+         if (element instanceof ParameterInfo) {
+             ParameterInfo para = (ParameterInfo) element;
+@@ -94,6 +92,7 @@ public class WebServiceTreeLabelProvider extends LabelProvider implements ITable
+      * 
+      * @see org.eclipse.jface.viewers.ITableColorProvider#getForeground(java.lang.Object, int)
+      */
++    @Override
+     public Color getForeground(Object element, int columnIndex) {
+         if (element instanceof ParameterInfo) {
+             ParameterInfo para = (ParameterInfo) element;

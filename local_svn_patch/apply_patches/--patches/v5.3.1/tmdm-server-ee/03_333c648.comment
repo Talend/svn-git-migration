@@ -1,0 +1,1 @@
+Committed by glzhou for patch TPS-467: Fixed  errors where RDBMSDataSource.DataSourceDialect should be used instead of RDBMSDataSource for MappingGenerator constructor

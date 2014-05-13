@@ -1,0 +1,82 @@
+diff --git a/org.talend.mdm.core.enterprise/src/com/amalto/core/storage/hibernate/FullStorageClassLoader.java b/org.talend.mdm.core.enterprise/src/com/amalto/core/storage/hibernate/FullStorageClassLoader.java
+index f8694f1..4115bdf 100644
+--- a/org.talend.mdm.core.enterprise/src/com/amalto/core/storage/hibernate/FullStorageClassLoader.java
++++ b/org.talend.mdm.core.enterprise/src/com/amalto/core/storage/hibernate/FullStorageClassLoader.java
+@@ -1,23 +1,23 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import com.amalto.core.storage.StorageType;
+-import com.amalto.core.storage.datasource.RDBMSDataSource;
++import javax.xml.xpath.XPath;
++import javax.xml.xpath.XPathFactory;
++
+ import org.apache.commons.lang.NotImplementedException;
+ import org.apache.log4j.Logger;
+ 
+-import javax.xml.xpath.XPath;
+-import javax.xml.xpath.XPathFactory;
++import com.amalto.core.storage.StorageType;
++import com.amalto.core.storage.datasource.RDBMSDataSource;
+ 
+ @SuppressWarnings("UnusedDeclaration")
+ // Dynamically called! Do not remove!
+@@ -27,28 +27,28 @@ public class FullStorageClassLoader extends DefaultStorageClassLoader {
+ 
+     private static final XPath pathFactory = XPathFactory.newInstance().newXPath();
+ 
+-    public FullStorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource.DataSourceDialect dialect, StorageType type) {
++    public FullStorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource dialect, StorageType type) {
+         super(parent, storageName, dialect, type);
+     }
+ 
+     @Override
+     protected String getDialect(RDBMSDataSource.DataSourceDialect dialectType) {
+         switch (dialectType) {
+-            case MYSQL:
+-                return "org.hibernate.dialect.MySQLDialect"; //$NON-NLS-1$
+-            case H2:
+-                // Default Hibernate configuration for H2 forgot some JDBC type mapping.
+-                return H2CustomDialect.class.getName();
+-            case ORACLE_10G:
+-                // Default Hibernate configuration for Oracle incorrectly maps Double JDBC type.
+-                return OracleCustomDialect.class.getName();
+-            case SQL_SERVER:
+-                // Default Hibernate configuration for SQL Server incorrectly maps string types (for MDM usage).
+-                return SQLServerCustomDialect.class.getName(); //$NON-NLS-1$
+-            case POSTGRES:
+-                return "org.hibernate.dialect.PostgreSQLDialect"; //$NON-NLS-1$
+-            default:
+-                throw new NotImplementedException("No supported database type '" + dialectType + "'");
++        case MYSQL:
++            return "org.hibernate.dialect.MySQLDialect"; //$NON-NLS-1$
++        case H2:
++            // Default Hibernate configuration for H2 forgot some JDBC type mapping.
++            return H2CustomDialect.class.getName();
++        case ORACLE_10G:
++            // Default Hibernate configuration for Oracle incorrectly maps Double JDBC type.
++            return OracleCustomDialect.class.getName();
++        case SQL_SERVER:
++            // Default Hibernate configuration for SQL Server incorrectly maps string types (for MDM usage).
++            return SQLServerCustomDialect.class.getName();
++        case POSTGRES:
++            return "org.hibernate.dialect.PostgreSQLDialect"; //$NON-NLS-1$
++        default:
++            throw new NotImplementedException("No supported database type '" + dialectType + "'");
+         }
+     }
+ }

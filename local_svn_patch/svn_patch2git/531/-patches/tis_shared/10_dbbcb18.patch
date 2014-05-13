@@ -1,0 +1,17 @@
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
+index d9d7702..3a6aac1 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
+@@ -325,11 +325,11 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+             if (!offlineMode) {
+                 Info localInfo = svnHandler.info(eclipseProject);
+                 Info remoteInfo = svnHandler.info(localInfo.getUrl());
++                statusArray = svnHandler.status(eclipseProject, true);
+                 if (project.isMainProject()) {
+                     // only check if need to revert on the main projectg
+                     revertIfHasAnyChange(eclipseProject);
+                 }
+-                statusArray = svnHandler.status(eclipseProject, true);
+                 statusChecked = true;
+                 revertIfHasAnyChange(eclipseProject);
+                 Collection<String> changedPaths = computeChangedPaths(statusArray);

@@ -1,0 +1,19 @@
+diff --git a/org.talend.camel.designer/src/main/java/org/talend/camel/designer/CamelJavaRoutesSychronizer.java b/org.talend.camel.designer/src/main/java/org/talend/camel/designer/CamelJavaRoutesSychronizer.java
+index 7eaf04a..e5550b0 100644
+--- a/org.talend.camel.designer/src/main/java/org/talend/camel/designer/CamelJavaRoutesSychronizer.java
++++ b/org.talend.camel.designer/src/main/java/org/talend/camel/designer/CamelJavaRoutesSychronizer.java
+@@ -73,6 +73,14 @@ public class CamelJavaRoutesSychronizer extends AbstractRoutineSynchronizer {
+             syncBean(beanItem, true);
+         }
+     }
++    
++    public void syncAllBeansForLogOn() throws SystemException {
++        for (IRepositoryViewObject routine : getBeans()) {
++            BeanItem beanItem = (BeanItem) routine.getProperty().getItem();
++            // syncRoutine(routineItem, true);
++            syncBean(beanItem, true, true);
++        }
++    }
+ 
+     /*
+      * (non-Jsdoc)

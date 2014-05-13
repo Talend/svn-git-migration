@@ -1,0 +1,89 @@
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/task/TaskOutput.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/task/TaskOutput.java
+index 481adf0..5ef3d07 100755
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/task/TaskOutput.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/task/TaskOutput.java
+@@ -24,8 +24,12 @@ import org.apache.commons.logging.LogFactory;
+ import org.talend.datastewardship.client.model.TaskState;
+ import org.talend.datastewardship.server.dao.SrccolumnsHome;
+ import org.talend.datastewardship.server.dao.TaskHome;
+-import org.talend.datastewardship.server.model.*;
++import org.talend.datastewardship.server.model.Srccolumns;
++import org.talend.datastewardship.server.model.Srcrecords;
++import org.talend.datastewardship.server.model.Task;
+ import org.talend.datastewardship.server.model.TaskSerializer;
++import org.talend.datastewardship.server.model.Tgtcolumns;
++import org.talend.datastewardship.server.model.Tgtrecords;
+ import org.talend.datastewardship.server.util.DateUtil;
+ 
+ /**
+@@ -45,8 +49,7 @@ public class TaskOutput {
+         String[][] result = null;
+         TaskHome taskHome = new TaskHome();
+         List resultList = taskHome.findByCriterias(typeId, owner, tagLabel, createTimeLowerBound, createTimeUpperBound,
+-                modifyTimeLowerBound, modifyTimeUpperBound, starNum,
+-                limit, status);
++                modifyTimeLowerBound, modifyTimeUpperBound, starNum, limit, status);
+         if (resultList != null) {
+             result = new String[resultList.size()][7];
+             for (int i = 0; i < resultList.size(); i++) {
+@@ -194,15 +197,11 @@ public class TaskOutput {
+     }
+ 
+     public static int deleteTasks(Integer typeId, String owner, String tagLabel, Date createTimeLowerBound,
+-                                  Date createTimeUpperBound, Integer starNum, int limit) {
++            Date createTimeUpperBound, Date updateTimeLowerBound, Date updateTimeUpperBound, Integer starNum, int limit,
++            String status) {
+         TaskHome taskHome = new TaskHome();
+-        List taskList = taskHome.findByCriterias(typeId,
+-                owner,
+-                tagLabel,
+-                createTimeLowerBound,
+-                createTimeUpperBound,
+-                starNum,
+-                limit);
++        List taskList = taskHome.findByCriterias(typeId, owner, tagLabel, createTimeLowerBound, createTimeUpperBound,
++                updateTimeLowerBound, updateTimeUpperBound, starNum, limit, status);
+         if (taskList == null) {
+             return 0;
+         }
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/ws/TDSCWSImpl.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/ws/TDSCWSImpl.java
+index 1c12b84..26db734 100755
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/ws/TDSCWSImpl.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/server/ws/TDSCWSImpl.java
+@@ -90,10 +90,9 @@ public class TDSCWSImpl implements TDSCWS {
+             log.debug("searchTasks called"); //$NON-NLS-1$
+         }
+         try {
+-            // FIXME search by modified time only
+-            return TaskOutput.searchTasks(typeId, owner, tagLabel, null, null,
+-                    createTimeLowerBound,
+-                    createTimeUpperBound,
++            // TODO : Date parameters handling should be revised. Date parameters are being used as Modify Date at the
++            // moment, despite the paramter names sugguest otherwise
++            return TaskOutput.searchTasks(typeId, owner, tagLabel, null, null, createTimeLowerBound, createTimeUpperBound,
+                     starNum, limit, status);
+         } catch (RuntimeException e) {
+             log.error(e.getMessage(), e);
+@@ -125,7 +124,8 @@ public class TDSCWSImpl implements TDSCWS {
+         }
+     }
+ 
+-    public void deleteTask(@WebParam(name = "taskID") String taskID) {
++    public void deleteTask(@WebParam(name = "taskID")
++    String taskID) {
+         if (log.isDebugEnabled()) {
+             log.debug("deleteTask called"); //$NON-NLS-1$
+         }
+@@ -139,8 +139,10 @@ public class TDSCWSImpl implements TDSCWS {
+             log.debug("deleteTasks called"); //$NON-NLS-1$
+         }
+         try {
+-            return TaskOutput.deleteTasks(typeId, owner, tagLabel, createTimeLowerBound, createTimeUpperBound, starNum, limit
+-            );
++            // TODO : Date parameters handling should be revised. Date parameters are being used as Modify Date at the
++            // moment, despite the paramter names sugguest otherwise
++            return TaskOutput.deleteTasks(typeId, owner, tagLabel, null, null, createTimeLowerBound, createTimeUpperBound,
++                    starNum, limit, status);
+         } catch (RuntimeException e) {
+             log.error(e.getMessage(), e);
+             throw e;

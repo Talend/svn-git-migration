@@ -1,0 +1,50 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/PluginChecker.java b/org.talend.core.runtime/src/main/java/org/talend/core/PluginChecker.java
+index 40c53d0..c5f67ca 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/PluginChecker.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/PluginChecker.java
+@@ -12,6 +12,11 @@
+ // ============================================================================
+ package org.talend.core;
+ 
++import java.io.IOException;
++import java.net.URL;
++
++import org.apache.log4j.Logger;
++import org.eclipse.core.runtime.FileLocator;
+ import org.eclipse.core.runtime.Platform;
+ import org.eclipse.core.runtime.Plugin;
+ import org.osgi.framework.Bundle;
+@@ -22,6 +27,8 @@ import org.osgi.framework.Bundle;
+  */
+ public class PluginChecker {
+ 
++    private static Logger log = Logger.getLogger(PluginChecker.class);
++
+     private static final String DOCUMENTATION_PLUGIN_ID = "org.talend.repository.documentation"; //$NON-NLS-1$
+ 
+     private static final String SNIPPET_PLUGIN_ID = "org.talend.snippets"; //$NON-NLS-1$
+@@ -286,16 +293,17 @@ public class PluginChecker {
+     }
+ 
+     public static String getBundlePath(String bundleName) {
++        String bundlePath = ""; //$NON-NLS-1$
+         Bundle refBundle = Platform.getBundle(bundleName);
+         if (refBundle != null) {
+-            String bundlePath = refBundle.getLocation();
+-            String prefix = "reference:file:"; //$NON-NLS-1$
+-            int prefixPos = bundlePath.lastIndexOf(prefix);
+-            if (prefixPos >= 0) {
+-                bundlePath = bundlePath.substring(prefixPos + prefix.length(), bundlePath.length() - 1);
+-                return bundlePath;
++            try {
++                URL resource = refBundle.getEntry("/"); //$NON-NLS-1$
++                bundlePath = FileLocator.toFileURL(resource).getPath();
++                bundlePath = bundlePath.substring(0, bundlePath.length() - 1);
++            } catch (IOException e) {
++                log.error(e);
+             }
+         }
+-        return ""; //$NON-NLS-1$
++        return bundlePath;
+     }
+ }

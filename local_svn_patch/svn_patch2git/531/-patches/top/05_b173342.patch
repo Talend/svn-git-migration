@@ -1,0 +1,26 @@
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/SwitchContextAction.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/SwitchContextAction.java
+index c8f0f2c..37a1839 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/SwitchContextAction.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/SwitchContextAction.java
+@@ -24,6 +24,7 @@ import org.talend.core.model.properties.Item;
+ import org.talend.dataprofiler.core.CorePlugin;
+ import org.talend.dataprofiler.core.ImageLib;
+ import org.talend.dataprofiler.core.i18n.internal.DefaultMessagesImpl;
++import org.talend.dq.CWMPlugin;
+ import org.talend.dq.nodes.ConnectionRepNode;
+ import org.talend.repository.ui.utils.SwitchContextGroupNameImpl;
+ import org.talend.repository.ui.wizards.metadata.ContextSetsSelectionDialog;
+@@ -69,6 +70,13 @@ public class SwitchContextAction extends Action {
+                     if (log.isDebugEnabled()) {
+                         log.debug(DefaultMessagesImpl.getString("SwitchContextAction.saveMessage", chooseContext, "successful"));//$NON-NLS-1$ //$NON-NLS-2$ 
+                     }
++
++                    // ADD msjian TDQ-8834 2014-4-10: after switch the context, update the sql explore alias
++                    // information.
++                    CWMPlugin.getDefault()
++                            .updateConnetionAliasByName(connItem.getConnection(), connItem.getProperty().getLabel());
++                    // TDQ-8834~
++
+                     CorePlugin.getDefault().refreshDQView(selectedObject);
+                 } else {
+                     MessageDialog.openWarning(CorePlugin.getDefault().getWorkbench().getDisplay().getActiveShell(), "", //$NON-NLS-1$

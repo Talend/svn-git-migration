@@ -1,0 +1,73 @@
+diff --git a/org.talend.core.tis/src/main/java/org/talend/core/tis/service/CoreTisService.java b/org.talend.core.tis/src/main/java/org/talend/core/tis/service/CoreTisService.java
+index 7b04dd1..1b0aadd 100755
+--- a/org.talend.core.tis/src/main/java/org/talend/core/tis/service/CoreTisService.java
++++ b/org.talend.core.tis/src/main/java/org/talend/core/tis/service/CoreTisService.java
+@@ -43,6 +43,7 @@ import org.osgi.service.prefs.BackingStoreException;
+ import org.talend.commons.CommonsPlugin;
+ import org.talend.commons.exception.LoginException;
+ import org.talend.commons.exception.PersistenceException;
++import org.talend.commons.exception.SystemException;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+ import org.talend.commons.utils.system.EclipseCommandLine;
+ import org.talend.core.GlobalServiceRegister;
+@@ -59,7 +60,6 @@ import org.talend.core.updatesite.IUpdateSiteBean;
+ import org.talend.cwm.relational.RelationalPackage;
+ import org.talend.repository.model.IProxyRepositoryFactory;
+ import org.talend.utils.json.JSONObject;
+-
+ import orgomg.cwm.objectmodel.core.CorePackage;
+ 
+ /**
+@@ -152,7 +152,7 @@ public class CoreTisService implements ICoreTisService {
+ 
+     @Override
+     public List<IUpdateSiteBean> getUpdateSitesToBeInstall(String username, String password, String archivaServerURL,
+-            List<String> repositories) throws BackingStoreException {
++            List<String> repositories) throws BackingStoreException, SystemException {
+         return UpdateSiteManager.getInstance().getUpdateSitesToBeInstall(username, password, archivaServerURL, repositories);
+     }
+ 
+diff --git a/org.talend.core.tis/src/main/java/org/talend/core/tis/updatesite/UpdateSiteManager.java b/org.talend.core.tis/src/main/java/org/talend/core/tis/updatesite/UpdateSiteManager.java
+index 67bd7f1..a47cccc 100755
+--- a/org.talend.core.tis/src/main/java/org/talend/core/tis/updatesite/UpdateSiteManager.java
++++ b/org.talend.core.tis/src/main/java/org/talend/core/tis/updatesite/UpdateSiteManager.java
+@@ -63,6 +63,7 @@ import org.osgi.framework.BundleContext;
+ import org.osgi.framework.FrameworkUtil;
+ import org.osgi.framework.ServiceReference;
+ import org.osgi.service.prefs.BackingStoreException;
++import org.talend.commons.exception.SystemException;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+ import org.talend.commons.utils.VersionUtils;
+ import org.talend.commons.utils.io.FilesUtils;
+@@ -256,9 +257,11 @@ public class UpdateSiteManager {
+      * 1.Basicly,the updates will have a version bigger than current 2.The patch will have a same version as current
+      * 3.If there is updates,then ignore all patches,there is one thing need to confirm is that if there are more than
+      * one updates,how to do the updates?install the highest version update?
++     * 
++     * @throws SystemException
+      * **/
+     public List<IUpdateSiteBean> getUpdateSitesToBeInstall(String username, String password, String archivaServicesURL,
+-            List<String> repositories) throws BackingStoreException {
++            List<String> repositories) throws BackingStoreException, SystemException {
+         // acording to url ,compare with installed patch bean,return the patch need to install
+         log.info("Calculate all the update sites to be installed from [" + archivaServicesURL + "] with user : " + username);
+         List<IUpdateSiteBean> toReture = new ArrayList<IUpdateSiteBean>();
+@@ -596,14 +599,17 @@ public class UpdateSiteManager {
+      * @param repositories all the repos to search in
+      * @return the list of artifact matching the above criteria
+      * @throws ArchivaRestServiceException, archiva request fails
++     * @throws SystemException
+      */
+     protected List<Artifact> getTalendGroupArtifacts(String archivaServicesURL, String artifactId, String authzHeader,
+-            String version, List<String> repositories) throws ArchivaRestServiceException {
++            String version, List<String> repositories) throws ArchivaRestServiceException, SystemException {
+         List<Artifact> artifacts = new ArrayList<Artifact>();
+         try {
+             SearchService searchService = getSearchService(authzHeader, archivaServicesURL);
+             SearchRequest searchRequest = new SearchRequest(TALEND_GROUP_ID, artifactId, version, null, null, repositories);
+             artifacts = searchService.searchArtifacts(searchRequest);
++        } catch (Error e) {
++            throw new SystemException(e);
+         } catch (Exception e) {
+             MessageDialog.openError(new Shell(), "Error", "can not connect to " + archivaServicesURL);
+         }

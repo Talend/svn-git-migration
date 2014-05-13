@@ -1,0 +1,844 @@
+diff --git a/org.talend.common.ui.runtime/src/main/java/org/talend/commons/ui/runtime/image/ECoreImage.java b/org.talend.common.ui.runtime/src/main/java/org/talend/commons/ui/runtime/image/ECoreImage.java
+index c96bf91..8abbf96 100644
+--- a/org.talend.common.ui.runtime/src/main/java/org/talend/commons/ui/runtime/image/ECoreImage.java
++++ b/org.talend.common.ui.runtime/src/main/java/org/talend/commons/ui/runtime/image/ECoreImage.java
+@@ -169,9 +169,10 @@ public enum ECoreImage implements IImage {
+     PROGRESSGRAYBAR("/icons1/gray.gif"), //$NON-NLS-1$
+     PROGRESSGRAYGEBAR("/icons1/graygeBar.gif"), //$NON-NLS-1$
+     TRIANGLE("/icons1/triangle.gif"), // triangle.gif //$NON-NLS-1$
+-    COMPARE("/icons1/compare.gif"), //$NON-NLS-N$
++    COMPARE("/icons1/compare.gif"),
+     EXCHNAGETAB("/icons/exchangeTab.jpg"), // $NON-NLS-1$
+-    EXCHNAGEIMAGEMISSING("/icons/component_missing.gif"); // $NON-NLS-1$
++    EXCHNAGEIMAGEMISSING("/icons/component_missing.gif"), // $NON-NLS-1$
++    STATUS_OK("/icons/ok.png"); // $NON-NLS-1$
+ 
+     private String path;
+ 
+@@ -188,6 +189,7 @@ public enum ECoreImage implements IImage {
+      * 
+      * @return the path
+      */
++    @Override
+     public String getPath() {
+         return this.path;
+     }
+@@ -197,6 +199,7 @@ public enum ECoreImage implements IImage {
+      * 
+      * @return the clazz
+      */
++    @Override
+     public Class getLocation() {
+         return ECoreImage.class;
+         // return CorePlugin.class;
+diff --git a/org.talend.migrationTool/src/messages.properties b/org.talend.migrationTool/src/messages.properties
+index c22d6c9..180dcd8 100644
+--- a/org.talend.migrationTool/src/messages.properties
++++ b/org.talend.migrationTool/src/messages.properties
+@@ -1,5 +1,6 @@
+ migrationTasksRecapDialog.title=Migration tasks done
+ migrationTasksRecapDialog.description=Here are the migration tasks applied on this session on this project.
++migrationTasksRecapDialog.descriptions=Here are the migration tasks applied on this session on this project.\nIf any migration failed , please check log for more details .
+ MigrationToolService.migrationCancel=Migration task is canceled during {0}.
+ MigrationToolService.taskInProgress=Migration task {0} run in progress...
+ 
+diff --git a/org.talend.migrationTool/src/org/talend/migrationtool/MigrationToolService.java b/org.talend.migrationTool/src/org/talend/migrationtool/MigrationToolService.java
+index 5915fc8..93978ec 100644
+--- a/org.talend.migrationTool/src/org/talend/migrationtool/MigrationToolService.java
++++ b/org.talend.migrationTool/src/org/talend/migrationtool/MigrationToolService.java
+@@ -12,6 +12,9 @@
+ // ============================================================================
+ package org.talend.migrationtool;
+ 
++import java.io.File;
++import java.io.FileWriter;
++import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collections;
+@@ -25,12 +28,14 @@ import org.eclipse.core.resources.IWorkspace;
+ import org.eclipse.core.resources.IWorkspaceRunnable;
+ import org.eclipse.core.resources.ResourcesPlugin;
+ import org.eclipse.core.runtime.CoreException;
++import org.eclipse.core.runtime.IPath;
+ import org.eclipse.core.runtime.IProgressMonitor;
+ import org.eclipse.core.runtime.OperationCanceledException;
+ import org.eclipse.core.runtime.Status;
+ import org.eclipse.core.runtime.SubProgressMonitor;
+ import org.eclipse.core.runtime.jobs.ISchedulingRule;
+ import org.eclipse.emf.common.util.EList;
++import org.eclipse.emf.ecore.resource.Resource;
+ import org.talend.commons.exception.PersistenceException;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+ import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
+@@ -52,6 +57,7 @@ import org.talend.core.model.repository.RepositoryObject;
+ import org.talend.core.model.utils.MigrationUtil;
+ import org.talend.core.repository.model.ProxyRepositoryFactory;
+ import org.talend.core.repository.utils.RoutineUtils;
++import org.talend.core.repository.utils.URIHelper;
+ import org.talend.designer.codegen.ICodeGeneratorService;
+ import org.talend.designer.codegen.ITalendSynchronizer;
+ import org.talend.migration.IMigrationTask;
+@@ -61,6 +67,7 @@ import org.talend.migration.IWorkspaceMigrationTask;
+ import org.talend.migrationtool.i18n.Messages;
+ import org.talend.migrationtool.model.GetTasksHelper;
+ import org.talend.migrationtool.model.summary.AlertUserOnLogin;
++import org.talend.repository.ProjectManager;
+ import org.talend.repository.RepositoryWorkUnit;
+ import org.talend.repository.model.IProxyRepositoryFactory;
+ import org.talend.repository.model.IRepositoryService;
+@@ -81,7 +88,11 @@ public class MigrationToolService implements IMigrationToolService {
+     private static final String RELATION_TASK = "org.talend.repository.model.migration.AutoUpdateRelationsMigrationTask"; //$NON-NLS-1$ 
+ 
+     // FIXME SML Change that
+-    public List<IProjectMigrationTask> doneThisSession;
++    private List<IProjectMigrationTask> doneThisSession;
++
++    private static String FULL_LOG_FILE = "migration.log"; //$NON-NLS-1$
++
++    private boolean migrationOnNewProject = false;
+ 
+     public MigrationToolService() {
+         doneThisSession = new ArrayList<IProjectMigrationTask>();
+@@ -163,7 +174,10 @@ public class MigrationToolService implements IMigrationToolService {
+         final List<IProjectMigrationTask> toExecute = GetTasksHelper.getProjectTasks(beforeLogon);
+         final List<MigrationTask> done = new ArrayList<MigrationTask>(project.getEmfProject().getMigrationTask());
+ 
+-        final boolean newProject = done.isEmpty();
++        if (beforeLogon) {
++            boolean isNewProject = project.getEmfProject().getProductVersion() == null ? true : false;
++            setMigrationOnNewProject(beforeLogon && isNewProject && done.isEmpty());
++        }
+ 
+         sortMigrationTasks(toExecute);
+ 
+@@ -226,134 +240,213 @@ public class MigrationToolService implements IMigrationToolService {
+ 
+                     @Override
+                     public void run(IProgressMonitor monitor) throws CoreException {
++                        if (!isMigrationOnNewProject() && beforeLogon) {
++                            appendToLogFile(project, " ---=== Start Migration of project " + project.getLabel() + " ===---\n"); //$NON-NLS-1$//$NON-NLS-2$
++                        }
+ 
+                         try {
+                             boolean needSave = false;
+-                            if (!beforeLogon) {
+-                                ERepositoryObjectType[] types = (ERepositoryObjectType[]) ERepositoryObjectType.values();
+-                                Arrays.sort(types, new Comparator<ERepositoryObjectType>() {
+-
+-                                    @Override
+-                                    public int compare(ERepositoryObjectType arg0, ERepositoryObjectType arg1) {
+-                                        if (arg0 == ERepositoryObjectType.PROCESS) {
+-                                            return 1;
+-                                        }
+-                                        if (arg0 == ERepositoryObjectType.JOBLET) {
+-                                            return 1;
++                            if (!isMigrationOnNewProject()) {
++                                if (!beforeLogon) {
++                                    ERepositoryObjectType[] types = (ERepositoryObjectType[]) ERepositoryObjectType.values();
++                                    Arrays.sort(types, new Comparator<ERepositoryObjectType>() {
++
++                                        @Override
++                                        public int compare(ERepositoryObjectType arg0, ERepositoryObjectType arg1) {
++                                            if (arg0 == ERepositoryObjectType.PROCESS) {
++                                                return 1;
++                                            }
++                                            if (arg0 == ERepositoryObjectType.JOBLET) {
++                                                return 1;
++                                            }
++                                            return 0;
+                                         }
+-                                        return 0;
+-                                    }
+-                                });
++                                    });
+ 
+-                                for (ERepositoryObjectType type : types) {
+-                                    if (!type.isResourceItem()) {
+-                                        continue;
+-                                    }
+-                                    List<IRepositoryViewObject> objects = repFactory.getAll(project, type, true, true);
+-
+-                                    for (IRepositoryViewObject object : objects) {
+-                                        Item item = object.getProperty().getItem();
+-                                        monitorWrap.subTask("Migrate... " + item.getProperty().getLabel());
+-
+-                                        subProgressMonitor.worked(1);
+-                                        for (IProjectMigrationTask task : toExecute) {
+-                                            if (monitorWrap.isCanceled()) {
+-                                                throw new OperationCanceledException(Messages.getString(
+-                                                        "MigrationToolService.migrationCancel", task.getName())); //$NON-NLS-1$
+-                                            }
+-                                            MigrationTask mgTask = MigrationUtil.findMigrationTask(done, task);
+-                                            if (mgTask == null && !task.isDeprecated()) {
+-                                                ExecutionResult status = task.execute(project, item);
+-                                                switch (status) {
+-                                                case SUCCESS_WITH_ALERT:
+-                                                    if (task.getStatus() != ExecutionResult.FAILURE) {
+-                                                        task.setStatus(status);
+-                                                    }
+-                                                case SUCCESS_NO_ALERT:
+-                                                    if (task.getStatus() != ExecutionResult.FAILURE) {
+-                                                        task.setStatus(status);
+-                                                    }
+-                                                case NOTHING_TO_DO:
+-                                                    if (task.getStatus() != ExecutionResult.SUCCESS_WITH_ALERT
+-                                                            && task.getStatus() != ExecutionResult.SUCCESS_NO_ALERT
+-                                                            && task.getStatus() != ExecutionResult.FAILURE) {
+-                                                        task.setStatus(status);
+-                                                    }
+-                                                    break;
+-                                                case SKIPPED:
+-                                                    if (task.getStatus() != ExecutionResult.SUCCESS_WITH_ALERT
+-                                                            && task.getStatus() != ExecutionResult.SUCCESS_NO_ALERT
+-                                                            && task.getStatus() != ExecutionResult.FAILURE) {
+-                                                        task.setStatus(status);
++                                    for (ERepositoryObjectType type : types) {
++                                        if (!type.isResourceItem()) {
++                                            continue;
++                                        }
++                                        List<IRepositoryViewObject> objects = repFactory.getAll(project, type, true, true);
++
++                                        for (IRepositoryViewObject object : objects) {
++                                            Item item = object.getProperty().getItem();
++                                            monitorWrap.subTask("Migrate... " + item.getProperty().getLabel());
++                                            boolean hadFailed = false;
++                                            subProgressMonitor.worked(1);
++                                            for (IProjectMigrationTask task : toExecute) {
++                                                if (monitorWrap.isCanceled()) {
++                                                    throw new OperationCanceledException(Messages.getString(
++                                                            "MigrationToolService.migrationCancel", task.getName())); //$NON-NLS-1$
++                                                }
++                                                MigrationTask mgTask = MigrationUtil.findMigrationTask(done, task);
++                                                if (mgTask == null && !task.isDeprecated()) {
++                                                    try {
++                                                        ExecutionResult status = task.execute(project, item);
++                                                        switch (status) {
++                                                        case SUCCESS_WITH_ALERT:
++                                                            if (task.getStatus() != ExecutionResult.FAILURE) {
++                                                                task.setStatus(status);
++                                                            }
++                                                            //$FALL-THROUGH$
++                                                        case SUCCESS_NO_ALERT:
++                                                            if (task.getStatus() != ExecutionResult.FAILURE) {
++                                                                task.setStatus(status);
++                                                            }
++                                                            //$FALL-THROUGH$
++                                                        case NOTHING_TO_DO:
++                                                            if (task.getStatus() != ExecutionResult.SUCCESS_WITH_ALERT
++                                                                    && task.getStatus() != ExecutionResult.SUCCESS_NO_ALERT
++                                                                    && task.getStatus() != ExecutionResult.FAILURE) {
++                                                                task.setStatus(status);
++                                                            }
++                                                            break;
++                                                        case SKIPPED:
++                                                            if (task.getStatus() != ExecutionResult.SUCCESS_WITH_ALERT
++                                                                    && task.getStatus() != ExecutionResult.SUCCESS_NO_ALERT
++                                                                    && task.getStatus() != ExecutionResult.FAILURE) {
++                                                                task.setStatus(status);
++                                                            }
++                                                            break;
++                                                        case FAILURE:
++                                                            task.setStatus(status);
++                                                            //$FALL-THROUGH$
++                                                        default:
++                                                            task.setStatus(status);
++                                                            if (!isMigrationOnNewProject()) {
++                                                                if (!hadFailed) {
++                                                                    hadFailed = true;
++                                                                    Property prop = object.getProperty();
++                                                                    Resource resource = prop.eResource();
++                                                                    String itemInfo = null;
++                                                                    if (resource != null) {
++                                                                        IPath path = URIHelper.convert(resource.getURI());
++                                                                        if (path != null) {
++                                                                            itemInfo = path.toPortableString();
++                                                                        }
++                                                                    }
++                                                                    if (itemInfo == null) {
++                                                                        itemInfo = prop.toString();
++                                                                    }
++                                                                    appendToLogFile(project,
++                                                                            " * FAILED Task(s) on item: " + itemInfo + "\n"); //$NON-NLS-1$//$NON-NLS-2$ 
++                                                                }
++                                                                appendToLogFile(project, "      " + task.getName() + "\n"); //$NON-NLS-1$//$NON-NLS-2$ 
++                                                            }
++
++                                                            break;
++                                                        }
++                                                    } catch (Exception e) {
++                                                        doneThisSession.add(task);
++                                                        ExceptionHandler.process(e);
++                                                        if (!isMigrationOnNewProject()) {
++                                                            if (!hadFailed) {
++                                                                hadFailed = true;
++                                                                Property prop = object.getProperty();
++                                                                Resource resource = prop.eResource();
++                                                                String itemInfo = null;
++                                                                if (resource != null) {
++                                                                    IPath path = URIHelper.convert(resource.getURI());
++                                                                    if (path != null) {
++                                                                        itemInfo = path.toPortableString();
++                                                                    }
++                                                                }
++                                                                if (itemInfo == null) {
++                                                                    itemInfo = prop.toString();
++                                                                }
++                                                                appendToLogFile(project,
++                                                                        " * FAILED Task(s) on item: " + itemInfo + "\n"); //$NON-NLS-1$//$NON-NLS-2$ 
++                                                            }
++                                                            appendToLogFile(project, "      " + task.getName() + "\n"); //$NON-NLS-1$//$NON-NLS-2$ 
++                                                        }
++                                                        log.debug("Task \"" + task.getName() + "\" failed"); //$NON-NLS-1$ //$NON-NLS-2$
+                                                     }
+-                                                    break;
+-                                                case FAILURE:
+-                                                    task.setStatus(status);
+-                                                default:
+-                                                    task.setStatus(status);
+-                                                    break;
+                                                 }
+-                                                // monitorWrap.setTaskName("");
+                                             }
+-                                        }
+ 
+-                                        if (object instanceof RepositoryObject) {
+-                                            ((RepositoryObject) object).unload();
++                                            if (object instanceof RepositoryObject) {
++                                                ((RepositoryObject) object).unload();
++                                            }
+                                         }
++                                        monitorWrap.subTask(""); //$NON-NLS-1$
+                                     }
+-                                    monitorWrap.subTask(""); //$NON-NLS-1$
+                                 }
+-                            }
+-                            for (IProjectMigrationTask task : toExecute) {
+-                                MigrationTask mgTask = MigrationUtil.findMigrationTask(done, task);
+-                                if (mgTask == null && !task.isDeprecated()) {
+-                                    try {
+-                                        ExecutionResult status;
+-                                        if (beforeLogon) {
+-                                            status = task.execute(project);
+-                                            task.setStatus(status);
+-                                        } else {
+-                                            status = task.getStatus();
+-                                        }
+-                                        switch (status) {
+-                                        case SUCCESS_WITH_ALERT:
+-                                            if (!newProject) { // if it's a new project, no need to display any alert,
+-                                                               // since no real
+-                                                               // migration.
++                                for (IProjectMigrationTask task : toExecute) {
++                                    MigrationTask mgTask = MigrationUtil.findMigrationTask(done, task);
++                                    if (mgTask == null && !task.isDeprecated()) {
++                                        try {
++                                            ExecutionResult status;
++                                            if (beforeLogon) {
++                                                status = task.execute(project);
++                                                task.setStatus(status);
++                                            } else {
++                                                status = task.getStatus();
++                                            }
++                                            switch (status) {
++                                            case SUCCESS_WITH_ALERT:
++                                                if (!isMigrationOnNewProject()) { // if it's a new project, no need to
++                                                    // display any
++                                                    // alert,
++                                                    // since no real
++                                                    // migration.
++                                                    doneThisSession.add(task);
++                                                }
++                                            case SUCCESS_NO_ALERT:
++                                                if (!isMigrationOnNewProject()) {
++                                                    log.debug("Task \"" + task.getName() + "\" done"); //$NON-NLS-1$ //$NON-NLS-2$
++                                                    appendToLogFile(project,
++                                                            " * Task [" + task.getName() + "] : Applied successfully\n"); //$NON-NLS-1$//$NON-NLS-2$
++                                                }
++                                            case NOTHING_TO_DO:
++                                                if (!isMigrationOnNewProject()
++                                                        && task.getStatus() == ExecutionResult.NOTHING_TO_DO) {
++                                                    appendToLogFile(project, " * Task [" + task.getName() + "] : Nothing to do\n"); //$NON-NLS-1$//$NON-NLS-2$
++                                                }
++                                                break;
++                                            case SKIPPED:
++                                                log.debug("Task \"" + task.getName() + "\" skipped"); //$NON-NLS-1$ //$NON-NLS-2$
++                                                if (!isMigrationOnNewProject()) {
++                                                    appendToLogFile(project, " * Task [" + task.getName() + "] : Skipped\n"); //$NON-NLS-1$//$NON-NLS-2$
++                                                }
++                                                break;
++                                            case FAILURE:
+                                                 doneThisSession.add(task);
++                                            default:
++                                                log.debug("Task \"" + task.getName() + "\" failed"); //$NON-NLS-1$ //$NON-NLS-2$
++                                                break;
+                                             }
+-                                        case SUCCESS_NO_ALERT:
+-                                            log.debug("Task \"" + task.getName() + "\" done"); //$NON-NLS-1$ //$NON-NLS-2$
+-                                        case NOTHING_TO_DO:
+-                                            done.add(MigrationUtil.convertMigrationTask(task));
+-                                            needSave = true;
+-                                            break;
+-                                        case SKIPPED:
+-                                            log.debug("Task \"" + task.getName() + "\" skipped"); //$NON-NLS-1$ //$NON-NLS-2$
+-                                            break;
+-                                        case FAILURE:
+-                                        default:
++                                        } catch (Exception e) {
++                                            doneThisSession.add(task);
++                                            ExceptionHandler.process(e);
+                                             log.debug("Task \"" + task.getName() + "\" failed"); //$NON-NLS-1$ //$NON-NLS-2$
+-                                            break;
+                                         }
+-                                    } catch (Exception e) {
+-                                        ExceptionHandler.process(e);
+-                                        log.debug("Task \"" + task.getName() + "\" failed"); //$NON-NLS-1$ //$NON-NLS-2$
++                                        done.add(MigrationUtil.convertMigrationTask(task));
+                                     }
+-                                } else if (mgTask == null && task.isDeprecated()) {
+-                                    done.add(MigrationUtil.convertMigrationTask(task));
+                                     needSave = true;
+                                 }
++                            } else {
++                                // new project
++                                for (IProjectMigrationTask task : toExecute) {
++                                    task.setStatus(ExecutionResult.NOTHING_TO_DO);
++                                    done.add(MigrationUtil.convertMigrationTask(task));
++                                }
++                                needSave = true;
+                             }
++
+                             if (needSave) {
+                                 saveProjectMigrationTasksDone(project, done);
+                             }
+                             if (!RelationshipItemBuilder.INDEX_VERSION.equals(project.getEmfProject().getItemsRelationVersion())) {
+                                 project.getEmfProject().setItemsRelationVersion(RelationshipItemBuilder.INDEX_VERSION);
+                             }
+-                            RelationshipItemBuilder.getInstance().saveRelations();
++                            if (!isMigrationOnNewProject()) {
++                                RelationshipItemBuilder.getInstance().saveRelations();
++                            }
+                         } catch (PersistenceException e) {
+-                            throw new CoreException(new Status(Status.ERROR, "org.talend.migrationTool", e.getMessage(), e));
++                            throw new CoreException(new Status(Status.ERROR, "org.talend.migrationTool", e.getMessage(), e)); //$NON-NLS-1$
++                        }
++                        if (!isMigrationOnNewProject() && !beforeLogon) {
++                            appendToLogFile(project, " ---=== Enf of migration ===---\n"); //$NON-NLS-1$
+                         }
+                     }
+                 };
+@@ -370,9 +463,34 @@ public class MigrationToolService implements IMigrationToolService {
+         };
+         repositoryWorkUnit.setAvoidUnloadResources(true);
+         repFactory.executeRepositoryWorkUnit(repositoryWorkUnit);
++        if (!beforeLogon) {
++            setMigrationOnNewProject(false);
++        }
+         // repositoryWorkUnit.throwPersistenceExceptionIfAny();
+     }
+ 
++    private void appendToLogFile(Project sourceProject, String logTxt) {
++        IProject project = ProjectManager.getInstance().getResourceProject(sourceProject.getEmfProject());
++        File fullLogFile = new File(project.getFile(FULL_LOG_FILE).getLocation().toPortableString());
++
++        FileWriter writer = null;
++        try {
++            writer = new FileWriter(fullLogFile, true);
++            writer.append(logTxt);
++        } catch (IOException e) {
++            // nothing
++        } finally {
++            if (writer != null) {
++                try {
++                    writer.close();
++                } catch (IOException e) {
++                    // do nothing
++                }
++            }
++        }
++
++    }
++
+     @Override
+     public boolean checkMigrationTasks(org.talend.core.model.properties.Project project) {
+         EList<MigrationTask> migrationTasks = project.getMigrationTask();
+@@ -450,7 +568,7 @@ public class MigrationToolService implements IMigrationToolService {
+         for (IProjectMigrationTask task : toExecute) {
+             done.add(MigrationUtil.convertMigrationTask(task));
+         }
+-
++        project.getEmfProject().setItemsRelationVersion(RelationshipItemBuilder.INDEX_VERSION);
+         saveProjectMigrationTasksDone(project, done);
+     }
+ 
+@@ -557,4 +675,33 @@ public class MigrationToolService implements IMigrationToolService {
+         return !AlertUserOnLogin.executed;
+     }
+ 
++    public boolean isMigrationOnNewProject() {
++        return migrationOnNewProject;
++    }
++
++    public void setMigrationOnNewProject(boolean migrationOnNewProject) {
++        this.migrationOnNewProject = migrationOnNewProject;
++    }
++
++    /**
++     * Getter for doneThisSession.
++     * 
++     * @return the doneThisSession
++     */
++    public List<IProjectMigrationTask> getDoneThisSession() {
++        Comparator comparator = new Comparator<IProjectMigrationTask>() {
++
++            @Override
++            public int compare(IProjectMigrationTask o1, IProjectMigrationTask o2) {
++                if (o1.getStatus() == ExecutionResult.FAILURE && o2.getStatus() == ExecutionResult.SUCCESS_WITH_ALERT) {
++                    return -1;
++                } else {
++                    return 1;
++                }
++            }
++
++        };
++        Collections.sort(doneThisSession, comparator);
++        return this.doneThisSession;
++    }
+ }
+diff --git a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/AlertUserOnLogin.java b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/AlertUserOnLogin.java
+index 94bbce6..3ffbfac 100644
+--- a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/AlertUserOnLogin.java
++++ b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/AlertUserOnLogin.java
+@@ -37,6 +37,7 @@ public class AlertUserOnLogin implements IStartup {
+         earlyStartup();
+     }
+ 
++    @Override
+     public void earlyStartup() {
+         if (!startUnderPluginModel && !CoreRuntimePlugin.getInstance().getRepositoryService().isRCPMode()) {
+             return;
+@@ -44,6 +45,7 @@ public class AlertUserOnLogin implements IStartup {
+         final IWorkbench workbench = PlatformUI.getWorkbench();
+         workbench.getDisplay().asyncExec(new Runnable() {
+ 
++            @Override
+             public void run() {
+                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+                 if (window != null) {
+@@ -52,8 +54,8 @@ public class AlertUserOnLogin implements IStartup {
+ 
+                     MigrationToolService m = (MigrationToolService) service;
+ 
+-                    if (!m.doneThisSession.isEmpty()) {
+-                        SummaryDialog loginDialog = new SummaryDialog(new Shell(), m.doneThisSession);
++                    if (!m.getDoneThisSession().isEmpty()) {
++                        SummaryDialog loginDialog = new SummaryDialog(new Shell(), m.getDoneThisSession());
+                         loginDialog.open();
+                     }
+                 }
+diff --git a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryComposite.java b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryComposite.java
+index d8e2854..28be89a 100644
+--- a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryComposite.java
++++ b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryComposite.java
+@@ -14,21 +14,25 @@ package org.talend.migrationtool.model.summary;
+ 
+ import java.util.List;
+ 
+-import org.eclipse.jface.resource.JFaceResources;
++import org.eclipse.jface.viewers.ColumnPixelData;
++import org.eclipse.jface.viewers.IStructuredContentProvider;
++import org.eclipse.jface.viewers.LabelProvider;
++import org.eclipse.jface.viewers.TableLayout;
++import org.eclipse.jface.viewers.TableViewer;
++import org.eclipse.jface.viewers.Viewer;
+ import org.eclipse.swt.SWT;
+ import org.eclipse.swt.custom.ScrolledComposite;
+ import org.eclipse.swt.graphics.Color;
++import org.eclipse.swt.graphics.Image;
+ import org.eclipse.swt.layout.FillLayout;
+-import org.eclipse.swt.layout.FormAttachment;
+-import org.eclipse.swt.layout.FormData;
+-import org.eclipse.swt.layout.FormLayout;
+ import org.eclipse.swt.layout.GridData;
+ import org.eclipse.swt.layout.GridLayout;
+ import org.eclipse.swt.widgets.Composite;
+-import org.eclipse.swt.widgets.Control;
+-import org.eclipse.swt.widgets.Label;
++import org.eclipse.swt.widgets.Table;
++import org.eclipse.swt.widgets.TableColumn;
+ import org.talend.commons.ui.runtime.image.ECoreImage;
+ import org.talend.commons.ui.runtime.image.ImageProvider;
++import org.talend.migration.IMigrationTask.ExecutionResult;
+ import org.talend.migration.IProjectMigrationTask;
+ 
+ /**
+@@ -41,14 +45,6 @@ public class SummaryComposite extends Composite {
+ 
+     private static final Color BCK_COLOR = new Color(null, 255, 255, 255);
+ 
+-    private static final int HORIZONTAL_MERGE = 5;
+-
+-    private static final int VERTICAL_MERGE = 5;
+-
+-    private static final int HORIZONTAL_SPACE = 5;
+-
+-    private static final int VERTICAL_SPACE = 5;
+-
+     public SummaryComposite(Composite parent, int style, List<IProjectMigrationTask> tasks, int size) {
+         super(parent, style);
+         parent.setBackground(BCK_COLOR);
+@@ -56,8 +52,6 @@ public class SummaryComposite extends Composite {
+         this.setLayoutData(new GridData(GridData.FILL_BOTH));
+         this.setBackground(BCK_COLOR);
+ 
+-        FormData data;
+-
+         ScrolledComposite scrolled = new ScrolledComposite(this, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+         scrolled.setLayout(new GridLayout());
+         scrolled.setExpandHorizontal(true);
+@@ -65,57 +59,84 @@ public class SummaryComposite extends Composite {
+ 
+         Composite container = new Composite(scrolled, SWT.NONE);
+         scrolled.setContent(container);
+-        FormLayout layout2 = new FormLayout();
++        GridLayout layout2 = new GridLayout();
+         container.setLayout(layout2);
+         container.setBackground(BCK_COLOR);
+ 
+-        Control lastControl = null;
+-
+-        int i = 0;
+-        for (IProjectMigrationTask task : tasks) {
+-            Label imageLabel = new Label(container, SWT.NONE);
+-            imageLabel.setImage(ImageProvider.getImage(ECoreImage.TALEND_PICTO));
+-            imageLabel.setBackground(BCK_COLOR);
+-            data = new FormData();
+-            data.left = new FormAttachment(HORIZONTAL_MERGE);
+-            if (lastControl == null) {
+-                data.top = new FormAttachment(VERTICAL_MERGE);
+-            } else {
+-                data.top = new FormAttachment(lastControl, VERTICAL_SPACE, SWT.BOTTOM);
++        TableViewer tableWiewer = new TableViewer(container, SWT.NONE);
++        tableWiewer.setContentProvider(new IStructuredContentProvider() {
++
++            @Override
++            public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
++            }
++
++            @Override
++            public void dispose() {
++            }
++
++            @Override
++            public Object[] getElements(Object inputElement) {
++                if (inputElement instanceof List) {
++                    return ((List) inputElement).toArray();
++                }
++                return null;
+             }
+-            imageLabel.setLayoutData(data);
+-
+-            Label taskNameLabel = new Label(container, SWT.NONE);
+-            taskNameLabel.setText(task.getName());
+-            taskNameLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+-            taskNameLabel.setBackground(BCK_COLOR);
+-            data = new FormData();
+-            data.left = new FormAttachment(imageLabel, HORIZONTAL_SPACE);
+-            data.top = new FormAttachment(imageLabel, 0, SWT.CENTER);
+-            taskNameLabel.setLayoutData(data);
+-
+-            Label taskDescLabel = new Label(container, SWT.WRAP);
+-            taskDescLabel.setText(task.getDescription());
+-            taskDescLabel.setBackground(BCK_COLOR);
+-            data = new FormData();
+-            data.left = new FormAttachment(HORIZONTAL_MERGE);
+-            data.right = new FormAttachment(100, -HORIZONTAL_MERGE);
+-            data.top = new FormAttachment(taskNameLabel, VERTICAL_SPACE, SWT.BOTTOM);
+-            taskDescLabel.setLayoutData(data);
+-            lastControl = taskDescLabel;
+-
+-            if (i + 1 < tasks.size()) {
+-                Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
+-                data = new FormData();
+-                data.left = new FormAttachment(HORIZONTAL_SPACE);
+-                data.right = new FormAttachment(100, -HORIZONTAL_SPACE);
+-                data.top = new FormAttachment(taskDescLabel, HORIZONTAL_SPACE);
+-                separator.setLayoutData(data);
+-                lastControl = separator;
++        });
++
++        tableWiewer.setLabelProvider(new LabelProvider() {
++
++            /*
++             * (non-Javadoc)
++             * 
++             * @see org.eclipse.jface.viewers.LabelProvider#getImage(java.lang.Object)
++             */
++            @Override
++            public Image getImage(Object element) {
++                if (element instanceof IProjectMigrationTask) {
++                    ExecutionResult status = ((IProjectMigrationTask) element).getStatus();
++                    if (status != null) {
++                        switch (status) {
++                        case SUCCESS_WITH_ALERT:
++                            return ImageProvider.getImage(ECoreImage.STATUS_OK);
++                        case FAILURE:
++                            return ImageProvider.getImage(ECoreImage.MODULE_ERROR_ICON);
++
++                        default:
++                            break;
++                        }
++                    }
++
++                }
++
++                return super.getImage(element);
+             }
+ 
+-            i++;
+-        }
++            /*
++             * (non-Javadoc)
++             * 
++             * @see org.eclipse.jface.viewers.LabelProvider#getText(java.lang.Object)
++             */
++            @Override
++            public String getText(Object element) {
++                if (element instanceof IProjectMigrationTask) {
++                    return ((IProjectMigrationTask) element).getClass().getSimpleName();
++                }
++                return super.getText(element);
++            }
++        });
++
++        Table table = tableWiewer.getTable();
++        TableLayout tableLayout = new TableLayout();
++        table.setLayout(tableLayout);
++        table.setHeaderVisible(true);
++        table.setLinesVisible(true);
++
++        GridData data = new GridData(GridData.FILL_BOTH);
++        table.setLayoutData(data);
++        tableLayout.addColumnData(new ColumnPixelData(500, true));
++        new TableColumn(table, SWT.NONE);
++
++        tableWiewer.setInput(tasks);
+ 
+         container.setSize(container.computeSize(size, SWT.DEFAULT));
+     }
+diff --git a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryDialog.java b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryDialog.java
+index 5f706e5..8d55313 100644
+--- a/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryDialog.java
++++ b/org.talend.migrationTool/src/org/talend/migrationtool/model/summary/SummaryDialog.java
+@@ -37,12 +37,13 @@ public class SummaryDialog extends TitleAreaDialog {
+         super(parentShell);
+         this.tasks = tasks;
+         setHelpAvailable(false);
++        // setShellStyle(SWT.Resize | getShellStyle());
+     }
+ 
+     @Override
+     protected Control createContents(Composite parent) {
+         Control control = super.createContents(parent);
+-        this.setMessage(Messages.getString("migrationTasksRecapDialog.description")); //$NON-NLS-1$
++        this.setMessage(Messages.getString("migrationTasksRecapDialog.descriptions")); //$NON-NLS-1$
+         return control;
+     }
+ 
+@@ -59,6 +60,7 @@ public class SummaryDialog extends TitleAreaDialog {
+         newShell.setSize(600, DIALOG_HEIGHT);
+     }
+ 
++    @Override
+     protected void createButtonsForButtonBar(Composite parent) {
+         createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
+     }
+diff --git a/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java b/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
+index 97fc9ce..7287a4c 100644
+--- a/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
++++ b/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
+@@ -21,6 +21,7 @@ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.Date;
+ import java.util.HashMap;
++import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+@@ -173,6 +174,8 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+ 
+     private boolean copyScreenshotFlag = false;
+ 
++    private Set<String> invalidFiles = new HashSet<String>();
++
+     public LocalRepositoryFactory() {
+         super();
+     }
+@@ -364,9 +367,10 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+                             Property property = null;
+                             try {
+                                 property = xmiResourceManager.loadProperty(current);
+-                            } catch (RuntimeException e) {
++                            } catch (Exception e) {
+                                 // property will be null
+-                                ExceptionHandler.process(e);
++                                // ExceptionHandler.process(e);
++                                // no log anymore here since we add the log.error, it should be enough
+                             }
+                             if (property != null) {
+                                 if (property.getItem() == null || property.getItem().getState() == null) {
+@@ -388,7 +392,11 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+                                     currentObject = new RepositoryObject(property);
+                                 }
+                             } else {
+-                                log.error(Messages.getString("LocalRepositoryFactory.CannotLoadProperty") + current); //$NON-NLS-1$
++                                String curFile = current.getFullPath().toPortableString();
++                                if (!invalidFiles.contains(curFile)) {
++                                    invalidFiles.add(curFile);
++                                    log.error(Messages.getString("LocalRepositoryFactory.CannotLoadProperty") + current); //$NON-NLS-1$
++                                }
+                             }
+                             addItemToContainer(toReturn, currentObject, onlyLastVersion);
+                         }
+@@ -615,9 +623,10 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+                                 Property property = null;
+                                 try {
+                                     property = xmiResourceManager.loadProperty(current);
+-                                } catch (RuntimeException e) {
++                                } catch (Exception e) {
+                                     // property will be null
+-                                    ExceptionHandler.process(e);
++                                    // ExceptionHandler.process(e);
++                                    // no log anymore here since we add the log.error, it should be enough
+                                 }
+                                 if (property != null) {
+                                     if (property.getItem() == null || property.getItem().getState() == null) {
+@@ -640,7 +649,11 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+                                         property.getItem().setParent(currentFolderItem);
+                                     }
+                                 } else {
+-                                    log.error(Messages.getString("LocalRepositoryFactory.CannotLoadProperty") + current); //$NON-NLS-1$
++                                    String curFile = current.getFullPath().toPortableString();
++                                    if (!invalidFiles.contains(curFile)) {
++                                        invalidFiles.add(curFile);
++                                        log.error(Messages.getString("LocalRepositoryFactory.CannotLoadProperty") + current); //$NON-NLS-1$
++                                    }
+                                 }
+                             }
+                         }
+@@ -3245,4 +3258,15 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+     public boolean isModified(Property property) {
+         return false;
+     }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.core.repository.model.AbstractRepositoryFactory#logOffProject()
++     */
++    @Override
++    public void logOffProject() {
++        invalidFiles.clear();
++        super.logOffProject();
++    }
+ }

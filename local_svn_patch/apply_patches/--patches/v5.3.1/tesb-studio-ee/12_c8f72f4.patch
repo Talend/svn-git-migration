@@ -1,0 +1,13 @@
+diff --git a/org.talend.designer.publish/src/org/talend/designer/publish/wizards/actions/PublishRouteWizardAction.java b/org.talend.designer.publish/src/org/talend/designer/publish/wizards/actions/PublishRouteWizardAction.java
+index 04da375..5704e56 100644
+--- a/org.talend.designer.publish/src/org/talend/designer/publish/wizards/actions/PublishRouteWizardAction.java
++++ b/org.talend.designer.publish/src/org/talend/designer/publish/wizards/actions/PublishRouteWizardAction.java
+@@ -132,7 +132,7 @@ public class PublishRouteWizardAction extends JavaCamelJobScriptsExportWSAction
+         String filePath = getTempDir() + displayName + '-' + jobVersion + FileConstants.JAR_FILE_SUFFIX;
+         if (processReferencedJob(filePath, referencedJobNode, jobVersion)) {
+             exportOsgiBundle(referencedJobNode, filePath, jobVersion,
+-                    /*VersionUtil.getBundleVersion(VersionUtil.getPublishVersion(jobVersion), isSnapshot)*/bundleVersion, "Job");
++                    /*VersionUtil.getBundleVersion(VersionUtil.getPublishVersion(jobVersion), isSnapshot)*/bundleVersion, "Job", true);
+         }
+ 
+     }

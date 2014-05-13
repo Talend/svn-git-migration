@@ -1,0 +1,29 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/process/AbstractNode.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/process/AbstractNode.java
+index 7582003..ca3a555 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/process/AbstractNode.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/process/AbstractNode.java
+@@ -826,7 +826,9 @@ public abstract class AbstractNode implements INode {
+ 
+     @Override
+     public IExternalData getExternalData() {
+-        // TODO Auto-generated method stub
++        if (externalNode != null) {
++            return externalNode.getExternalData();
++        }
+         return null;
+     }
+ 
+@@ -837,7 +839,12 @@ public abstract class AbstractNode implements INode {
+ 
+     @Override
+     public IMetadataTable getMetadataTable(String metaName) {
+-        // TODO Auto-generated method stub
++        for (int i = 0; i < metadataList.size(); i++) {
++            String tableName = metadataList.get(i).getTableName();
++            if (tableName != null && tableName.equals(metaName)) {
++                return metadataList.get(i);
++            }
++        }
+         return null;
+     }
+ 

@@ -1,0 +1,1170 @@
+diff --git a/org.talend.commons.runtime/src/org/talend/commons/utils/database/DB2ForZosDataBaseMetadata.java b/org.talend.commons.runtime/src/org/talend/commons/utils/database/DB2ForZosDataBaseMetadata.java
+index bd8e753..733d719 100644
+--- a/org.talend.commons.runtime/src/org/talend/commons/utils/database/DB2ForZosDataBaseMetadata.java
++++ b/org.talend.commons.runtime/src/org/talend/commons/utils/database/DB2ForZosDataBaseMetadata.java
+@@ -1,398 +1,385 @@
+-// ============================================================================
+-//
+-// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
+-//
+-// This source code is available under agreement available at
+-// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+-//
+-// You should have received a copy of the agreement
+-// along with this program; if not, write to Talend SA
+-// 9 rue Pages 92150 Suresnes, France
+-//
+-// ============================================================================
+-package org.talend.commons.utils.database;
+-
+-import java.sql.Connection;
+-import java.sql.ResultSet;
+-import java.sql.SQLException;
+-import java.sql.Statement;
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-import org.talend.fakejdbc.FakeDatabaseMetaData;
+-
+-/**
+- * DOC bqian class global comment. Detailled comment
+- */
+-public class DB2ForZosDataBaseMetadata extends FakeDatabaseMetaData {
+-
+-    private static final String[] TABLE_META = { "ID", "TABLE_SCHEM", "TABLE_NAME", "TABLE_TYPE", "REMARKS" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+-
+-    private static final String[] COLUMN_META = { "TABLE_NAME", "COLUMN_NAME", "TYPE_NAME", "COLUMN_SIZE", "DECIMAL_DIGITS", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+-            "IS_NULLABLE", "REMARKS", "COLUMN_DEF" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+-
+-    private Connection connection;
+-
+-    private String T = "T";//$NON-NLS-1$
+-
+-    private String V = "V";//$NON-NLS-1$
+-
+-    private String S = "S";//$NON-NLS-1$
+-
+-    private String A = "A";//$NON-NLS-1$
+-
+-    private String TABLE = "TABLE"; //$NON-NLS-1$
+-
+-    private String VIEW = "VIEW"; //$NON-NLS-1$
+-
+-    private String SYNONYM = "SYNONYM"; //$NON-NLS-1$
+-
+-    private String ALIAS = "ALIAS"; //$NON-NLS-1$
+-
+-    /**
+-     * DOC xqliu Comment method "getDb2zosTypeName".
+-     * 
+-     * @param typeName
+-     * @return
+-     */
+-    private String getDb2zosTypeName(String typeName) {
+-        String result = typeName;
+-        if (TABLE.equals(typeName)) {
+-            result = T;
+-        } else if (VIEW.equals(typeName)) {
+-            result = V;
+-        } else if (SYNONYM.equals(typeName)) {
+-            result = S;
+-        } else if (ALIAS.equals(typeName)) {
+-            result = A;
+-        }
+-        return result;
+-    }
+-
+-    /**
+-     * DOC xqliu Comment method "getTypeNameFromDb2zosType".
+-     * 
+-     * @param typeName
+-     * @return
+-     */
+-    private String getTypeNameFromDb2zosType(String typeName) {
+-        String result = typeName;
+-        if (T.equals(typeName)) {
+-            result = TABLE;
+-        } else if (V.equals(typeName)) {
+-            result = VIEW;
+-        } else if (S.equals(typeName)) {
+-            result = SYNONYM;
+-        } else if (A.equals(typeName)) {
+-            result = ALIAS;
+-        }
+-        return result;
+-    }
+-
+-    /**
+-     * DOC bqian DB2ForZosDataBaseMetadata constructor comment.
+-     * 
+-     * @param metaData
+-     */
+-    public DB2ForZosDataBaseMetadata(Connection connection) {
+-        this.connection = connection;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getConnection()
+-     */
+-    @Override
+-    public Connection getConnection() throws SQLException {
+-        return connection;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getSchemas()
+-     */
+-    @Override
+-    public ResultSet getSchemas() throws SQLException {
+-        // see the feature 5827
+-        // MOD yyin 2012-05-15 TDQ-5190
+-        String sql = "SELECT DISTINCT CREATOR FROM SYSIBM.SYSTABLES"; //$NON-NLS-1$
+-        ResultSet rs = null;
+-        Statement stmt = null;
+-        List<String[]> list = new ArrayList<String[]>();
+-        try {
+-            stmt = connection.createStatement();
+-            rs = stmt.executeQuery(sql);
+-
+-            while (rs.next()) {
+-                String creator = rs.getString("CREATOR"); //$NON-NLS-1$
+-
+-                String[] r = new String[] { creator.trim() };
+-                list.add(r);
+-            }
+-
+-        } catch (SQLException e) {
+-            throw new RuntimeException(e);
+-        } finally {
+-            try {
+-                rs.close();
+-                stmt.close();
+-            } catch (Exception e) {
+-            }
+-        }
+-
+-        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
+-        tableResultSet.setMetadata(new String[] { "TABLE_SCHEM" }); //$NON-NLS-1$
+-        tableResultSet.setData(list);
+-        return tableResultSet;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getPrimaryKeys(java.lang.String, java.lang.String,
+-     * java.lang.String)
+-     */
+-    @Override
+-    public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
+-        return new DB2ForZosResultSet();
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getTableTypes()
+-     */
+-    @Override
+-    public ResultSet getTableTypes() throws SQLException {
+-        String[] s1 = new String[] { "TABLE" }; //$NON-NLS-1$
+-        String[] s2 = new String[] { "VIEW" }; //$NON-NLS-1$
+-        String[] s3 = new String[] { "SYNONYM" }; //$NON-NLS-1$
+-        String[] s4 = new String[] { "ALIAS" }; //$NON-NLS-1$
+-
+-        List<String[]> list = new ArrayList<String[]>();
+-
+-        list.add(s1);
+-        list.add(s2);
+-        list.add(s3);
+-        list.add(s4);
+-
+-        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
+-        tableResultSet.setMetadata(new String[] { "TABLE_TYPE" }); //$NON-NLS-1$
+-        tableResultSet.setData(list);
+-
+-        return tableResultSet;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getExportedKeys(java.lang.String, java.lang.String,
+-     * java.lang.String)
+-     */
+-    @Override
+-    public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
+-        return new DB2ForZosResultSet();
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getTables(java.lang.String, java.lang.String,
+-     * java.lang.String, java.lang.String[])
+-     */
+-    @Override
+-    public ResultSet getTables(String catalog, String schema, String tableNamePattern, String[] types) throws SQLException {
+-        String sql;
+-        String and;
+-        if (schema != null) {
+-            sql = "SELECT * FROM SYSIBM.SYSTABLES where CREATOR = '" + schema + "'"; //$NON-NLS-1$ //$NON-NLS-2$
+-            and = " and ";
+-        } else {
+-            sql = "SELECT * FROM SYSIBM.SYSTABLES"; //$NON-NLS-1$
+-            and = " where ";
+-        }
+-        // ADD xqliu 2012-04-17 TDQ-5118
+-        sql = addTypesToSql(sql, types, and);
+-        // ~ TDQ-5118
+-        ResultSet rs = null;
+-        Statement stmt = null;
+-        List<String[]> list = new ArrayList<String[]>();
+-        try {
+-            stmt = connection.createStatement();
+-            rs = stmt.executeQuery(sql);
+-
+-            while (rs.next()) {
+-                String name = rs.getString("NAME"); //$NON-NLS-1$
+-                String creator = rs.getString("CREATOR"); //$NON-NLS-1$
+-                String type = rs.getString("TYPE"); //$NON-NLS-1$
+-                // String dbname = rs.getString("DBNAME");
+-
+-                String[] r = new String[] { "", creator, name, getTypeNameFromDb2zosType(type), "" }; //$NON-NLS-1$ //$NON-NLS-2$
+-                list.add(r);
+-            }
+-
+-        } catch (SQLException e) {
+-            throw new RuntimeException(e);
+-        } finally {
+-            try {
+-                rs.close();
+-                stmt.close();
+-            } catch (Exception e) {
+-            }
+-        }
+-
+-        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
+-        tableResultSet.setMetadata(TABLE_META);
+-        tableResultSet.setData(list);
+-        return tableResultSet;
+-    }
+-
+-    /**
+-     * DOC xqliu Comment method "addTypesToSql".
+-     * 
+-     * @param sql
+-     * @param types
+-     * @param and
+-     * @return
+-     */
+-    private String addTypesToSql(String sql, String[] types, String and) {
+-        String result = sql;
+-        if (types != null && types.length > 0) {
+-            String typeClause = " type in("; //$NON-NLS-1$
+-            int len = types.length;
+-            for (int i = 0; i < len; ++i) {
+-                String comma = ""; //$NON-NLS-1$
+-                if (i > 0) {
+-                    comma = " , "; //$NON-NLS-1$
+-                }
+-                typeClause = typeClause + comma + "'" + getDb2zosTypeName(types[i]) + "'";//$NON-NLS-1$ //$NON-NLS-2$
+-            }
+-            typeClause = typeClause + ")"; //$NON-NLS-1$
+-            result = sql + and + typeClause;
+-        }
+-        return result;
+-    }
+-
+-    /**
+-     * DOC zshen Comment method "checkContainTable".
+-     * 
+-     * @param types
+-     */
+-    private boolean checkContainTable(String[] types) {
+-        if (types != null && types.length > 0) {
+-            int len = types.length;
+-            for (int i = 0; i < len; ++i) {
+-                if (TABLE.equals(types[i])) {
+-                    return true;
+-                }
+-            }
+-        }
+-        return false;
+-
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#supportsSchemasInDataManipulation()
+-     */
+-    @Override
+-    public boolean supportsSchemasInDataManipulation() throws SQLException {
+-        return true;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#supportsSchemasInTableDefinitions()
+-     */
+-    @Override
+-    public boolean supportsSchemasInTableDefinitions() throws SQLException {
+-        return true;
+-    }
+-
+-    @Override
+-    public String getIdentifierQuoteString() throws SQLException {
+-        return "\""; //$NON-NLS-1$ 
+-    }
+-
+-    @Override
+-    public boolean supportsSchemasInIndexDefinitions() throws SQLException {
+-        return true;
+-    }
+-
+-    /*
+-     * (non-Javadoc)
+-     * 
+-     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getColumns(java.lang.String, java.lang.String,
+-     * java.lang.String, java.lang.String)
+-     */
+-    @Override
+-    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+-            throws SQLException {
+-        // for real
+-        String sql = "SELECT * FROM SYSIBM.SYSCOLUMNS where TBNAME='" + tableNamePattern + "' AND  TBCREATOR = '" //$NON-NLS-1$ //$NON-NLS-2$
+-                + schemaPattern + "' ORDER BY TBCREATOR, TBNAME, COLNO"; //$NON-NLS-1$
+-
+-        // for test
+-        // String sql = "SELECT * FROM SYSIBM.SYSCOLUMNS where NAME='NAME'";
+-
+-        ResultSet rs = null;
+-        Statement stmt = null;
+-        List<String[]> list = new ArrayList<String[]>();
+-        try {
+-            stmt = connection.createStatement();
+-            rs = stmt.executeQuery(sql);
+-            while (rs.next()) {
+-
+-                // For real db2 for zos, should use these code.
+-                String tableName = rs.getString("TBNAME"); //$NON-NLS-1$
+-                String columnName = rs.getString("NAME"); //$NON-NLS-1$
+-                String typeName = rs.getString("COLTYPE"); //$NON-NLS-1$
+-                String columnSize = rs.getString("LENGTH"); //$NON-NLS-1$
+-                String decimalDigits = rs.getString("SCALE"); //$NON-NLS-1$
+-                String isNullable;
+-                if (rs.getString("NULLS").equals("Y")) { //$NON-NLS-1$ //$NON-NLS-2$
+-                    isNullable = "YES"; //$NON-NLS-1$
+-                } else {
+-                    isNullable = rs.getString("NULLS"); //$NON-NLS-1$
+-                }
+-                // String keys = rs.getString("keys");
+-                String remarks = ""; //$NON-NLS-1$
+-                String columnDef = ""; //$NON-NLS-1$
+-
+-                // this is for testing with DB2 on windows
+-                // String tableName = tableNamePattern;
+-                // String columnName = rs.getString("NAME");
+-                // String typeName = "datatype";
+-                // String columnSize = "10";
+-                // String decimalDigits = "10";
+-                // String isNullable = "true";
+-                // String remarks = "remarks";
+-                // String columnDef = "columnDef";
+-
+-                String[] r = new String[] { tableName, columnName, typeName, columnSize, decimalDigits, isNullable, // keys
+-                        // ,
+-                        remarks, columnDef };
+-                list.add(r);
+-            }
+-
+-        } catch (SQLException e) {
+-            throw new RuntimeException(e);
+-        } finally {
+-            try {
+-                rs.close();
+-                stmt.close();
+-            } catch (Exception e) {
+-            }
+-        }
+-
+-        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
+-        tableResultSet.setMetadata(COLUMN_META);
+-        tableResultSet.setData(list);
+-        return tableResultSet;
+-    }
+-
+-}
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.commons.utils.database;
++
++import java.sql.Connection;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.sql.Statement;
++import java.util.ArrayList;
++import java.util.List;
++
++/**
++ * DOC bqian class global comment. Detailled comment
++ */
++public class DB2ForZosDataBaseMetadata extends PackageFakeDatabaseMetadata {
++
++    private static final String[] TABLE_META = { "ID", "TABLE_SCHEM", "TABLE_NAME", "TABLE_TYPE", "REMARKS" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
++
++    private static final String[] COLUMN_META = { "TABLE_NAME", "COLUMN_NAME", "TYPE_NAME", "COLUMN_SIZE", "DECIMAL_DIGITS", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
++            "IS_NULLABLE", "REMARKS", "COLUMN_DEF" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
++
++    private String T = "T";//$NON-NLS-1$
++
++    private String V = "V";//$NON-NLS-1$
++
++    private String S = "S";//$NON-NLS-1$
++
++    private String A = "A";//$NON-NLS-1$
++
++    private String TABLE = "TABLE"; //$NON-NLS-1$
++
++    private String VIEW = "VIEW"; //$NON-NLS-1$
++
++    private String SYNONYM = "SYNONYM"; //$NON-NLS-1$
++
++    private String ALIAS = "ALIAS"; //$NON-NLS-1$
++
++    /**
++     * DOC xqliu Comment method "getDb2zosTypeName".
++     * 
++     * @param typeName
++     * @return
++     */
++    private String getDb2zosTypeName(String typeName) {
++        String result = typeName;
++        if (TABLE.equals(typeName)) {
++            result = T;
++        } else if (VIEW.equals(typeName)) {
++            result = V;
++        } else if (SYNONYM.equals(typeName)) {
++            result = S;
++        } else if (ALIAS.equals(typeName)) {
++            result = A;
++        }
++        return result;
++    }
++
++    /**
++     * DOC xqliu Comment method "getTypeNameFromDb2zosType".
++     * 
++     * @param typeName
++     * @return
++     */
++    private String getTypeNameFromDb2zosType(String typeName) {
++        String result = typeName;
++        if (T.equals(typeName)) {
++            result = TABLE;
++        } else if (V.equals(typeName)) {
++            result = VIEW;
++        } else if (S.equals(typeName)) {
++            result = SYNONYM;
++        } else if (A.equals(typeName)) {
++            result = ALIAS;
++        }
++        return result;
++    }
++
++    /**
++     * DOC bqian DB2ForZosDataBaseMetadata constructor comment.
++     * 
++     * @param metaData
++     * @throws SQLException
++     */
++    public DB2ForZosDataBaseMetadata(Connection connection) throws SQLException {
++        super(connection);
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getSchemas()
++     */
++    @Override
++    public ResultSet getSchemas() throws SQLException {
++        // see the feature 5827
++        // MOD yyin 2012-05-15 TDQ-5190
++        String sql = "SELECT DISTINCT CREATOR FROM SYSIBM.SYSTABLES"; //$NON-NLS-1$
++        ResultSet rs = null;
++        Statement stmt = null;
++        List<String[]> list = new ArrayList<String[]>();
++        try {
++            stmt = connection.createStatement();
++            rs = stmt.executeQuery(sql);
++
++            while (rs.next()) {
++                String creator = rs.getString("CREATOR"); //$NON-NLS-1$
++
++                String[] r = new String[] { creator.trim() };
++                list.add(r);
++            }
++
++        } catch (SQLException e) {
++            throw new RuntimeException(e);
++        } finally {
++            try {
++                rs.close();
++                stmt.close();
++            } catch (Exception e) {
++            }
++        }
++
++        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
++        tableResultSet.setMetadata(new String[] { "TABLE_SCHEM" }); //$NON-NLS-1$
++        tableResultSet.setData(list);
++        return tableResultSet;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getPrimaryKeys(java.lang.String, java.lang.String,
++     * java.lang.String)
++     */
++    @Override
++    public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
++        return new DB2ForZosResultSet();
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getTableTypes()
++     */
++    @Override
++    public ResultSet getTableTypes() throws SQLException {
++        String[] s1 = new String[] { "TABLE" }; //$NON-NLS-1$
++        String[] s2 = new String[] { "VIEW" }; //$NON-NLS-1$
++        String[] s3 = new String[] { "SYNONYM" }; //$NON-NLS-1$
++        String[] s4 = new String[] { "ALIAS" }; //$NON-NLS-1$
++
++        List<String[]> list = new ArrayList<String[]>();
++
++        list.add(s1);
++        list.add(s2);
++        list.add(s3);
++        list.add(s4);
++
++        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
++        tableResultSet.setMetadata(new String[] { "TABLE_TYPE" }); //$NON-NLS-1$
++        tableResultSet.setData(list);
++
++        return tableResultSet;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getExportedKeys(java.lang.String, java.lang.String,
++     * java.lang.String)
++     */
++    @Override
++    public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
++        return new DB2ForZosResultSet();
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getTables(java.lang.String, java.lang.String,
++     * java.lang.String, java.lang.String[])
++     */
++    @Override
++    public ResultSet getTables(String catalog, String schema, String tableNamePattern, String[] types) throws SQLException {
++        String sql;
++        String and;
++        if (schema != null) {
++            sql = "SELECT * FROM SYSIBM.SYSTABLES where CREATOR = '" + schema + "'"; //$NON-NLS-1$ //$NON-NLS-2$
++            and = " and ";
++        } else {
++            sql = "SELECT * FROM SYSIBM.SYSTABLES"; //$NON-NLS-1$
++            and = " where ";
++        }
++        // ADD xqliu 2012-04-17 TDQ-5118
++        sql = addTypesToSql(sql, types, and);
++        // ~ TDQ-5118
++        ResultSet rs = null;
++        Statement stmt = null;
++        List<String[]> list = new ArrayList<String[]>();
++        try {
++            stmt = connection.createStatement();
++            rs = stmt.executeQuery(sql);
++
++            while (rs.next()) {
++                String name = rs.getString("NAME"); //$NON-NLS-1$
++                String creator = rs.getString("CREATOR"); //$NON-NLS-1$
++                String type = rs.getString("TYPE"); //$NON-NLS-1$
++                // String dbname = rs.getString("DBNAME");
++
++                String[] r = new String[] { "", creator, name, getTypeNameFromDb2zosType(type), "" }; //$NON-NLS-1$ //$NON-NLS-2$
++                list.add(r);
++            }
++
++        } catch (SQLException e) {
++            throw new RuntimeException(e);
++        } finally {
++            try {
++                rs.close();
++                stmt.close();
++            } catch (Exception e) {
++            }
++        }
++
++        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
++        tableResultSet.setMetadata(TABLE_META);
++        tableResultSet.setData(list);
++        return tableResultSet;
++    }
++
++    /**
++     * DOC xqliu Comment method "addTypesToSql".
++     * 
++     * @param sql
++     * @param types
++     * @param and
++     * @return
++     */
++    private String addTypesToSql(String sql, String[] types, String and) {
++        String result = sql;
++        if (types != null && types.length > 0) {
++            String typeClause = " type in("; //$NON-NLS-1$
++            int len = types.length;
++            for (int i = 0; i < len; ++i) {
++                String comma = ""; //$NON-NLS-1$
++                if (i > 0) {
++                    comma = " , "; //$NON-NLS-1$
++                }
++                typeClause = typeClause + comma + "'" + getDb2zosTypeName(types[i]) + "'";//$NON-NLS-1$ //$NON-NLS-2$
++            }
++            typeClause = typeClause + ")"; //$NON-NLS-1$
++            result = sql + and + typeClause;
++        }
++        return result;
++    }
++
++    /**
++     * DOC zshen Comment method "checkContainTable".
++     * 
++     * @param types
++     */
++    private boolean checkContainTable(String[] types) {
++        if (types != null && types.length > 0) {
++            int len = types.length;
++            for (int i = 0; i < len; ++i) {
++                if (TABLE.equals(types[i])) {
++                    return true;
++                }
++            }
++        }
++        return false;
++
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#supportsSchemasInDataManipulation()
++     */
++    @Override
++    public boolean supportsSchemasInDataManipulation() throws SQLException {
++        return true;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#supportsSchemasInTableDefinitions()
++     */
++    @Override
++    public boolean supportsSchemasInTableDefinitions() throws SQLException {
++        return true;
++    }
++
++    @Override
++    public String getIdentifierQuoteString() throws SQLException {
++        return "\""; //$NON-NLS-1$ 
++    }
++
++    @Override
++    public boolean supportsSchemasInIndexDefinitions() throws SQLException {
++        return true;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeDatabaseMetaData#getColumns(java.lang.String, java.lang.String,
++     * java.lang.String, java.lang.String)
++     */
++    @Override
++    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
++            throws SQLException {
++        // for real
++        String sql = "SELECT * FROM SYSIBM.SYSCOLUMNS where TBNAME='" + tableNamePattern + "' AND  TBCREATOR = '" //$NON-NLS-1$ //$NON-NLS-2$
++                + schemaPattern + "' ORDER BY TBCREATOR, TBNAME, COLNO"; //$NON-NLS-1$
++
++        // for test
++        // String sql = "SELECT * FROM SYSIBM.SYSCOLUMNS where NAME='NAME'";
++
++        ResultSet rs = null;
++        Statement stmt = null;
++        List<String[]> list = new ArrayList<String[]>();
++        try {
++            stmt = connection.createStatement();
++            rs = stmt.executeQuery(sql);
++            while (rs.next()) {
++
++                // For real db2 for zos, should use these code.
++                String tableName = rs.getString("TBNAME"); //$NON-NLS-1$
++                String columnName = rs.getString("NAME"); //$NON-NLS-1$
++                String typeName = rs.getString("COLTYPE"); //$NON-NLS-1$
++                String columnSize = rs.getString("LENGTH"); //$NON-NLS-1$
++                String decimalDigits = rs.getString("SCALE"); //$NON-NLS-1$
++                String isNullable;
++                if (rs.getString("NULLS").equals("Y")) { //$NON-NLS-1$ //$NON-NLS-2$
++                    isNullable = "YES"; //$NON-NLS-1$
++                } else {
++                    isNullable = rs.getString("NULLS"); //$NON-NLS-1$
++                }
++                // String keys = rs.getString("keys");
++                String remarks = ""; //$NON-NLS-1$
++                String columnDef = ""; //$NON-NLS-1$
++
++                // this is for testing with DB2 on windows
++                // String tableName = tableNamePattern;
++                // String columnName = rs.getString("NAME");
++                // String typeName = "datatype";
++                // String columnSize = "10";
++                // String decimalDigits = "10";
++                // String isNullable = "true";
++                // String remarks = "remarks";
++                // String columnDef = "columnDef";
++
++                String[] r = new String[] { tableName, columnName, typeName, columnSize, decimalDigits, isNullable, // keys
++                        // ,
++                        remarks, columnDef };
++                list.add(r);
++            }
++
++        } catch (SQLException e) {
++            throw new RuntimeException(e);
++        } finally {
++            try {
++                rs.close();
++                stmt.close();
++            } catch (Exception e) {
++            }
++        }
++
++        DB2ForZosResultSet tableResultSet = new DB2ForZosResultSet();
++        tableResultSet.setMetadata(COLUMN_META);
++        tableResultSet.setData(list);
++        return tableResultSet;
++    }
++
++}
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/ExtractMetaDataUtils.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/ExtractMetaDataUtils.java
+index 142d974..1b267e3 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/ExtractMetaDataUtils.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/ExtractMetaDataUtils.java
+@@ -82,9 +82,9 @@ import orgomg.cwm.objectmodel.core.Expression;
+ 
+ /**
+  * DOC cantoine. Extract Meta Data Table. Contains all the Table and Metadata about a DB Connection. <br/>
+- *
++ * 
+  * $Id: ExtractMetaDataUtils.java 38999 2010-03-24 03:33:58Z cli $
+- *
++ * 
+  */
+ public class ExtractMetaDataUtils {
+ 
+@@ -109,7 +109,7 @@ public class ExtractMetaDataUtils {
+      * Gets an instance of <code>DatabaseMetadata</code> by the given argument. The reason why it provides this method
+      * is sometimes the database metadata you want to get is not from the <code>Connection</code>, in talend product
+      * maybe a "fake" database metadata is created like "HiveDatabaseMetadata". Added by Marvin Wang on Mar 13, 2013.
+-     *
++     * 
+      * @param metadataConn
+      * @return
+      */
+@@ -128,13 +128,13 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return DatabaseMetaData of a DB connection.
+-     *
++     * 
+      * FIXME sizhaoliu remove repetitions of specific DB conditions.
+-     *
++     * 
+      * @param Connection conn
+      * @param Connection dbType
+      * @return DatabaseMetaData
+-     *
++     * 
+      * MOD by zshen this method don't care about sqlMode
+      */
+     public static DatabaseMetaData getDatabaseMetaData(Connection conn, String dbType) {
+@@ -147,11 +147,11 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return DatabaseMetaData of a DB connection.
+-     *
++     * 
+      * @param Connection conn
+      * @param DatabaseConnection dbConn
+      * @return DatabaseMetaData
+-     *
++     * 
+      * MOD by zshen this method don't care about sqlMode
+      */
+     public static DatabaseMetaData getDatabaseMetaData(Connection connection, DatabaseConnection dbConnection) {
+@@ -160,13 +160,13 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return DatabaseMetaData of a DB connection.
+-     *
++     * 
+      * @param Connection conn
+      * @param isSqlMode
+      * @param DatabaseConnection dbConn
+      * @return DatabaseMetaData
+-     *
+-     *
++     * 
++     * 
+      */
+     public static DatabaseMetaData getDatabaseMetaData(Connection connection, DatabaseConnection dbConnection, boolean isSqlMode) {
+         IMetadataConnection metadataConnection = ConvertionHelper.convert(dbConnection);
+@@ -190,15 +190,15 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
+-     *
++     * 
++     * 
+      * @param conn
+      * @return
+      * @throws SQLException
+-     *
++     * 
+      * this method will pass a mistake databaseType to get DatabaseMetDdata(e.x. db2->db2 for zos) if you can, you
+      * should use getDatabaseMetaData() instead of this method
+-     *
++     * 
+      */
+     public static DatabaseMetaData getConnectionMetadata(java.sql.Connection conn) throws SQLException {
+         if (conn != null) {
+@@ -216,13 +216,13 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return DatabaseMetaData of a DB connection.
+-     *
++     * 
+      * @param Connection conn
+      * @param isSqlMode whether is sqlMode
+      * @param String dbType
+      * @return DatabaseMetaData
+-     *
+-     *
++     * 
++     * 
+      */
+     public static DatabaseMetaData getDatabaseMetaData(Connection conn, String dbType, boolean isSqlMode, String database) {
+         DatabaseMetaData dbMetaData = null;
+@@ -294,9 +294,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * Added by Marvin Wang on Dec 6, 2012.
+-     *
++     * 
+      * @param metadataConnection
+      * @return
+      */
+@@ -320,7 +320,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * Added by Marvin Wang on Dec 6, 2012.
+-     *
++     * 
+      * @param dbType
+      * @param isSqlMode
+      * @return
+@@ -345,11 +345,12 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * only for db2 on z/os right now.
+-     *
++     * 
+      * @param conn2
+      * @return
++     * @throws SQLException
+      */
+-    public static DatabaseMetaData createDB2ForZosFakeDatabaseMetaData(Connection conn) {
++    public static DatabaseMetaData createDB2ForZosFakeDatabaseMetaData(Connection conn) throws SQLException {
+         DB2ForZosDataBaseMetadata dmd = new DB2ForZosDataBaseMetadata(conn);
+         return dmd;
+     }
+@@ -389,7 +390,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return MetaDataInfo on Column DataBaseConnection.
+-     *
++     * 
+      * @param ResultSet columns
+      * @param String infoType
+      * @return String : the result of column's information MetaData
+@@ -422,9 +423,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * DOC xye Comment method "getStringMetaDataInfo".
+-     *
++     * 
+      * @param columns
+      * @param infoType
+      * @return
+@@ -448,7 +449,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to return MetaDataInfo on Column DataBaseConnection.
+-     *
++     * 
+      * @param ResultSet columns
+      * @param String infoType
+      * @return int : the result of column's information MetaData
+@@ -501,7 +502,7 @@ public class ExtractMetaDataUtils {
+     /**
+      * Return boolean value, used only to check if one field is nullable or not. If used to something else than nullable
+      * check, take care of the default values returned. Actually returns null if there is any error during the check.
+-     *
++     * 
+      * @param ResultSet columns
+      * @param String infoType
+      * @return boolean : the result of column's information MetaData
+@@ -528,7 +529,7 @@ public class ExtractMetaDataUtils {
+     // OCA : save connectionString and associated regex in the same place.
+     /**
+      * DOC cantoine. Method to return MetaDataInfo on Column DataBaseConnection.
+-     *
++     * 
+      * @param ResultSet columns
+      * @param String infoType
+      * @return String : the result of column's information MetaData
+@@ -566,9 +567,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * DOC YeXiaowei Comment method "isValidJarFile".
+-     *
++     * 
+      * @param driverJarPath
+      * @return
+      */
+@@ -586,9 +587,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * cli Comment method "retrieveSchemaPatternForAS400".
+-     *
++     * 
+      * bug 12179
+      */
+     public static String retrieveSchemaPatternForAS400(String url) {
+@@ -645,9 +646,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * cli Comment method "getMultiSchems".
+-     *
++     * 
+      * bug 12179
+      */
+     public static String[] getMultiSchems(String schemas) {
+@@ -697,9 +698,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * ggu Comment method "checkDBConnectionTimeout".
+-     *
++     * 
+      * there is no effect for oracle.
+      */
+     public static void checkDBConnectionTimeout() {
+@@ -721,9 +722,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * ggu Comment method "setQueryStatementTimeout".
+-     *
++     * 
+      * @param statement
+      */
+     public static void setQueryStatementTimeout(Statement statement) {
+@@ -739,7 +740,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC cantoine. Method to connect to DataBase.
+-     *
++     * 
+      * @param String driverClass
+      * @param String urlString pwdT
+      * @param String username
+@@ -821,7 +822,7 @@ public class ExtractMetaDataUtils {
+      * JDBCDriverLoader.java. Due to the limitation on code structure, I have to put it here, so if the part of metadata
+      * connection will be refactored later, then developer could remove it to anyway they want. Added by Marvin Wang on
+      * Oct 24, 2012.
+-     *
++     * 
+      * @param dbType
+      * @param dbVersion
+      */
+@@ -845,7 +846,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC xye Comment method "connect".
+-     *
++     * 
+      * @param dbType
+      * @param url
+      * @param username
+@@ -1019,18 +1020,18 @@ public class ExtractMetaDataUtils {
+             // Don't use DriverManager
+ 
+             try {
+-            Class<?> klazz = Class.forName(driverClassName);
+-
+-            Properties info = new Properties();
+-            info.put("user", username); //$NON-NLS-1$
+-            info.put("password", pwd); //$NON-NLS-1$
+-            if (dbType.equals(EDatabaseTypeName.ACCESS.getXmlName()) || dbType.equals(EDatabaseTypeName.GODBC.getXmlName())) {
+-                Charset systemCharset = CharsetToolkit.getInternalSystemCharset();
+-                if (systemCharset != null && systemCharset.displayName() != null) {
+-                    info.put("charSet", systemCharset.displayName()); //$NON-NLS-1$
++                Class<?> klazz = Class.forName(driverClassName);
++
++                Properties info = new Properties();
++                info.put("user", username); //$NON-NLS-1$
++                info.put("password", pwd); //$NON-NLS-1$
++                if (dbType.equals(EDatabaseTypeName.ACCESS.getXmlName()) || dbType.equals(EDatabaseTypeName.GODBC.getXmlName())) {
++                    Charset systemCharset = CharsetToolkit.getInternalSystemCharset();
++                    if (systemCharset != null && systemCharset.displayName() != null) {
++                        info.put("charSet", systemCharset.displayName()); //$NON-NLS-1$
++                    }
+                 }
+-            }
+-            connection = ((Driver) klazz.newInstance()).connect(url, info);
++                connection = ((Driver) klazz.newInstance()).connect(url, info);
+             } catch (ClassNotFoundException e) {
+                 String errorMessage = Messages.getString("ExtractMetaDataUtils.missDriver.1") + driverClassName; //$NON-NLS-1$
+                 if (driverJarPath != null && driverJarPath.length > 0) {
+@@ -1065,9 +1066,9 @@ public class ExtractMetaDataUtils {
+     }
+ 
+     /**
+-     *
++     * 
+      * DOC YeXiaowei Comment method "getJavaLibPath".
+-     *
++     * 
+      * @return
+      */
+     public static String getJavaLibPath() {
+@@ -1153,7 +1154,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC ycbai Comment method "getMeataConnectionSchema".
+-     *
++     * 
+      * @param metadataConnection
+      * @return
+      */
+@@ -1170,7 +1171,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC ycbai Comment method "getDBConnectionSchema".
+-     *
++     * 
+      * @param dbConnection
+      * @return
+      */
+@@ -1215,7 +1216,7 @@ public class ExtractMetaDataUtils {
+ 
+     /**
+      * DOC ycbai Comment method "handleDefaultValue".
+-     *
++     * 
+      * @param column
+      */
+     public static void handleDefaultValue(MetadataColumn column, DatabaseMetaData dbMetaData) {
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/TDColumnAttributeHelper.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/TDColumnAttributeHelper.java
+index ab61307..4347aad 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/TDColumnAttributeHelper.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/TDColumnAttributeHelper.java
+@@ -85,6 +85,7 @@ public class TDColumnAttributeHelper {
+      * @throws SQLException
+      * 
+      */
++    @Deprecated
+     public static TdColumn addColumnAttribute(ResultSet resutSet, TdColumn column) throws SQLException {
+         Connection conn = ConnectionHelper.getConnection(column);
+         boolean isMssql = isMssql(createConnection((DatabaseConnection) conn).getObject());
+@@ -302,7 +303,7 @@ public class TDColumnAttributeHelper {
+             // ~ 16538
+         } catch (Exception e) {
+             // for ORACLE synonyms
+-            column.setNullable(false);//$NON-NLS-1$
++            column.setNullable(false);
+         }
+         return column;
+     }
+@@ -383,8 +384,9 @@ public class TDColumnAttributeHelper {
+      * 
+      * @param conn2
+      * @return
++     * @throws SQLException
+      */
+-    private static DatabaseMetaData createFakeDatabaseMetaData(java.sql.Connection conn) {
++    private static DatabaseMetaData createFakeDatabaseMetaData(java.sql.Connection conn) throws SQLException {
+         DB2ForZosDataBaseMetadata dmd = new DB2ForZosDataBaseMetadata(conn);
+         return dmd;
+     }

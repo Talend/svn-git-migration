@@ -1,0 +1,282 @@
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java b/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
+index 576f0eb..5498538 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
+@@ -93,6 +93,18 @@ public final class PropertyHelper {
+     }
+ 
+     /**
++     * get the companion property of an item file
++     * 
++     * @param itemFile
++     * @return
++     */
++    public static Property getCompanionProperty(File itemFile) {
++        File propertyFile = new Path(itemFile.getAbsolutePath()).removeFileExtension()
++                .addFileExtension(FactoriesUtil.PROPERTIES_EXTENSION).toFile();
++        return getProperty(propertyFile);
++    }
++
++    /**
+      * DOC bZhou Comment method "getPropertyFile".
+      * 
+      * @param modelElement
+@@ -235,6 +247,9 @@ public final class PropertyHelper {
+      * @return property or null
+      */
+     public static Property getProperty(ModelElement element) {
++        if (element.eIsProxy()) {
++            element = (ModelElement) EObjectHelper.resolveObject(element);
++        }
+         URI uri = element.eResource() == null ? null : element.eResource().getURI();
+         if (uri != null) {
+             if (uri.isPlatform()) {
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/IndicatorTreeModelBuilder.java b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/IndicatorTreeModelBuilder.java
+index db16dd6..dd3fc8f 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/IndicatorTreeModelBuilder.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/IndicatorTreeModelBuilder.java
+@@ -32,28 +32,32 @@ public final class IndicatorTreeModelBuilder {
+             return indicatorCategoryNodes;
+         }
+         // build Basic Statistic categoryNode
+-        IndicatorCategoryNode simpleCategoryNode = new IndicatorCategoryNode(IndicatorEnum.CountsIndicatorEnum);
+-        // simpleCategoryNode.creatChildren(simpleIndicatorEnums);
++        IndicatorCategoryNode simpleCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.SimpleStatistics"), IndicatorEnum.CountsIndicatorEnum); //$NON-NLS-1$
+ 
+         // build Text statistics categoryNode
+-        IndicatorCategoryNode textCategoryNode = new IndicatorCategoryNode(IndicatorEnum.TextIndicatorEnum);
++        IndicatorCategoryNode textCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.TextStatistics"), IndicatorEnum.TextIndicatorEnum); //$NON-NLS-1$
+ 
+         // build Summary Statistic categoryNode
+-        IndicatorCategoryNode boxCategoryNode = new IndicatorCategoryNode(IndicatorEnum.BoxIIndicatorEnum);
++        IndicatorCategoryNode boxCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.SummaryStatistics"), IndicatorEnum.BoxIIndicatorEnum); //$NON-NLS-1$
+ 
+         // build pattern finder categoryNode
+         IndicatorEnum[] patternFinderEnums = new IndicatorEnum[] { IndicatorEnum.PatternFreqIndicatorEnum,
+                 IndicatorEnum.PatternLowFreqIndicatorEnum, IndicatorEnum.DatePatternFreqIndicatorEnum };
+-        IndicatorCategoryNode patternFinderCategoryNode = new IndicatorCategoryNode(Messages
+-                .getString("IndicatorTreeModelBuilder.PatternStatistics"), //$NON-NLS-1$
++        IndicatorCategoryNode patternFinderCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.PatternStatistics"), //$NON-NLS-1$
+                 patternFinderEnums);
+         // MOD mzhao 2009-03-05 build Soundex Statistic categoryNode
+         IndicatorEnum[] soundexIndicatorEnums = new IndicatorEnum[] { IndicatorEnum.SoundexIndicatorEnum,
+                 IndicatorEnum.SoundexLowIndicatorEnum };
+-        IndicatorCategoryNode soundexCategoryNode = new IndicatorCategoryNode(Messages
+-                .getString("IndicatorTreeModelBuilder.SoundexStatistics"), //$NON-NLS-1$
++        IndicatorCategoryNode soundexCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.SoundexStatistics"), //$NON-NLS-1$
+                 soundexIndicatorEnums);
+-        IndicatorCategoryNode phoneCategoryNode = new IndicatorCategoryNode(IndicatorEnum.PhoneNumbStatisticsIndicatorEnum);
++        IndicatorCategoryNode phoneCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.PhonenumberStatistics"), //$NON-NLS-1$
++                IndicatorEnum.PhoneNumbStatisticsIndicatorEnum);
+ 
+         // build Nominal Statistic categoryNode
+         IndicatorEnum[] advanceIndicatorEnums = new IndicatorEnum[] { IndicatorEnum.ModeIndicatorEnum,
+@@ -64,13 +68,13 @@ public final class IndicatorTreeModelBuilder {
+                 IndicatorEnum.DateLowFrequencyIndicatorEnum, IndicatorEnum.WeekLowFrequencyIndicatorEnum,
+                 IndicatorEnum.MonthLowFrequencyIndicatorEnum, IndicatorEnum.QuarterLowFrequencyIndicatorEnum,
+                 IndicatorEnum.YearLowFrequencyIndicatorEnum, IndicatorEnum.BinLowFrequencyIndicatorEnum };
+-        IndicatorCategoryNode advanceCategoryNode = new IndicatorCategoryNode(Messages
+-                .getString("IndicatorTreeModelBuilder.AdvancedStatistics"), advanceIndicatorEnums); //$NON-NLS-1$
++        IndicatorCategoryNode advanceCategoryNode = new IndicatorCategoryNode(
++                Messages.getString("IndicatorTreeModelBuilder.AdvancedStatistics"), advanceIndicatorEnums); //$NON-NLS-1$
+ 
+         // Added yyin 20120827, TDQ-5076, build Fraud Detection category and SIndicator
+         IndicatorEnum[] fraudIndicatorEnums = new IndicatorEnum[] { IndicatorEnum.BenfordLawFrequencyIndicatorEnum };
+         IndicatorCategoryNode fraudCategoryNode = new IndicatorCategoryNode(
+-                Messages.getString("IndicatorTreeModelBuilder.FraudStatistics"), fraudIndicatorEnums);
++                Messages.getString("IndicatorTreeModelBuilder.FraudStatistics"), fraudIndicatorEnums); //$NON-NLS-1$
+ 
+         indicatorCategoryNodes = new IndicatorCategoryNode[] { simpleCategoryNode, textCategoryNode, boxCategoryNode,
+                 advanceCategoryNode, patternFinderCategoryNode, soundexCategoryNode, phoneCategoryNode, fraudCategoryNode };
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/impl/IndicatorCategoryNode.java b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/impl/IndicatorCategoryNode.java
+index 1157444..d476ec1 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/impl/IndicatorCategoryNode.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/impl/IndicatorCategoryNode.java
+@@ -12,6 +12,7 @@
+ // ============================================================================
+ package org.talend.dq.nodes.indicator.impl;
+ 
++import org.apache.commons.lang.StringUtils;
+ import org.talend.dq.nodes.indicator.AbstractIndicatorNode;
+ import org.talend.dq.nodes.indicator.IIndicatorNode;
+ import org.talend.dq.nodes.indicator.type.IndicatorEnum;
+@@ -27,6 +28,12 @@ public class IndicatorCategoryNode extends AbstractIndicatorNode {
+         createChildren(indicatorEnum);
+     }
+ 
++    public IndicatorCategoryNode(String label, IndicatorEnum indicatorEnum) {
++        super(indicatorEnum);
++        this.label = label;
++        createChildren(indicatorEnum);
++    }
++
+     public IndicatorCategoryNode(String label, IndicatorEnum[] indicatorEnums) {
+         super(null);
+         this.label = label;
+@@ -53,9 +60,10 @@ public class IndicatorCategoryNode extends AbstractIndicatorNode {
+         this.setChildren(childrenNodes);
+     }
+ 
++    @Override
+     public String getLabel() {
+         String displayLabel = label;
+-        if (indicatorEnum != null) {
++        if (StringUtils.isEmpty(displayLabel) && indicatorEnum != null) {
+             displayLabel = this.indicatorEnum.getLabel();
+         }
+         return displayLabel;
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/type/IndicatorEnum.java b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/type/IndicatorEnum.java
+index 5640172..102af2b 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/type/IndicatorEnum.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/nodes/indicator/type/IndicatorEnum.java
+@@ -13,7 +13,6 @@
+ package org.talend.dq.nodes.indicator.type;
+ 
+ import org.eclipse.emf.ecore.EClass;
+-import org.talend.cwm.management.i18n.Messages;
+ import org.talend.dataquality.indicators.IndicatorsPackage;
+ import org.talend.dataquality.indicators.columnset.ColumnsetPackage;
+ import org.talend.dataquality.indicators.sql.IndicatorSqlPackage;
+@@ -248,13 +247,11 @@ public enum IndicatorEnum {
+                                IndicatorsPackage.Literals.UPPER_QUARTILE_INDICATOR,
+                                "Upper Quartile", //$NON-NLS-1$
+                                null),
+-    CountsIndicatorEnum(IndicatorsPackage.COUNTS_INDICATOR, IndicatorsPackage.Literals.COUNTS_INDICATOR, Messages
+-            .getString("IndicatorTreeModelBuilder.SimpleStatistics"), //$NON-NLS-1$
++    CountsIndicatorEnum(IndicatorsPackage.COUNTS_INDICATOR, IndicatorsPackage.Literals.COUNTS_INDICATOR, "Simple Statistics", //$NON-NLS-1$
+                         new IndicatorEnum[] { RowCountIndicatorEnum, NullCountIndicatorEnum, DistinctCountIndicatorEnum,
+                                 UniqueIndicatorEnum, DuplicateCountIndicatorEnum, BlankCountIndicatorEnum,
+                                 DefValueCountIndicatorEnum }),
+-    TextIndicatorEnum(IndicatorsPackage.TEXT_INDICATOR, IndicatorsPackage.Literals.TEXT_INDICATOR, Messages
+-            .getString("IndicatorTreeModelBuilder.TextStatistics"), //$NON-NLS-1$
++    TextIndicatorEnum(IndicatorsPackage.TEXT_INDICATOR, IndicatorsPackage.Literals.TEXT_INDICATOR, "Text Statistics", //$NON-NLS-1$
+                       new IndicatorEnum[] { MinLengthIndicatorEnum, MinLengthWithNullIndicatorEnum,
+                               MinLengthWithBlankIndicatorEnum, MinLengthWithBlankNullIndicatorEnum, MaxLengthIndicatorEnum,
+                               MaxLengthWithNullIndicatorEnum, MaxLengthWithBlankIndicatorEnum,
+@@ -265,8 +262,7 @@ public enum IndicatorEnum {
+                      new IndicatorEnum[] { LowerQuartileIndicatorEnum, UpperQuartileIndicatorEnum }),
+     RangeIndicatorEnum(IndicatorsPackage.RANGE_INDICATOR, IndicatorsPackage.Literals.RANGE_INDICATOR, "Range", //$NON-NLS-1$
+                        new IndicatorEnum[] { MinValueIndicatorEnum, MaxValueIndicatorEnum }),
+-    BoxIIndicatorEnum(IndicatorsPackage.BOX_INDICATOR, IndicatorsPackage.Literals.BOX_INDICATOR, Messages
+-            .getString("IndicatorTreeModelBuilder.SummaryStatistics"), //$NON-NLS-1$
++    BoxIIndicatorEnum(IndicatorsPackage.BOX_INDICATOR, IndicatorsPackage.Literals.BOX_INDICATOR, "Summary Statistics", //$NON-NLS-1$
+                       new IndicatorEnum[] { MeanIndicatorEnum, MedianIndicatorEnum, IQRIndicatorEnum, RangeIndicatorEnum }),
+     WhereRuleIndicatorEnum(
+                            IndicatorSqlPackage.WHERE_RULE_INDICATOR,
+@@ -344,12 +340,12 @@ public enum IndicatorEnum {
+     FormatFreqPieIndictorEnum(
+                               IndicatorsPackage.FORMAT_FREQ_PIE_INDICATOR,
+                               IndicatorsPackage.Literals.FORMAT_FREQ_PIE_INDICATOR,
+-                              "Format Phone Number Frequency",
++                              "Format Phone Number Frequency", //$NON-NLS-1$
+                               null),
+     PhoneNumbStatisticsIndicatorEnum(
+                                      IndicatorsPackage.PHONE_NUMB_STATISTICS_INDICATOR,
+                                      IndicatorsPackage.Literals.PHONE_NUMB_STATISTICS_INDICATOR,
+-                                     Messages.getString("IndicatorTreeModelBuilder.PhonenumberStatistics"), //$NON-NLS-1$
++                                     "Phone Number Statistics", //$NON-NLS-1$
+                                      new IndicatorEnum[] { ValidPhoneCountIndicatorEnum, ValidRegCodeCountIndicatorEnum,
+                                              InvalidRegCodeCountIndicatorEnum, PossiblePhoneCountIndicatorEnum,
+                                              WellFormIntePhoneCountIndicatorEnum, WellFormNationalPhoneCountIndicatorEnum,
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/writer/impl/IndicatorDefinitionWriter.java b/org.talend.cwm.management/src/main/java/org/talend/dq/writer/impl/IndicatorDefinitionWriter.java
+index 9b3a478..2a06918 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/writer/impl/IndicatorDefinitionWriter.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/writer/impl/IndicatorDefinitionWriter.java
+@@ -117,7 +117,8 @@ public class IndicatorDefinitionWriter extends AElementPersistance {
+             return property;
+         }
+         // For system indicator, make its display name international.(means its display name is in the messages file)
+-        property.setDisplayName(org.talend.cwm.management.i18n.Messages.getString(modelElement.getName().replace(' ', '.')));//$NON-NLS-1$
++        // MOD sizhaoliu TDQ-7454 do not translate here, but during the initialization of RepositoryViewObjects
++        property.setDisplayName(modelElement.getName());
+         return property;
+     }
+ 
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/editor/preview/IndicatorUnit.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/editor/preview/IndicatorUnit.java
+index 30586e3..46187bf 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/editor/preview/IndicatorUnit.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/editor/preview/IndicatorUnit.java
+@@ -19,6 +19,7 @@ import org.talend.dataprofiler.core.model.ModelElementIndicator;
+ import org.talend.dataprofiler.core.model.XmlElementIndicator;
+ import org.talend.dataquality.indicators.Indicator;
+ import org.talend.dataquality.indicators.IndicatorParameters;
++import org.talend.dataquality.indicators.sql.UserDefIndicator;
+ import org.talend.dq.helper.PropertyHelper;
+ import org.talend.dq.indicators.IndicatorCommonUtil;
+ import org.talend.dq.nodes.indicator.type.IndicatorEnum;
+@@ -102,13 +103,26 @@ public class IndicatorUnit {
+     public String getIndicatorName() {
+         Property property = PropertyHelper.getProperty(indicator.getIndicatorDefinition());
+         if (property != null) {
+-            return property.getDisplayName();
++            return getDisplayName(property);
+         } else {
+             return this.indicator.getName();
+         }
+     }
+ 
+     /**
++     * only internationalization name of indicator
++     * 
++     * @return
++     */
++    private String getDisplayName(Property property) {
++        // only internationalization SystemIndicator
++        if (indicator instanceof UserDefIndicator) {
++            return property.getDisplayName();
++        }
++        return org.talend.cwm.management.i18n.Messages.getString(property.getLabel().replace("_", ".")); //$NON-NLS-1$ //$NON-NLS-2$
++    }
++
++    /**
+      * Getter for children.
+      * 
+      * @return the children
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/imex/model/ItemRecord.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/imex/model/ItemRecord.java
+index e0a7c78..800d753 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/imex/model/ItemRecord.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/imex/model/ItemRecord.java
+@@ -47,6 +47,7 @@ import org.talend.dataquality.indicators.definition.IndicatorDefinition;
+ import org.talend.dataquality.indicators.definition.userdefine.UDIndicatorDefinition;
+ import org.talend.dataquality.reports.AnalysisMap;
+ import org.talend.dataquality.reports.TdReport;
++import org.talend.dataquality.rules.DQRule;
+ import org.talend.dq.helper.EObjectHelper;
+ import org.talend.dq.helper.PropertyHelper;
+ import org.talend.dq.helper.resourcehelper.RepResourceFileHelper;
+@@ -441,7 +442,7 @@ public class ItemRecord {
+      */
+     public String getName() {
+         if (property != null) {
+-            return property.getDisplayName();
++            return getDisplayName();
+         } else if (element != null) {
+             return element.getName();
+         } else {
+@@ -450,6 +451,20 @@ public class ItemRecord {
+     }
+ 
+     /**
++     * only internationalization name of indicator
++     * 
++     * @return
++     */
++    private String getDisplayName() {
++        // only internationalization SystemIndicator
++        if (element != null && element instanceof IndicatorDefinition
++                && !(element instanceof UDIndicatorDefinition || element instanceof DQRule)) {
++            return org.talend.cwm.management.i18n.Messages.getString(property.getLabel().replace("_", ".")); //$NON-NLS-1$ //$NON-NLS-2$
++        }
++        return property.getDisplayName();
++    }
++
++    /**
+      * DOC bZhou Comment method "isValid".
+      * 
+      * @param file

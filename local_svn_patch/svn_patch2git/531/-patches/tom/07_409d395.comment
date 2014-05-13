@@ -1,0 +1,1 @@
+Committed by glzhou for patch TPS-532:  Incorporate Changeset #108477 from TMDM-6342: Fix isReadOnly call when object isn't associated with current session.

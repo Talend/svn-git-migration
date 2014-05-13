@@ -1,0 +1,38 @@
+diff --git a/org.talend.dataquality.reporting/reports/column/b01_column_basic.jrxml b/org.talend.dataquality.reporting/reports/column/b01_column_basic.jrxml
+index 0bfe57d..79776b3 100644
+--- a/org.talend.dataquality.reporting/reports/column/b01_column_basic.jrxml
++++ b/org.talend.dataquality.reporting/reports/column/b01_column_basic.jrxml
+@@ -36,7 +36,7 @@ _IpFnwBIoEd6pt-TgDw7oCA]]></parameterDescription>
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
+ 	<queryString>
+-		<![CDATA[SELECT
++		<![CDATA[SELECT  * FROM (SELECT
+ 	VERS.PR_VERSION,
+ 	VAL.AN_RUNTIME,
+ 	ANA.REP_UUID,
+@@ -54,6 +54,7 @@ _IpFnwBIoEd6pt-TgDw7oCA]]></parameterDescription>
+ 	ELEMENT.ELT_PROJECT_NAME,
+ 	ELEMENT.ELT_TABLE_NAME,
+ 	ELEMENT.ELT_COLUMN_NAME,
++	ELEMENT.ELT_UUID,
+ 	DEFIND.IND_CATEG_UUID,
+ 	DEFIND.IND_UUID,
+ 	DEFIND.IND_CATEGORY,
+@@ -127,11 +128,11 @@ WHERE
+ join TDQ_ANALYSIS ON TDQ_ANALYSIS.AN_PK=TDQ_INDICATOR_VALUE.ANALYSIS_PK
+ AND TDQ_ANALYSIS.REP_UUID=$P{REPORT_UUID} AND TDQ_ANALYSIS.AN_UUID=$P{ANA_UUID}
+  )
+-
+-ORDER BY ANA.AN_UUID,ELEMENT.ELT_UUID,DEFIND.IND_CATEGORY,IND_LABEL,DEFIND.IND_UUID,
+-(CASE WHEN ('_2aGLUOzJEeG0fbygDv6UrQ'!=DEFIND.IND_CATEG_UUID and ind_label not like '%Low%') then NEW_INDV_VALUE end) DESC,
+-(CASE WHEN '_2aGLUOzJEeG0fbygDv6UrQ'=DEFIND.IND_CATEG_UUID then VAL_STRING_BIS end),
+-(CASE WHEN (ind_label like '%Low%') then NEW_INDV_VALUE end)]]>
++) A 
++ORDER BY A.AN_UUID, A.ELT_UUID, A.IND_CATEGORY, A.IND_LABEL, A.IND_UUID, 
++(CASE WHEN ('_2aGLUOzJEeG0fbygDv6UrQ'!=A.IND_CATEG_UUID and  A.ind_label not like '%Low%') then  A.NEW_INDV_VALUE end) DESC, 
++(CASE WHEN '_2aGLUOzJEeG0fbygDv6UrQ'=A.IND_CATEG_UUID then  A.VAL_STRING_BIS end), 
++(CASE WHEN (A.ind_label like '%Low%') then  A.NEW_INDV_VALUE end)]]> 
+ 	</queryString>
+ 	<field name="PR_VERSION" class="java.lang.String"/>
+ 	<field name="AN_RUNTIME" class="java.sql.Timestamp"/>

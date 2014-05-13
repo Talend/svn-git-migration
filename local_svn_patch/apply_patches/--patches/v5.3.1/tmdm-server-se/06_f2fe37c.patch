@@ -1,0 +1,827 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/AbstractQueryHandler.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/AbstractQueryHandler.java
+index ccd81e9..f4ee127 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/AbstractQueryHandler.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/AbstractQueryHandler.java
+@@ -43,7 +43,7 @@ abstract class AbstractQueryHandler extends VisitorAdapter<StorageResults> {
+ 
+     final ValueAdapter VALUE_ADAPTER = new ValueAdapter();
+ 
+-    final Session session;
++    Session session;
+ 
+     final Storage storage;
+ 
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+index 4598833..7bb732c 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/HibernateStorage.java
+@@ -10,25 +10,37 @@
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import com.amalto.core.metadata.MetadataUtils;
+-import com.amalto.core.query.optimization.*;
+-import com.amalto.core.query.user.*;
+-import org.apache.log4j.Level;
+-import org.hibernate.cfg.Environment;
+-import org.talend.mdm.commmon.metadata.*;
+-import com.amalto.core.storage.Storage;
+-import com.amalto.core.storage.StorageResults;
+-import com.amalto.core.storage.StorageType;
+-import com.amalto.core.storage.datasource.DataSource;
+-import com.amalto.core.storage.datasource.RDBMSDataSource;
+-import com.amalto.core.storage.prepare.*;
+-import com.amalto.core.storage.record.DataRecord;
+-import com.amalto.core.storage.record.DataRecordConverter;
+-import com.amalto.core.storage.record.metadata.DataRecordMetadata;
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.Serializable;
++import java.lang.reflect.Constructor;
++import java.lang.reflect.Field;
++import java.sql.SQLException;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.LinkedList;
++import java.util.List;
++import java.util.Map;
++import java.util.Properties;
++import java.util.Set;
++import java.util.WeakHashMap;
++
+ import net.sf.ehcache.CacheManager;
++
++import org.apache.log4j.Level;
+ import org.apache.log4j.Logger;
+-import org.hibernate.*;
++import org.hibernate.FlushMode;
++import org.hibernate.HibernateException;
++import org.hibernate.NonUniqueObjectException;
++import org.hibernate.PropertyValueException;
++import org.hibernate.Session;
++import org.hibernate.SessionFactory;
++import org.hibernate.Transaction;
+ import org.hibernate.cfg.Configuration;
++import org.hibernate.cfg.Environment;
+ import org.hibernate.exception.ConstraintViolationException;
+ import org.hibernate.search.MassIndexer;
+ import org.hibernate.search.Search;
+@@ -37,19 +49,46 @@ import org.hibernate.search.impl.SearchFactoryImpl;
+ import org.hibernate.tool.hbm2ddl.SchemaExport;
+ import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+ import org.hibernate.tool.hbm2ddl.SchemaValidator;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.DefaultMetadataVisitor;
++import org.talend.mdm.commmon.metadata.EnumerationFieldMetadata;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.MetadataRepository;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.TypeMetadata;
++import org.talend.mdm.commmon.metadata.Types;
+ import org.talend.mdm.commmon.util.core.MDMConfiguration;
+ import org.xml.sax.EntityResolver;
+ import org.xml.sax.InputSource;
+ import org.xml.sax.SAXException;
+ 
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.Serializable;
+-import java.lang.reflect.Constructor;
+-import java.lang.reflect.Field;
+-import java.sql.SQLException;
+-import java.util.*;
++import com.amalto.core.metadata.MetadataUtils;
++import com.amalto.core.query.optimization.ConfigurableContainsOptimizer;
++import com.amalto.core.query.optimization.ContainsOptimizer;
++import com.amalto.core.query.optimization.Optimizer;
++import com.amalto.core.query.optimization.RangeOptimizer;
++import com.amalto.core.query.optimization.RecommendedIndexes;
++import com.amalto.core.query.optimization.UpdateReportOptimizer;
++import com.amalto.core.query.user.Expression;
++import com.amalto.core.query.user.Select;
++import com.amalto.core.query.user.UserQueryDumpConsole;
++import com.amalto.core.query.user.Visitor;
++import com.amalto.core.storage.Storage;
++import com.amalto.core.storage.StorageResults;
++import com.amalto.core.storage.StorageType;
++import com.amalto.core.storage.datasource.DataSource;
++import com.amalto.core.storage.datasource.RDBMSDataSource;
++import com.amalto.core.storage.prepare.FullTextIndexCleaner;
++import com.amalto.core.storage.prepare.JDBCStorageCleaner;
++import com.amalto.core.storage.prepare.JDBCStorageInitializer;
++import com.amalto.core.storage.prepare.StorageCleaner;
++import com.amalto.core.storage.prepare.StorageInitializer;
++import com.amalto.core.storage.record.DataRecord;
++import com.amalto.core.storage.record.DataRecordConverter;
++import com.amalto.core.storage.record.metadata.DataRecordMetadata;
+ 
+ public class HibernateStorage implements Storage {
+ 
+@@ -61,10 +100,12 @@ public class HibernateStorage implements Storage {
+ 
+     private static final Logger LOGGER = Logger.getLogger(HibernateStorage.class);
+ 
+-    private static final Optimizer[] OPTIMIZERS = new Optimizer[]{
+-            new RangeOptimizer(), // Transforms (value > n AND value < p) into (RANGE(n,p)).
++    private static final Optimizer[] OPTIMIZERS = new Optimizer[] { new RangeOptimizer(), // Transforms (value > n AND
++                                                                                          // value < p) into
++                                                                                          // (RANGE(n,p)).
+             new ContainsOptimizer(), // Transforms all '*' in CONTAINS into '%'.
+-            new UpdateReportOptimizer() // Adds queries on super types if update report query a concept name with super types.
++            new UpdateReportOptimizer() // Adds queries on super types if update report query a concept name with super
++                                        // types.
+     };
+ 
+     private static final String FORBIDDEN_PREFIX = "x_talend_"; //$NON-NLS-1$
+@@ -75,16 +116,8 @@ public class HibernateStorage implements Storage {
+     private static final boolean autoPrepare = Boolean.valueOf(MDMConfiguration.getConfiguration().getProperty(
+             "db.autoPrepare", "true")); //$NON-NLS-1$ //$NON-NLS-2$
+ 
+-    // Thread local to keep track of transactions explicitly started by MDM (prevents close() on Session during update
+-    // when initial record is read).
+-    public static final ThreadLocal<Boolean> isMDMTransaction = new ThreadLocal<Boolean>() {
+-        @Override
+-        protected Boolean initialValue() {
+-            return false;
+-        }
+-    };
+-
+-    private static final Boolean FLUSH_ON_LOAD = Boolean.valueOf(MDMConfiguration.getConfiguration().getProperty("db.flush.on.load", "false")); //$NON-NLS-1$ //$NON-NLS-2$
++    private static final Boolean FLUSH_ON_LOAD = Boolean.valueOf(MDMConfiguration.getConfiguration().getProperty(
++            "db.flush.on.load", "false")); //$NON-NLS-1$ //$NON-NLS-2$
+ 
+     private final String storageName;
+ 
+@@ -114,7 +147,7 @@ public class HibernateStorage implements Storage {
+ 
+     /**
+      * Create a {@link StorageType#MASTER} storage.
+-     *
++     * 
+      * @param storageName Name for this storage. <b>by convention</b>, this is the MDM container name.
+      * @see StorageType#MASTER
+      */
+@@ -124,7 +157,7 @@ public class HibernateStorage implements Storage {
+ 
+     /**
+      * @param storageName Name for this storage. <b>By convention</b>, this is the MDM container name.
+-     * @param type        Tells whether this storage is a staging area or not.
++     * @param type Tells whether this storage is a staging area or not.
+      * @see StorageType
+      */
+     public HibernateStorage(String storageName, StorageType type) {
+@@ -165,10 +198,8 @@ public class HibernateStorage implements Storage {
+     }
+ 
+     @Override
+-    public synchronized void prepare(MetadataRepository repository,
+-                                     Set<Expression> optimizedExpressions,
+-                                     boolean force,
+-                                     boolean dropExistingData) {
++    public synchronized void prepare(MetadataRepository repository, Set<Expression> optimizedExpressions, boolean force,
++            boolean dropExistingData) {
+         if (!force && isPrepared) {
+             return; // No op operation
+         }
+@@ -197,13 +228,9 @@ public class HibernateStorage implements Storage {
+             } catch (ClassNotFoundException e) {
+                 clazz = (Class<? extends StorageClassLoader>) Class.forName(CLASS_LOADER);
+             }
+-            Constructor<? extends StorageClassLoader> constructor = clazz.getConstructor(ClassLoader.class,
+-                    String.class,
+-                    RDBMSDataSource.DataSourceDialect.class,
+-                    StorageType.class);
+-            storageClassLoader = constructor.newInstance(contextClassLoader,
+-                    storageName,
+-                    dataSource.getDialectName(),
++            Constructor<? extends StorageClassLoader> constructor = clazz.getConstructor(ClassLoader.class, String.class,
++                    RDBMSDataSource.DataSourceDialect.class, StorageType.class);
++            storageClassLoader = constructor.newInstance(contextClassLoader, storageName, dataSource.getDialectName(),
+                     storageType);
+             storageClassLoader.setDataSourceConfiguration(dataSource);
+             storageClassLoader.generateHibernateConfig(); // Checks if configuration can be generated.
+@@ -246,63 +273,66 @@ public class HibernateStorage implements Storage {
+             // Set fields to be indexed in database.
+             Set<FieldMetadata> databaseIndexedFields = new HashSet<FieldMetadata>();
+             switch (storageType) {
+-                case MASTER:
+-                    // Adds indexes on user defined fields
+-                    for (Expression optimizedExpression : optimizedExpressions) {
+-                        Collection<FieldMetadata> indexedFields = RecommendedIndexes.get(optimizedExpression);
+-                        for (FieldMetadata indexedField : indexedFields) {
+-                            // TMDM-5311: Don't index TEXT fields
+-                            TypeMetadata indexedFieldType = indexedField.getType();
+-                            if (!isIndexable(indexedFieldType)) {
+-                                if (LOGGER.isDebugEnabled()) {
+-                                    LOGGER.debug("Ignore index on field '" + indexedField.getName() + "' because value is stored in TEXT.");
+-                                }
+-                                continue;
+-                            }
+-                            // Go up the containment tree in case containing type is anonymous.
+-                            ComplexTypeMetadata containingType = indexedField.getContainingType();
+-                            while (containingType instanceof ContainedComplexTypeMetadata) {
+-                                containingType = ((ContainedComplexTypeMetadata) containingType).getContainerType();
++            case MASTER:
++                // Adds indexes on user defined fields
++                for (Expression optimizedExpression : optimizedExpressions) {
++                    Collection<FieldMetadata> indexedFields = RecommendedIndexes.get(optimizedExpression);
++                    for (FieldMetadata indexedField : indexedFields) {
++                        // TMDM-5311: Don't index TEXT fields
++                        TypeMetadata indexedFieldType = indexedField.getType();
++                        if (!isIndexable(indexedFieldType)) {
++                            if (LOGGER.isDebugEnabled()) {
++                                LOGGER.debug("Ignore index on field '" + indexedField.getName()
++                                        + "' because value is stored in TEXT.");
+                             }
+-                            TypeMapping mapping = mappingRepository.getMappingFromUser(containingType);
+-                            FieldMetadata databaseField = mapping.getDatabase(indexedField);
+-                            if (!isIndexable(databaseField.getType())) {
+-                                if (LOGGER.isDebugEnabled()) {
+-                                    LOGGER.debug("Ignore index on field '" + indexedField.getName() + "' because value (in database mapping) is stored in TEXT.");
+-                                }
+-                                continue; // Don't take into indexed fields long text fields
++                            continue;
++                        }
++                        // Go up the containment tree in case containing type is anonymous.
++                        ComplexTypeMetadata containingType = indexedField.getContainingType();
++                        while (containingType instanceof ContainedComplexTypeMetadata) {
++                            containingType = ((ContainedComplexTypeMetadata) containingType).getContainerType();
++                        }
++                        TypeMapping mapping = mappingRepository.getMappingFromUser(containingType);
++                        FieldMetadata databaseField = mapping.getDatabase(indexedField);
++                        if (!isIndexable(databaseField.getType())) {
++                            if (LOGGER.isDebugEnabled()) {
++                                LOGGER.debug("Ignore index on field '" + indexedField.getName()
++                                        + "' because value (in database mapping) is stored in TEXT.");
+                             }
+-                            databaseIndexedFields.add(databaseField);
+-                            if (!databaseField.getContainingType().isInstantiable()) {
+-                                Collection<ComplexTypeMetadata> roots = RecommendedIndexes.getRoots(optimizedExpression);
+-                                for (ComplexTypeMetadata root : roots) {
+-                                    List<FieldMetadata> path = MetadataUtils.path(mappingRepository.getMappingFromUser(root).getDatabase(), databaseField);
+-                                    if (path.size() > 1) {
+-                                        databaseIndexedFields.addAll(path.subList(0, path.size() - 1));
+-                                    } else {
+-                                        LOGGER.warn("Failed to properly index field '" + databaseField + "'.");
+-                                    }
++                            continue; // Don't take into indexed fields long text fields
++                        }
++                        databaseIndexedFields.add(databaseField);
++                        if (!databaseField.getContainingType().isInstantiable()) {
++                            Collection<ComplexTypeMetadata> roots = RecommendedIndexes.getRoots(optimizedExpression);
++                            for (ComplexTypeMetadata root : roots) {
++                                List<FieldMetadata> path = MetadataUtils.path(mappingRepository.getMappingFromUser(root)
++                                        .getDatabase(), databaseField);
++                                if (path.size() > 1) {
++                                    databaseIndexedFields.addAll(path.subList(0, path.size() - 1));
++                                } else {
++                                    LOGGER.warn("Failed to properly index field '" + databaseField + "'.");
+                                 }
+                             }
+                         }
+                     }
+-                    break;
+-                case STAGING:
+-                     // Adds "staging status" as indexed field
+-                    if (!optimizedExpressions.isEmpty()) {
+-                        if (LOGGER.isDebugEnabled()) {
+-                            LOGGER.debug("Ignoring " + optimizedExpressions.size() + " to optimize (disabled on staging area).");
+-                        }
++                }
++                break;
++            case STAGING:
++                // Adds "staging status" as indexed field
++                if (!optimizedExpressions.isEmpty()) {
++                    if (LOGGER.isDebugEnabled()) {
++                        LOGGER.debug("Ignoring " + optimizedExpressions.size() + " to optimize (disabled on staging area).");
+                     }
+-                    for (TypeMapping typeMapping : mappingRepository.getAllTypeMappings()) {
+-                        ComplexTypeMetadata database = typeMapping.getDatabase();
+-                        if (database.hasField(METADATA_STAGING_STATUS)) {
+-                            databaseIndexedFields.add(database.getField(METADATA_STAGING_STATUS));
+-                        }
++                }
++                for (TypeMapping typeMapping : mappingRepository.getAllTypeMappings()) {
++                    ComplexTypeMetadata database = typeMapping.getDatabase();
++                    if (database.hasField(METADATA_STAGING_STATUS)) {
++                        databaseIndexedFields.add(database.getField(METADATA_STAGING_STATUS));
+                     }
+-                    break;
+-                case SYSTEM: // Nothing to index on SYSTEM
+-                    break;
++                }
++                break;
++            case SYSTEM: // Nothing to index on SYSTEM
++                break;
+             }
+             // Don't add FK in indexes if using H2
+             if (dataSource.getDialectName() == RDBMSDataSource.DataSourceDialect.H2) {
+@@ -316,45 +346,45 @@ public class HibernateStorage implements Storage {
+             }
+             // Set table/column name length limitation
+             switch (dataSource.getDialectName()) {
+-                case ORACLE_10G:
+-                    if (LOGGER.isDebugEnabled()) {
+-                        LOGGER.debug("Oracle database is being used. Limit table name length to 30.");
+-                    }
+-                    tableResolver = new OracleStorageTableResolver(databaseIndexedFields, 30);
+-                    break;
+-                case MYSQL:
+-                    if (LOGGER.isDebugEnabled()) {
+-                        LOGGER.debug("MySQL database is being used. Limit table name length to 64.");
+-                    }
+-                    tableResolver = new StorageTableResolver(databaseIndexedFields, 64);
+-                    break;
+-                case SQL_SERVER:
+-                    if (LOGGER.isDebugEnabled()) {
+-                        LOGGER.debug("SQL Server database is being used. Limit table name length to 128.");
+-                    }
+-                    tableResolver = new StorageTableResolver(databaseIndexedFields, 128);
+-                    break;
+-                case POSTGRES:
+-                    if (LOGGER.isDebugEnabled()) {
+-                        LOGGER.debug("Postgres database is being used. Limit table name length to 63.");
+-                    }
+-                    tableResolver = new StorageTableResolver(databaseIndexedFields, 63);
+-                    break;
+-                case H2:
+-                    if (LOGGER.isDebugEnabled()) {
+-                        LOGGER.debug("No limitation for table name length.");
+-                    }
+-                    tableResolver = new StorageTableResolver(databaseIndexedFields);
+-                    break;
++            case ORACLE_10G:
++                if (LOGGER.isDebugEnabled()) {
++                    LOGGER.debug("Oracle database is being used. Limit table name length to 30.");
++                }
++                tableResolver = new OracleStorageTableResolver(databaseIndexedFields, 30);
++                break;
++            case MYSQL:
++                if (LOGGER.isDebugEnabled()) {
++                    LOGGER.debug("MySQL database is being used. Limit table name length to 64.");
++                }
++                tableResolver = new StorageTableResolver(databaseIndexedFields, 64);
++                break;
++            case SQL_SERVER:
++                if (LOGGER.isDebugEnabled()) {
++                    LOGGER.debug("SQL Server database is being used. Limit table name length to 128.");
++                }
++                tableResolver = new StorageTableResolver(databaseIndexedFields, 128);
++                break;
++            case POSTGRES:
++                if (LOGGER.isDebugEnabled()) {
++                    LOGGER.debug("Postgres database is being used. Limit table name length to 63.");
++                }
++                tableResolver = new StorageTableResolver(databaseIndexedFields, 63);
++                break;
++            case H2:
++                if (LOGGER.isDebugEnabled()) {
++                    LOGGER.debug("No limitation for table name length.");
++                }
++                tableResolver = new StorageTableResolver(databaseIndexedFields);
++                break;
+             }
+             storageClassLoader.setTableResolver(tableResolver);
+             // Master, Staging and System share same class creator.
+             switch (storageType) {
+-                case MASTER:
+-                case STAGING:
+-                case SYSTEM:
+-                    hibernateClassCreator = new ClassCreator(storageClassLoader);
+-                    break;
++            case MASTER:
++            case STAGING:
++            case SYSTEM:
++                hibernateClassCreator = new ClassCreator(storageClassLoader);
++                break;
+             }
+             // Create Hibernate classes (after some modifications to the types).
+             try {
+@@ -383,27 +413,27 @@ public class HibernateStorage implements Storage {
+                 RDBMSDataSource.SchemaGeneration schemaGeneration = dataSource.getSchemaGeneration();
+                 List exceptions = Collections.emptyList();
+                 switch (schemaGeneration) {
+-                    case CREATE:
+-                        SchemaExport schemaExport = new SchemaExport(configuration);
+-                        schemaExport.create(false, true);
+-                        // Exception may happen during recreation (hibernate may perform statements on tables that does
+-                        // not exist): these exceptions are supposed to be harmless (but log them to DEBUG just in case).
+-                        if (LOGGER.isDebugEnabled()) {
+-                            LOGGER.debug("Exception(s) occurred during schema creation:");
+-                            for (Object exceptionObject : schemaExport.getExceptions()) {
+-                                LOGGER.debug(((Exception) exceptionObject).getMessage());
+-                            }
++                case CREATE:
++                    SchemaExport schemaExport = new SchemaExport(configuration);
++                    schemaExport.create(false, true);
++                    // Exception may happen during recreation (hibernate may perform statements on tables that does
++                    // not exist): these exceptions are supposed to be harmless (but log them to DEBUG just in case).
++                    if (LOGGER.isDebugEnabled()) {
++                        LOGGER.debug("Exception(s) occurred during schema creation:");
++                        for (Object exceptionObject : schemaExport.getExceptions()) {
++                            LOGGER.debug(((Exception) exceptionObject).getMessage());
+                         }
+-                        break;
+-                    case VALIDATE:
+-                        SchemaValidator schemaValidator = new SchemaValidator(configuration);
+-                        schemaValidator.validate(); // This is supposed to throw exception on validation issue.
+-                        break;
+-                    case UPDATE:
+-                        SchemaUpdate schemaUpdate = new SchemaUpdate(configuration);
+-                        schemaUpdate.execute(false, true);
+-                        exceptions = schemaUpdate.getExceptions();
+-                        break;
++                    }
++                    break;
++                case VALIDATE:
++                    SchemaValidator schemaValidator = new SchemaValidator(configuration);
++                    schemaValidator.validate(); // This is supposed to throw exception on validation issue.
++                    break;
++                case UPDATE:
++                    SchemaUpdate schemaUpdate = new SchemaUpdate(configuration);
++                    schemaUpdate.execute(false, true);
++                    exceptions = schemaUpdate.getExceptions();
++                    break;
+                 }
+                 // Throw an exception if schema update met issue(s).
+                 if (!exceptions.isEmpty()) {
+@@ -454,7 +484,7 @@ public class HibernateStorage implements Storage {
+     }
+ 
+     private static boolean isIndexable(TypeMetadata fieldType) {
+-        if (Types.MULTI_LINGUAL.equals(fieldType.getName())) { //$NON-NLS-1$
++        if (Types.MULTI_LINGUAL.equals(fieldType.getName())) {
+             return false;
+         }
+         if (fieldType.getData(MetadataRepository.DATA_MAX_LENGTH) != null) {
+@@ -494,30 +524,30 @@ public class HibernateStorage implements Storage {
+         if (typeMappingRepository == null) {
+             TypeMappingStrategy mappingStrategy;
+             switch (storageType) {
+-                case SYSTEM:
+-                    switch (dataSource.getDialectName()) {
+-                        case ORACLE_10G: // Oracle needs to store long string values to CLOBs.
+-                            mappingStrategy = TypeMappingStrategy.SCATTERED_CLOB;
+-                            break;
+-                        default:
+-                            mappingStrategy = TypeMappingStrategy.SCATTERED;
+-                            break;
+-                    }
+-                    mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
+-                    typeMappingRepository = new SystemTypeMappingRepository(mappingStrategy);
+-                    break;
+-                case MASTER:
+-                    mappingStrategy = TypeMappingStrategy.AUTO;
+-                    mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
+-                    typeMappingRepository = new UserTypeMappingRepository(mappingStrategy);
+-                    break;
+-                case STAGING:
+-                    mappingStrategy = TypeMappingStrategy.AUTO;
+-                    mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
+-                    typeMappingRepository = new StagingTypeMappingRepository(mappingStrategy);
++            case SYSTEM:
++                switch (dataSource.getDialectName()) {
++                case ORACLE_10G: // Oracle needs to store long string values to CLOBs.
++                    mappingStrategy = TypeMappingStrategy.SCATTERED_CLOB;
+                     break;
+                 default:
+-                    throw new IllegalArgumentException("Storage type '" + storageType + "' is not supported.");
++                    mappingStrategy = TypeMappingStrategy.SCATTERED;
++                    break;
++                }
++                mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
++                typeMappingRepository = new SystemTypeMappingRepository(mappingStrategy);
++                break;
++            case MASTER:
++                mappingStrategy = TypeMappingStrategy.AUTO;
++                mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
++                typeMappingRepository = new UserTypeMappingRepository(mappingStrategy);
++                break;
++            case STAGING:
++                mappingStrategy = TypeMappingStrategy.AUTO;
++                mappingStrategy.setUseTechnicalFK(dataSource.generateTechnicalFK());
++                typeMappingRepository = new StagingTypeMappingRepository(mappingStrategy);
++                break;
++            default:
++                throw new IllegalArgumentException("Storage type '" + storageType + "' is not supported.");
+             }
+             if (LOGGER.isDebugEnabled()) {
+                 LOGGER.debug("Selected type mapping strategy: " + mappingStrategy);
+@@ -529,7 +559,7 @@ public class HibernateStorage implements Storage {
+     @Override
+     public synchronized void prepare(MetadataRepository repository, boolean dropExistingData) {
+         if (!isPrepared) {
+-            prepare(repository, Collections.<Expression>emptySet(), false, dropExistingData);
++            prepare(repository, Collections.<Expression> emptySet(), false, dropExistingData);
+         }
+     }
+ 
+@@ -549,18 +579,18 @@ public class HibernateStorage implements Storage {
+             Thread.currentThread().setContextClassLoader(storageClassLoader);
+ 
+             final Session session = factory.getCurrentSession();
+-            Transaction transaction = session.getTransaction();
++            final Transaction transaction = session.getTransaction();
+             if (!transaction.isActive()) {
+                 // Implicitly start a transaction
+                 transaction.begin();
+             }
+             // Call back closes session once calling code has consumed all results.
+-            Set<EndOfResultsCallback> callbacks = Collections.<EndOfResultsCallback>singleton(new EndOfResultsCallback() {
++            Set<EndOfResultsCallback> callbacks = Collections.<EndOfResultsCallback> singleton(new EndOfResultsCallback() {
+ 
+                 @Override
+                 public void onEndOfResults() {
+-                    if (!isMDMTransaction.get() && session.isOpen()) { // Prevent any problem if anyone (Hibernate...) already closed session.
+-                        session.close();
++                    if (transaction.isActive()) {
++                        transaction.commit();
+                     } else {
+                         if (LOGGER.isDebugEnabled()) {
+                             LOGGER.debug("Attempted to close session on end of query result, but it has already been done.");
+@@ -593,10 +623,12 @@ public class HibernateStorage implements Storage {
+             for (DataRecord currentDataRecord : records) {
+                 TypeMapping mapping = mappingRepository.getMappingFromUser(currentDataRecord.getType());
+                 Wrapper o = (Wrapper) currentDataRecord.convert(converter, mapping);
++                if (session.isReadOnly(o)) { // A read only instance for an update?
++                    session.setReadOnly(o, false);
++                }
+                 o.timestamp(System.currentTimeMillis());
+-
+                 DataRecordMetadata recordMetadata = currentDataRecord.getRecordMetadata();
+-                    o.taskId(recordMetadata.getTaskId());
++                o.taskId(recordMetadata.getTaskId());
+                 Map<String, String> recordProperties = recordMetadata.getRecordProperties();
+                 for (Map.Entry<String, String> currentProperty : recordProperties.entrySet()) {
+                     String key = currentProperty.getKey();
+@@ -637,7 +669,9 @@ public class HibernateStorage implements Storage {
+         // TMDM-5794: Clean up transaction in case previous operation did not clean up a failed transaction
+         try {
+             Transaction transaction = session.getTransaction();
+-            if (transaction.isActive() && session.getStatistics().getEntityCount() > 0) { // Not expecting active transaction here in begin().
++            if (transaction.isActive() && session.getStatistics().getEntityCount() > 0) { // Not expecting active
++                                                                                          // transaction here in
++                                                                                          // begin().
+                 LOGGER.warn("Transaction #" + transaction.hashCode() + " should not be active.");
+                 try {
+                     transaction.commit();
+@@ -657,40 +691,43 @@ public class HibernateStorage implements Storage {
+         }
+         session.beginTransaction();
+         session.setFlushMode(FlushMode.AUTO);
+-        isMDMTransaction.set(true);
+     }
+ 
+     @Override
+     public void commit() {
+         assertPrepared();
+-        isMDMTransaction.remove();
+         Session session = factory.getCurrentSession();
+-        Transaction transaction = session.getTransaction();
+-        if (LOGGER.isDebugEnabled()) {
+-            LOGGER.debug("[" + this + "] Transaction #" + transaction.hashCode() + " -> Commit "
+-                    + session.getStatistics().getEntityCount() + " record(s).");
+-        }
+-        if (!transaction.isActive()) {
+-            throw new IllegalStateException("Can not commit transaction, no transaction is active.");
+-        }
+         try {
+-            if (!transaction.wasCommitted()) {
+-                transaction.commit();
+-                if (LOGGER.isDebugEnabled()) {
+-                    LOGGER.debug("[" + this + "] Transaction #" + transaction.hashCode() + " -> Commit done.");
++            Transaction transaction = session.getTransaction();
++            if (LOGGER.isDebugEnabled()) {
++                LOGGER.debug("[" + this + "] Transaction #" + transaction.hashCode() + " -> Commit "
++                        + session.getStatistics().getEntityCount() + " record(s).");
++            }
++            if (!transaction.isActive()) {
++                throw new IllegalStateException("Can not commit transaction, no transaction is active.");
++            }
++            try {
++                if (!transaction.wasCommitted()) {
++                    transaction.commit();
++                    if (LOGGER.isDebugEnabled()) {
++                        LOGGER.debug("[" + this + "] Transaction #" + transaction.hashCode() + " -> Commit done.");
++                    }
++                } else {
++                    LOGGER.warn("Transaction was already committed.");
+                 }
+-            } else {
+-                LOGGER.warn("Transaction was already committed.");
++            } catch (ConstraintViolationException e) {
++                throw new com.amalto.core.storage.exception.ConstraintViolationException(e);
++            }
++        } finally {
++            if (session.isOpen()) {
++                session.clear(); // TMDM-6192: Evicts cache in case session is reused without being closed.
+             }
+-        } catch (ConstraintViolationException e) {
+-            throw new com.amalto.core.storage.exception.ConstraintViolationException(e);
+         }
+     }
+ 
+     @Override
+     public void rollback() {
+         assertPrepared();
+-        isMDMTransaction.remove();
+         Session session = factory.getCurrentSession();
+         Transaction transaction = session.getTransaction();
+         if (!transaction.isActive()) {
+@@ -722,7 +759,8 @@ public class HibernateStorage implements Storage {
+     @Override
+     public void reindex() {
+         if (!dataSource.supportFullText()) {
+-            LOGGER.error("Can not reindex storage '" + storageName + "': datasource '" + dataSource.getName() + "' does not support full text.");
++            LOGGER.error("Can not reindex storage '" + storageName + "': datasource '" + dataSource.getName()
++                    + "' does not support full text.");
+             return;
+         }
+         Session session = factory.getCurrentSession();
+@@ -785,6 +823,10 @@ public class HibernateStorage implements Storage {
+         throw new UnsupportedOperationException("No support due to version of Lucene in use.");
+     }
+ 
++    public SessionFactory getFactory() {
++        return factory;
++    }
++
+     @Override
+     public String getName() {
+         return storageName;
+@@ -806,7 +848,7 @@ public class HibernateStorage implements Storage {
+         try {
+             Thread.currentThread().setContextClassLoader(storageClassLoader);
+             Session session = factory.getCurrentSession();
+-            Iterable<DataRecord> records = internalFetch(session, userQuery, Collections.<EndOfResultsCallback>emptySet());
++            Iterable<DataRecord> records = internalFetch(session, userQuery, Collections.<EndOfResultsCallback> emptySet());
+             for (DataRecord currentDataRecord : records) {
+                 ComplexTypeMetadata currentType = currentDataRecord.getType();
+                 TypeMapping mapping = mappingRepository.getMappingFromUser(currentType);
+@@ -866,7 +908,8 @@ public class HibernateStorage implements Storage {
+                 }
+                 if (factory != null) {
+                     factory.close();
+-                    factory = null; // SessionFactory#close() documentation advises to remove all references to SessionFactory.
++                    factory = null; // SessionFactory#close() documentation advises to remove all references to
++                                    // SessionFactory.
+                 }
+             } finally {
+                 if (storageClassLoader != null) {
+@@ -914,7 +957,8 @@ public class HibernateStorage implements Storage {
+             userQuery.accept(new UserQueryDumpConsole(LOGGER));
+         }
+         // Analyze query
+-        SelectAnalyzer selectAnalysis = new SelectAnalyzer(mappingRepository, storageClassLoader, session, callbacks, this, tableResolver);
++        SelectAnalyzer selectAnalysis = new SelectAnalyzer(mappingRepository, storageClassLoader, session, callbacks, this,
++                tableResolver);
+         Visitor<StorageResults> queryHandler = userQuery.accept(selectAnalysis);
+         // Transform query using mappings
+         Expression internalExpression = expression;
+@@ -957,10 +1001,8 @@ public class HibernateStorage implements Storage {
+         @Override
+         public Object visit(SimpleTypeFieldMetadata simpleField) {
+             String simpleFieldTypeName = simpleField.getType().getName();
+-            if (Types.G_YEAR_MONTH.equals(simpleFieldTypeName)
+-                    || Types.G_YEAR.equals(simpleFieldTypeName)
+-                    || Types.G_MONTH_DAY.equals(simpleFieldTypeName)
+-                    || Types.G_DAY.equals(simpleFieldTypeName)
++            if (Types.G_YEAR_MONTH.equals(simpleFieldTypeName) || Types.G_YEAR.equals(simpleFieldTypeName)
++                    || Types.G_MONTH_DAY.equals(simpleFieldTypeName) || Types.G_DAY.equals(simpleFieldTypeName)
+                     || Types.G_MONTH.equals(simpleFieldTypeName)) {
+                 throw new IllegalArgumentException("No support for field type '" + simpleFieldTypeName + "' (field '"
+                         + simpleField.getName() + "' of type '" + simpleField.getContainingType().getName() + "').");
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/InClauseOptimization.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/InClauseOptimization.java
+index 5190ff3..3974290 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/InClauseOptimization.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/InClauseOptimization.java
+@@ -19,6 +19,7 @@ import com.amalto.core.query.user.UserQueryBuilder;
+ import com.amalto.core.storage.EmptyIterator;
+ import com.amalto.core.storage.Storage;
+ import com.amalto.core.storage.StorageResults;
++import com.amalto.core.storage.hibernate.HibernateStorage;
+ import com.amalto.core.storage.record.DataRecord;
+ import org.apache.commons.lang.NotImplementedException;
+ import org.apache.log4j.Logger;
+@@ -26,6 +27,7 @@ import org.hibernate.Criteria;
+ import org.hibernate.EntityMode;
+ import org.hibernate.HibernateException;
+ import org.hibernate.Session;
++import org.hibernate.Transaction;
+ import org.hibernate.criterion.CriteriaQuery;
+ import org.hibernate.criterion.Criterion;
+ import org.hibernate.dialect.Dialect;
+@@ -63,13 +65,14 @@ public class InClauseOptimization extends StandardQueryHandler {
+ 
+     @Override
+     public StorageResults visit(Select select) {
+-        // Standard criteria
+-        Criteria criteria = createCriteria(select);
++	// Keep select class loader (for result creation)
++        ClassLoader resultClassLoader = Thread.currentThread().getContextClassLoader();
+         // Create in clause for the id
+         ComplexTypeMetadata mainType = select.getTypes().get(0);
+         Paging paging = select.getPaging();
+         int start = paging.getStart();
+         int limit = paging.getLimit();
++	Criterion criterion = null;
+         switch (mode) {
+             case SUB_QUERY:
+                 throw new NotImplementedException("Not supported in this MDM version");
+@@ -79,7 +82,7 @@ public class InClauseOptimization extends StandardQueryHandler {
+                 // ComplexTypeMetadata typeMetadata = (ComplexTypeMetadata) MetadataUtils.getSuperConcreteType(mainType);
+                 // String idColumnName = typeMetadata.getKeyFields().iterator().next().getName();
+                 // String tableName = typeMetadata.getName();
+-                // criteria.add(new IdInSubQueryClause(idColumnName, tableName, start, limit));
++                // criterion = new IdInSubQueryClause(idColumnName, tableName, start, limit);
+             case CONSTANT:
+                 UserQueryBuilder qb = from(mainType)
+                         .selectId(mainType)
+@@ -94,18 +97,6 @@ public class InClauseOptimization extends StandardQueryHandler {
+                 } else {
+                     constants = new LinkedList<String[]>();
+                 }
+-                // TODO Prevent session close (DO NOT REMOVE).
+-                if (!HibernateStorage.isMDMTransaction.get()) {
+-                    storage.begin();
+-                    Set<EndOfResultsCallback> newCallbacks = new HashSet<EndOfResultsCallback>(callbacks);
+-                    newCallbacks.add(new EndOfResultsCallback() {
+-                        @Override
+-                        public void onEndOfResults() {
+-                            storage.rollback();
+-                        }
+-                    });
+-                    callbacks = newCallbacks;
+-                }
+                 // Get ids for constant list
+                 StorageResults records = storage.fetch(qb.getSelect());
+                 for (DataRecord record : records) {
+@@ -119,15 +110,37 @@ public class InClauseOptimization extends StandardQueryHandler {
+                     constants.add(constant);
+                 }
+                 if (!constants.isEmpty()) {
+-                    criteria.add(new IdInConstantClause(mainType.getKeyFields(), constants));
++                    criterion = new IdInConstantClause(mainType.getKeyFields(), constants);
+                 } else {
+                     return new HibernateStorageResults(storage, select, EmptyIterator.INSTANCE);
+                 }
+                 break;
+         }
+         // Create results
+-        List list = criteria.list();
+-        return createResults(list, select.isProjection());
++        final ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
++	Thread.currentThread().setContextClassLoader(resultClassLoader);
++	try {
++		this.session = ((HibernateStorage) storage).getFactory().getCurrentSession();
++		final Transaction transaction = session.getTransaction();
++		transaction.begin();
++		Criteria criteria = createCriteria(select);
++		if(criterion != null) {
++		    criteria.add(criterion);
++		}
++		List list = criteria.list();
++		this.callbacks = Collections.<EndOfResultsCallback>singleton(new EndOfResultsCallback() {
++		        @Override
++		        public void onEndOfResults() {
++			    if (transaction.isActive()) {
++				transaction.commit();
++		            }
++		            Thread.currentThread().setContextClassLoader(previousClassLoader);
++		        }
++		});
++		return createResults(list, select.isProjection());
++	} catch(Exception e) {
++	    throw new RuntimeException("Could not create 'in clause' result", e);
++	}
+     }
+ 
+     private static class IdInConstantClause implements Criterion {
+diff --git a/org.talend.mdm.core/test/com/amalto/core/query/StorageQueryTest.java b/org.talend.mdm.core/test/com/amalto/core/query/StorageQueryTest.java
+index b488490..1eefa8a 100644
+--- a/org.talend.mdm.core/test/com/amalto/core/query/StorageQueryTest.java
++++ b/org.talend.mdm.core/test/com/amalto/core/query/StorageQueryTest.java
+@@ -1152,6 +1152,16 @@ public class StorageQueryTest extends StorageTestCase {
+         } finally {
+             results.close();
+         }
++
++        //
++        qb = from(person).selectId(person).limit(-1);
++        results = storage.fetch(qb.getSelect());
++        try {
++            assertEquals(3, results.getSize());
++            assertEquals(3, results.getCount());
++        } finally {
++            results.close();
++        }
+     }
+ 
+     public void testPagingWithOuterJoin() throws Exception {

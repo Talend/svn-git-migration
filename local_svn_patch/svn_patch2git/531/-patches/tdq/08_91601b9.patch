@@ -1,0 +1,14 @@
+diff --git a/org.talend.datacleansing.core.ui/main/java/src/org/talend/datacleansing/core/ui/util/EJobDBName.java b/org.talend.datacleansing.core.ui/main/java/src/org/talend/datacleansing/core/ui/util/EJobDBName.java
+index fde70f9..99e4db3 100644
+--- a/org.talend.datacleansing.core.ui/main/java/src/org/talend/datacleansing/core/ui/util/EJobDBName.java
++++ b/org.talend.datacleansing.core.ui/main/java/src/org/talend/datacleansing/core/ui/util/EJobDBName.java
+@@ -38,7 +38,8 @@ public enum EJobDBName {
+     AS400(SupportDBUrlType.AS400DEFAULTURL, EDatabaseComponentName.AS400),
+     ORACL_SID(SupportDBUrlType.ORACLEWITHSIDDEFAULTURL, EDatabaseComponentName.DBORACLEFORSID),
+     ORACL_SRV(SupportDBUrlType.ORACLEWITHSERVICENAMEDEFAULTURL, EDatabaseComponentName.DBORACLESN),
+-    HIVE(SupportDBUrlType.HIVEDEFAULTURL, EDatabaseComponentName.HIVE);
++    HIVE(SupportDBUrlType.HIVEDEFAULTURL, EDatabaseComponentName.HIVE),
++    NETEZZA(SupportDBUrlType.NETEZZADEFAULTURL, EDatabaseComponentName.NETEZZA);
+ 
+     private SupportDBUrlType tdqSupportType;
+ 

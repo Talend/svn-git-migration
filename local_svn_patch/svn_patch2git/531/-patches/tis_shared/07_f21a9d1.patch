@@ -1,0 +1,446 @@
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/PreviewSocketServer.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/PreviewSocketServer.java
+index 9a52421..2d55083 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/PreviewSocketServer.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/PreviewSocketServer.java
+@@ -33,6 +33,26 @@ public class PreviewSocketServer extends Thread {
+ 
+     private int nbLine;
+ 
++    private boolean isNeedTimeout = true;
++
++    /**
++     * Getter for isNeedTimeout.
++     * 
++     * @return the isNeedTimeout
++     */
++    public boolean isNeedTimeout() {
++        return this.isNeedTimeout;
++    }
++
++    /**
++     * Sets the isNeedTimeout.
++     * 
++     * @param isNeedTimeout the isNeedTimeout to set
++     */
++    public void setNeedTimeout(boolean isNeedTimeout) {
++        this.isNeedTimeout = isNeedTimeout;
++    }
++
+     public PreviewSocketServer() {
+ 
+     }
+@@ -70,7 +90,9 @@ public class PreviewSocketServer extends Thread {
+ 
+             dataSocketServer = new java.net.ServerSocket(port);
+ 
+-            dataSocketServer.setSoTimeout(30000);
++            if (isNeedTimeout) {
++                dataSocketServer.setSoTimeout(30000);
++            }
+ 
+             while (donetSocketInput) {
+                 dataSocketClient = dataSocketServer.accept();
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/TGenkeyViewProfileAction.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/TGenkeyViewProfileAction.java
+index 3b68cb1..40ca2c3 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/TGenkeyViewProfileAction.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/TGenkeyViewProfileAction.java
+@@ -38,8 +38,8 @@ import org.talend.core.model.properties.PropertiesFactory;
+ import org.talend.core.model.properties.Property;
+ import org.talend.core.model.utils.ContextParameterUtils;
+ import org.talend.designer.component.preview.i18n.Messages;
+-import org.talend.designer.component.preview.shadow.ViewBlockProfileDataMain;
+ import org.talend.designer.component.preview.shadow.DQPreviewComponentDataProcess;
++import org.talend.designer.component.preview.shadow.ViewBlockProfileDataMain;
+ import org.talend.designer.component.preview.ui.ViewBlockProfileDataDialog;
+ import org.talend.designer.core.ui.editor.CustomExternalActions;
+ import org.talend.designer.core.ui.editor.nodes.Node;
+@@ -126,7 +126,8 @@ public class TGenkeyViewProfileAction extends CustomExternalActions {
+         property.setId(ViewBlockProfileDataMain.PREVIEW + "_" + "Data"); //$NON-NLS-1$ //$NON-NLS-2$
+ 
+         // Get a virtual node (by copying the metadata and parameters)
+-        DQPreviewComponentDataProcess proc = new DQPreviewComponentDataProcess(property, dataMain.getDataNode(), node.getProcess());
++        DQPreviewComponentDataProcess proc = new DQPreviewComponentDataProcess(property, dataMain.getDataNode(),
++                node.getProcess());
+         proc.initNodesAndConnections(limit);
+         return runPreviewProcessHelper(proc, dataMain);
+     }
+@@ -150,6 +151,7 @@ public class TGenkeyViewProfileAction extends CustomExternalActions {
+ 
+         try {
+             previewServer = new PreviewSocketServer();
++            previewServer.setNeedTimeout(false);
+             previewServer.setEcnoding(fetchNodeEncoding(dataMain));
+             previewServer.start();
+             return processor.run(IProcessor.NO_STATISTICS, IProcessor.NO_TRACES, null);
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/DQPreviewComponentDataProcess.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/DQPreviewComponentDataProcess.java
+index 13cb4f2..bdde356 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/DQPreviewComponentDataProcess.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/DQPreviewComponentDataProcess.java
+@@ -80,43 +80,53 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+ 
+     public void initNodesAndConnections(int lmt) {
+ 
+-        // nodes.add(inputNode);
+-        // Back trace the node along with the main line, create the fake node and the connections.
++        createFakeNodes();
++        // tlogrow will blocking the generate code process becasue of can not find a device to print.
++        filterTLogRowNode();
++        addCurrentAndSocketNode(lmt);
++    }
+ 
+-        checkAndAddAllOfLeaveNode();
+-        while (!needToBackTraceNodeQueue.empty()) {
+-            List<INode> traceNodes = new ArrayList<INode>();
+-            backTraceAlongwithIncomingLine(traceNodes, needToBackTraceNodeQueue.get(), this);
+-            nodes.addAll(traceNodes);
+-        }
++    /**
++     * DOC zshen Comment method "addCurrentAndSocketNode".
++     */
++    private void addCurrentAndSocketNode(int lmt) {
+         AbstractNode previousNode = (AbstractNode) nodes.get(0);
+         AbstractNode currentNode = node; // noOutputVisualNode;
+         if (currentNode != null) {
++            String MetadataTableName = currentNode.getIncomingConnections().get(0).getMetaName();
+             // MOD yyi 2011-10-13 add java node before the current node for limit
+-            MetadataTable sourceTablePrv = (MetadataTable) previousNode.getMetadataList().get(0);
++            MetadataTable sourceTablePrv = (MetadataTable) previousNode.getMetadataTable(MetadataTableName);
+             MetadataTable targetTablePrv = new MetadataTable();
+             MetadataToolHelper.copyTable(sourceTablePrv, targetTablePrv);
+-            targetTablePrv.setAttachedConnector(sourceTablePrv.getAttachedConnector());
++            targetTablePrv.setAttachedConnector(EConnectionType.FLOW_MAIN.getName());
++            targetTablePrv.setTableName(sourceTablePrv.getTableName());
+ 
+             MetadataTable sourceTableCur = (MetadataTable) currentNode.getMetadataList().get(0);
+             MetadataTable targetTableCur = new MetadataTable();
+             MetadataToolHelper.copyTable(sourceTableCur, targetTableCur);
+             targetTableCur.setAttachedConnector(sourceTableCur.getAttachedConnector());
++            targetTableCur.setTableName(sourceTableCur.getTableName());
+ 
+             // previous node->javanode
+             jrn = new JavaRowNode(lmt, targetTablePrv);
+ 
+-            ShadowConnection cnxPrv2Java = new ShadowConnection(previousNode, jrn, getCurrentConnectionName(currentNode,
+-                    previousNode));
++            IConnection currentConnection = getCurrentConnection(currentNode, previousNode);
++            ShadowConnection cnxPrv2Java = new SpecialShadowConnection(previousNode, jrn, currentConnection.getName(),
++                    currentConnection.getLineStyle());
+             if (previousNode.getOutgoingConnections().size() > 0) {
+-                cnxPrv2Java.setConnectorName(previousNode.getOutgoingConnections().get(0).getConnectorName());
++                cnxPrv2Java.setConnectorName(currentConnection.getConnectorName());
+             } else {
+                 cnxPrv2Java.setConnectorName(sourceTablePrv.getAttachedConnector());
+             }
+-            cnxPrv2Java.setMetaName(cnxPrv2Java.getName());
++            cnxPrv2Java.setMetaName(currentConnection.getMetaName());
+             List<IConnection> cnxs = new ArrayList<IConnection>();
+             cnxs.add(cnxPrv2Java);
++            previousNode.getOutgoingConnections().remove(getCurrentConnection(currentNode, previousNode));
++
++            cnxs.addAll(previousNode.getOutgoingConnections());
+             previousNode.setOutgoingConnections(cnxs);
++            cnxs = new ArrayList<IConnection>();
++            cnxs.add(cnxPrv2Java);
+             jrn.setIncomingConnections(cnxs);
+ 
+             nodes.add(jrn);
+@@ -124,7 +134,7 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+             // java node->current node
+             ShadowConnection cnxJava2Cur = new ShadowConnection(jrn, currentNode);
+             cnxJava2Cur.setConnectorName(EConnectionType.FLOW_MAIN.getName());
+-            cnxJava2Cur.setMetaName(cnxJava2Cur.getName());
++            cnxJava2Cur.setMetaName(targetTablePrv.getTableName());
+             cnxs = new ArrayList<IConnection>();
+             cnxs.add(cnxJava2Cur);
+             jrn.setOutgoingConnections(cnxs);
+@@ -135,7 +145,7 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+             logRowNode = new SocketOutputNode(targetTableCur);
+             ShadowConnection cnxCur2Log = new ShadowConnection(currentNode, logRowNode);
+             cnxCur2Log.setConnectorName(sourceTableCur.getAttachedConnector());
+-            cnxCur2Log.setMetaName(cnxCur2Log.getName());
++            cnxCur2Log.setMetaName(targetTableCur.getTableName());
+             cnxs = new ArrayList<IConnection>();
+             cnxs.add(cnxCur2Log);
+             currentNode.setOutgoingConnections(cnxs);
+@@ -159,33 +169,85 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+     }
+ 
+     /**
++     * Filter out the tlogRow node from the virtual job. (Fix a problem of match wizard when printing on console)
++     */
++    private void filterTLogRowNode() {
++        List<INode> nodeList = new ArrayList<INode>();
++        nodeList.addAll(nodes);
++        for (INode theNode : nodeList) {
++            if (theNode.getComponent().getName().equals("tLogRow")) { //$NON-NLS-1$
++                IConnection iConnection = theNode.getIncomingConnections().get(0);
++                if (theNode.getOutgoingConnections().size() == 0) {
++                    // the node is leaf node case we remove it.
++                    INode preNode = iConnection.getSource();
++                    preNode.getOutgoingConnections().remove(iConnection);
++                } else {
++                    // the node is previous node of tmatchGroup. Remove the tLogRow node and re-establish the
++                    // connection.
++                    AbstractNode preNode = (AbstractNode) iConnection.getSource();
++                    IConnection oConnection = theNode.getOutgoingConnections().get(0);
++                    AbstractNode NextNode = (AbstractNode) oConnection.getTarget();
++                    // Set the connection
++                    ShadowConnection cnx = new SpecialShadowConnection(preNode, NextNode, iConnection.getName(),
++                            iConnection.getLineStyle());
++                    cnx.setElementParameters(iConnection.getElementParameters());
++                    cnx.setConnectorName(iConnection.getConnectorName());
++                    cnx.setMetaName(iConnection.getMetaName());
++                    NextNode.getIncomingConnections().remove(oConnection);
++                    replaceShadowConnection(preNode, cnx, true);
++                    replaceShadowConnection(NextNode, cnx, false);
++                }
++                nodes.remove(theNode);
++            }
++        }
++    }
++
++    /**
++     * Create the fake nodes (except current node in selection).
++     * 
++     */
++    private void createFakeNodes() {
++        // Back trace the node along with all of lines, create the fake node and the connections.
++        checkAndAddAllLeavesNodes();
++        while (!needToBackTraceNodeQueue.empty()) {
++            backTraceAlongwithIncomingLine(traceNodes, needToBackTraceNodeQueue.get(), this);
++            nodes.addAll(traceNodes);
++        }
++
++    }
++
++    /**
+      * DOC zshen Comment method "getCurrentConnectionName".
+      * 
+      * @param currentNode
+      * @param previousNode
+      * @return
+      */
+-    private String getCurrentConnectionName(AbstractNode currentNode, AbstractNode previousNode) {
+-        for (IConnection inComingConn : currentNode.getIncomingConnections()) {
++    private IConnection getCurrentConnection(AbstractNode currentNode, AbstractNode previousNode) {
++        List<? extends IConnection> incomingConnections = currentNode.getIncomingConnections();
++        for (IConnection inComingConn : incomingConnections) {
+             INode source = inComingConn.getSource();
+             if (source != null && source.getElementName().equalsIgnoreCase(previousNode.getElementName())) {
+                 source.removeInput(inComingConn);
+                 currentNode.removeOutput(inComingConn);
+-                return inComingConn.getName();
++                return inComingConn;
+             }
+         }
+-
+-        return currentNode.getIncomingConnections().get(0).getName();
++        if (incomingConnections.size() > 0) {
++            return currentNode.getIncomingConnections().get(0);
++        } else {
++            return null;
++        }
+     }
+ 
+     /**
+      * DOC zshen Comment method "checkAndAddAllOfLeaveNode". Get all of leaveNode from the Process
+      */
+-    private void checkAndAddAllOfLeaveNode() {
++    private void checkAndAddAllLeavesNodes() {
+         List<? extends INode> dependencyNode = this.node.getProcess().getGraphicalNodes();
+         for (INode currentNode : dependencyNode) {
+             if (currentNode.getOutgoingConnections().size() == 0) {
+-                if (checkWhetherBehandOfCurrentNode(currentNode)) {
++                if (isAfterUISelectedNode(currentNode)) {
+                     continue;
+                 }
+                 AbstractNode convertAbstractNode = convertAbstractNode(currentNode);
+@@ -198,20 +260,23 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+     }
+ 
+     /**
+-     * DOC zshen Comment method "checkWhetherBehandOfCurrentNode".
+      * 
+-     * Check whether the node which come from parameter is behand of current node
++     * 
++     * Check if the current node is linked after tMatchGroup/tGenKey component.
+      * 
+      * @param currentNode
+-     * @return
++     * @return true if linked after tMatchgroup/tGenKey component.
+      */
+-    private boolean checkWhetherBehandOfCurrentNode(INode currentNode) {
++    private boolean isAfterUISelectedNode(INode currentNode) {
++        if (currentNode == null || currentNode.getElementName().equalsIgnoreCase(this.node.getElementName())) {
++            return true;
++        }
+         for (IConnection inputConn : currentNode.getIncomingConnections()) {
+             INode source = inputConn.getSource();
+             if (source != null && source.getElementName().equalsIgnoreCase(this.node.getElementName())) {
+                 return true;
+             } else {
+-                return checkWhetherBehandOfCurrentNode(source);
++                return isAfterUISelectedNode(source);
+             }
+         }
+         return false;
+@@ -258,7 +323,7 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+                     currConn.getLineStyle());
+             cnx.setElementParameters(currConn.getElementParameters());
+             cnx.setConnectorName(currConn.getConnectorName());
+-            cnx.setMetaName(cnx.getName());
++            cnx.setMetaName(currConn.getMetaName());
+             // ((List<IConnection>) prevFakeNode.getOutgoingConnections()).add(cnx);
+             replaceShadowConnection(prevFakeNode, cnx, true);
+             replaceShadowConnection(currFakeNode, cnx, false);
+@@ -365,16 +430,6 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+     }
+ 
+     /**
+-     * DOC talend Comment method "clearInConnection".
+-     * 
+-     * @param currFakeNode
+-     */
+-    private void clearInConnection(AbstractNode currFakeNode) {
+-        currFakeNode.setIncomingConnections(new ArrayList<IConnection>());
+-
+-    }
+-
+-    /**
+      * remove old one and add new shadowConnection
+      * 
+      * @param currFakeNode
+@@ -404,16 +459,6 @@ public class DQPreviewComponentDataProcess extends PreviewComponentDataProcess {
+         connections.add(cnx);
+     }
+ 
+-    /**
+-     * DOC talend Comment method "clearOutConnection".
+-     * 
+-     * @param prevFakeNode
+-     */
+-    private void clearOutConnection(AbstractNode prevFakeNode) {
+-        prevFakeNode.setOutgoingConnections(new ArrayList<IConnection>());
+-
+-    }
+-
+     private class NodeQueue<E> {
+ 
+         private LinkedList<E> ll = new LinkedList<E>();
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ShadowConnection.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ShadowConnection.java
+index 7b42a00..de7e04a 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ShadowConnection.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ShadowConnection.java
+@@ -83,7 +83,7 @@ public class ShadowConnection extends AbstractConnection implements IConnection
+         if (source != null) {
+             List<IMetadataTable> metadataList = source.getMetadataList();
+             for (int i = 0; i < metadataList.size(); i++) {
+-                if (metadataList.get(i).getTableName().equals(source.getUniqueName())) {
++                if (metadataList.get(i).getTableName().equals(metadataName)) {
+                     return metadataList.get(i);
+                 }
+             }
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ViewBlockProfileDataMain.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ViewBlockProfileDataMain.java
+index 1ca6a2b..e8ab8a5 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ViewBlockProfileDataMain.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/shadow/ViewBlockProfileDataMain.java
+@@ -28,7 +28,7 @@ import org.talend.core.model.components.IComponentsFactory;
+ import org.talend.core.model.context.ContextUtils;
+ import org.talend.core.model.metadata.IMetadataColumn;
+ import org.talend.core.model.metadata.IMetadataTable;
+-import org.talend.core.model.metadata.MetadataTable;
++import org.talend.core.model.process.AbstractExternalNode;
+ import org.talend.core.model.process.AbstractNode;
+ import org.talend.core.model.process.EParameterFieldType;
+ import org.talend.core.model.process.IConnection;
+@@ -58,17 +58,15 @@ public class ViewBlockProfileDataMain {
+ 
+     public ViewBlockProfileDataMain(Node node, IProcess process) {
+         // MOD by zhsen care for tMap Component which need more parameters when use.
+-        if (node.isExternalNode()) {
+-            this.dataNode = createExtenalNode(node, process);
+-        } else {
+-
+-            this.dataNode = new DataNode(cloneComponent(node.getComponent()), node.getUniqueName());
+-        }
++        this.dataNode = new DataNode(cloneComponent(node.getComponent()), node.getUniqueName());
+         copyConnections(dataNode, node);
+ 
+         copyParamsAndMetadata(node);
+         copyContextRefrence(node);
+         setUseExistingConnectionToFalse(dataNode);
++        if (node.isExternalNode()) {
++            this.dataNode.setExternalNode(createExtenalNode(node, process));
++        }
+         dataNode.setProcess(process);
+     }
+ 
+@@ -95,7 +93,7 @@ public class ViewBlockProfileDataMain {
+      * 
+      * @param node
+      */
+-    private AbstractNode createExtenalNode(Node node, IProcess process) {
++    private AbstractExternalNode createExtenalNode(Node node, IProcess process) {
+         if (node.getExternalNode() instanceof MapperComponent) {
+             MapperComponent mapperComp = new MapperComponent();
+             mapperComp.setProcess(process);
+@@ -103,7 +101,7 @@ public class ViewBlockProfileDataMain {
+             copyMapperComponent(node, mapperComp);
+             return mapperComp;
+         } else if (node.getExternalNode() instanceof MatchGroupComponent) {
+-            AbstractNode matchGroupNode = new MatchGroupComponent();
++            AbstractExternalNode matchGroupNode = new MatchGroupComponent();
+             matchGroupNode.setProcess(process);
+             prepareCopyParameters(node, matchGroupNode);
+             copyMatchGroupComponent(node, matchGroupNode);
+@@ -122,9 +120,7 @@ public class ViewBlockProfileDataMain {
+         targetNode.setElementParameters(node.getComponent().createElementParameters(targetNode));
+         List<IMetadataTable> metaList = new ArrayList<IMetadataTable>();
+         targetNode.setMetadataList(metaList);
+-        IMetadataTable metaTable = new MetadataTable();
+-        metaTable.setTableName(node.getUniqueName());
+-        metaList.add(metaTable);
++        metaList.addAll(node.getMetadataList());
+         targetNode.setMetadataList(metaList);
+         targetNode.setComponentName(node.getComponent().getName());
+ 
+@@ -158,7 +154,12 @@ public class ViewBlockProfileDataMain {
+         DesignerMapperService designerMapperService = new DesignerMapperService();
+         designerMapperService.createAutoMappedNode(mapperComp, node.getIncomingConnections().get(0), node
+                 .getOutgoingConnections().get(0));
+-
++        List<IConnection> incomingConnections = new ArrayList<IConnection>();
++        incomingConnections.addAll(node.getExternalNode().getIncomingConnections());
++        List<IConnection> outgoingConnections = new ArrayList<IConnection>();
++        outgoingConnections.addAll(node.getExternalNode().getOutgoingConnections());
++        mapperComp.setIncomingConnections(incomingConnections);
++        mapperComp.setOutgoingConnections(outgoingConnections);
+         // Note that the connection will be kept to one for both input and output.
+         try {
+             mapperComp.setExternalData(node.getExternalData().clone());
+@@ -212,7 +213,7 @@ public class ViewBlockProfileDataMain {
+         for (IMetadataTable metadataTable : component.getMetadataList()) {
+             IMetadataTable orgtable = metadataTable.clone();
+             orgtable.setAttachedConnector(metadataTable.getAttachedConnector());
+-            orgtable.setTableName(dataNode.getUniqueName());
++            orgtable.setTableName(metadataTable.getTableName());
+             dataNode.getMetadataList().add(orgtable);
+         }
+     }
+diff --git a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/ui/matchrule/ConfigureMatchRuleDialog.java b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/ui/matchrule/ConfigureMatchRuleDialog.java
+index 90b5872..9f15279 100644
+--- a/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/ui/matchrule/ConfigureMatchRuleDialog.java
++++ b/org.talend.designer.component.preview/src/main/java/org/talend/designer/component/preview/ui/matchrule/ConfigureMatchRuleDialog.java
+@@ -382,8 +382,10 @@ public class ConfigureMatchRuleDialog extends TrayDialog {
+             matchAction.setLimits(lmt);
+             matchAction.makeFakeNodeAndLoad(cloneMatchGroupNode);
+             viewData = matchAction.getListData();
+-            refreshChart(viewData);
+-            refreshTable(viewData);
++            if (viewData != null) {
++                refreshChart(viewData);
++                refreshTable(viewData);
++            }
+             refreshDialog((MatchingData) cloneMatchGroupNode.getExternalNode().getExternalEmfData());
+ 
+         } catch (NumberFormatException ne) {

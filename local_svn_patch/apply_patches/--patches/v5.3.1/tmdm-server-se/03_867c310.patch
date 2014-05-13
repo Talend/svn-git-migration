@@ -1,0 +1,138 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
+index 8b0477a..50aee42 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/DefaultStorageClassLoader.java
+@@ -47,7 +47,8 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+ 
+     private static final XPath pathFactory = XPathFactory.newInstance().newXPath();
+ 
+-    public DefaultStorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource dialect, StorageType type) {
++    public DefaultStorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource.DataSourceDialect dialect,
++            StorageType type) {
+         super(parent, storageName, dialect, type);
+     }
+ 
+@@ -111,9 +112,9 @@ public class DefaultStorageClassLoader extends StorageClassLoader {
+         switch (type) {
+         case MASTER:
+         case SYSTEM:
+-            return new MappingGenerator(document, resolver, dialect);
++            return new MappingGenerator(document, resolver, dataSource);
+         case STAGING:
+-            return new MappingGenerator(document, resolver, dialect, false);
++            return new MappingGenerator(document, resolver, dataSource, false);
+         default:
+             throw new NotImplementedException("No support for storage type '" + type + "'.");
+         }
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
+index 75e89cd..7677254 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StorageClassLoader.java
+@@ -1,15 +1,22 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- * 
++ *
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- * 
+- * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
+- * 92150 Suresnes, France
++ *
++ * You should have received a copy of the agreement
++ * along with this program; if not, write to Talend SA
++ * 9 rue Pages 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
++import com.amalto.core.storage.StorageType;
++import com.amalto.core.storage.datasource.DataSource;
++import com.amalto.core.storage.datasource.RDBMSDataSource;
++import org.apache.log4j.Logger;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.net.MalformedURLException;
+@@ -20,13 +27,6 @@ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.TreeMap;
+ 
+-import org.apache.log4j.Logger;
+-import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+-
+-import com.amalto.core.storage.StorageType;
+-import com.amalto.core.storage.datasource.DataSource;
+-import com.amalto.core.storage.datasource.RDBMSDataSource;
+-
+ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     public static final String MAPPING_PUBLIC_ID = "-//Hibernate/Hibernate Mapping DTD 3.0//EN"; //$NON-NLS-1$
+@@ -51,7 +51,7 @@ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     final StorageType type;
+ 
+-    final RDBMSDataSource dialect;
++    final RDBMSDataSource.DataSourceDialect dialect;
+ 
+     RDBMSDataSource dataSource;
+ 
+@@ -59,7 +59,10 @@ public abstract class StorageClassLoader extends ClassLoader {
+ 
+     private boolean isClosed;
+ 
+-    StorageClassLoader(ClassLoader parent, String storageName, RDBMSDataSource dialect, StorageType type) {
++    StorageClassLoader(ClassLoader parent,
++                       String storageName,
++                       RDBMSDataSource.DataSourceDialect dialect,
++                       StorageType type) {
+         super(parent);
+         this.storageName = storageName;
+         this.dialect = dialect;
+@@ -101,23 +104,21 @@ public abstract class StorageClassLoader extends ClassLoader {
+         assertNotClosed();
+         if (EHCACHE_XML_CONFIG.equals(name)) {
+             try {
+-                return new URL("http", "fakehost", 0, '/' + EHCACHE_XML_CONFIG, new URLStreamHandler() { //$NON-NLS-1$ //$NON-NLS-2$ 
++                return new URL("http", "fakehost", 0, '/' + EHCACHE_XML_CONFIG, new URLStreamHandler() { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
++                    @Override
++                    protected URLConnection openConnection(URL u) throws IOException {
++                        return new URLConnection(u) {
++                            @Override
++                            public void connect() throws IOException {
++                            }
+ 
+                             @Override
+-                            protected URLConnection openConnection(URL u) throws IOException {
+-                                return new URLConnection(u) {
+-
+-                                    @Override
+-                                    public void connect() throws IOException {
+-                                    }
+-
+-                                    @Override
+-                                    public InputStream getInputStream() throws IOException {
+-                                        return generateEhCacheConfig();
+-                                    }
+-                                };
++                            public InputStream getInputStream() throws IOException {
++                                return generateEhCacheConfig();
+                             }
+-                        });
++                        };
++                    }
++                });
+             } catch (MalformedURLException e) {
+                 return null;
+             }
+@@ -181,8 +182,7 @@ public abstract class StorageClassLoader extends ClassLoader {
+     public void setDataSourceConfiguration(DataSource dataSource) {
+         assertNotClosed();
+         if (!(dataSource instanceof RDBMSDataSource)) {
+-            throw new IllegalArgumentException("Expected an instance of " + RDBMSDataSource.class.getName() + " but was "
+-                    + dataSource);
++            throw new IllegalArgumentException("Expected an instance of " + RDBMSDataSource.class.getName() + " but was " + dataSource);
+         }
+         this.dataSource = (RDBMSDataSource) dataSource;
+     }

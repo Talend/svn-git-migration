@@ -1,0 +1,110 @@
+diff --git a/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java b/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
+index d92f67f..72e0941 100644
+--- a/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
++++ b/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
+@@ -14,7 +14,6 @@ package org.talend.commandline.util;
+ 
+ import java.io.File;
+ import java.io.FileNotFoundException;
+-import java.lang.reflect.InvocationTargetException;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Date;
+@@ -29,13 +28,10 @@ import java.util.zip.ZipFile;
+ import org.eclipse.core.resources.IWorkspace;
+ import org.eclipse.core.resources.IWorkspaceRunnable;
+ import org.eclipse.core.resources.ResourcesPlugin;
+-import org.eclipse.core.runtime.CoreException;
+ import org.eclipse.core.runtime.IProgressMonitor;
+ import org.eclipse.core.runtime.NullProgressMonitor;
+ import org.eclipse.core.runtime.jobs.ISchedulingRule;
+ import org.eclipse.emf.common.util.EList;
+-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+-import org.eclipse.jface.operation.IRunnableWithProgress;
+ import org.talend.commandline.client.ICommandLineConstants;
+ import org.talend.commandline.client.filter.AndGroupFilter;
+ import org.talend.commandline.client.filter.EqualsTypeFilter;
+@@ -497,6 +493,7 @@ public class ItemsHelper {
+ 
+     public void changeVersions(final String newVersion, final boolean fixLatestVersion, final boolean dependencies,
+             final ItemFilter itemFilter) throws Exception {
++        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+         final IWorkspaceRunnable op = new IWorkspaceRunnable() {
+ 
+             public void run(IProgressMonitor monitor) {
+@@ -557,31 +554,14 @@ public class ItemsHelper {
+                 }
+             }
+         };
+-
+-        IRunnableWithProgress iRunnableWithProgress = new IRunnableWithProgress() {
+-
+-            public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+-                IWorkspace workspace = ResourcesPlugin.getWorkspace();
+-                try {
+-                    ISchedulingRule schedulingRule = workspace.getRoot();
+-                    // the update the project files need to be done in the workspace runnable to avoid all
+-                    // notification
+-                    // of changes before the end of the modifications.
+-                    workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, monitor);
+-                } catch (CoreException e) {
+-                    throw new InvocationTargetException(e);
+-                }
+-            }
+-        };
+-
+         try {
+-            new ProgressMonitorDialog(null).run(false, false, iRunnableWithProgress);
+-        } catch (InvocationTargetException e) {
++            ISchedulingRule schedulingRule = workspace.getRoot();
++            // the update the project files need to be done in the workspace runnable to avoid all
++            // notification of changes before the end of the modifications.
++            workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, new NullProgressMonitor());
++        } catch (Exception e) {
+             ExceptionHandler.process(e);
+-        } catch (InterruptedException e) {
+-            //
+         }
+-
+     }
+ 
+     private void updateVersion(Item item, String newVersion, boolean fixLatest, Map<String, String> oldVersions) throws Exception {
+@@ -662,6 +642,7 @@ public class ItemsHelper {
+ 
+     public void changeStatus(final String newStatusCode, final boolean dependencies, final ItemFilter itemFilter)
+             throws PersistenceException {
++        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+         final IWorkspaceRunnable op = new IWorkspaceRunnable() {
+ 
+             public void run(IProgressMonitor monitor) {
+@@ -705,25 +686,13 @@ public class ItemsHelper {
+             }
+         };
+ 
+-        IRunnableWithProgress iRunnableWithProgress = new IRunnableWithProgress() {
+-
+-            public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+-                IWorkspace workspace = ResourcesPlugin.getWorkspace();
+-                try {
+-                    ISchedulingRule schedulingRule = workspace.getRoot();
+-                    workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, monitor);
+-                } catch (CoreException e) {
+-                    throw new InvocationTargetException(e);
+-                }
+-            }
+-        };
+-
+         try {
+-            new ProgressMonitorDialog(null).run(false, false, iRunnableWithProgress);
+-        } catch (InvocationTargetException e) {
++            ISchedulingRule schedulingRule = workspace.getRoot();
++            // the update the project files need to be done in the workspace runnable to avoid all
++            // notification of changes before the end of the modifications.
++            workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, new NullProgressMonitor());
++        } catch (Exception e) {
+             ExceptionHandler.process(e);
+-        } catch (InterruptedException e) {
+-            //
+         }
+     }
+ 

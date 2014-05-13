@@ -1,0 +1,41 @@
+diff --git a/org.talend.datatools.xml/src/main/java/org/talend/datatools/xml/utils/XSDPopulationUtil2.java b/org.talend.datatools.xml/src/main/java/org/talend/datatools/xml/utils/XSDPopulationUtil2.java
+index 5805b25..e102f95 100644
+--- a/org.talend.datatools.xml/src/main/java/org/talend/datatools/xml/utils/XSDPopulationUtil2.java
++++ b/org.talend.datatools.xml/src/main/java/org/talend/datatools/xml/utils/XSDPopulationUtil2.java
+@@ -46,6 +46,7 @@ import org.eclipse.xsd.XSDSchema;
+ import org.eclipse.xsd.XSDTerm;
+ import org.eclipse.xsd.XSDTypeDefinition;
+ import org.eclipse.xsd.impl.XSDNamedComponentImpl;
++import org.eclipse.xsd.util.XSDConstants;
+ import org.eclipse.xsd.util.XSDResourceImpl;
+ 
+ /**
+@@ -324,7 +325,8 @@ public class XSDPopulationUtil2 {
+             }
+             if (!resolvedAsComplex) {
+                 String dataType = xsdElementDeclarationParticle.getTypeDefinition().getQName();
+-                if (xsdElementDeclarationParticle.getTypeDefinition().getBaseType() != null) {
++                if (!XSDConstants.isSchemaForSchemaNamespace(xsdElementDeclarationParticle.getTypeDefinition()
++                        .getTargetNamespace()) && xsdElementDeclarationParticle.getTypeDefinition().getBaseType() != null) {
+                     if (!"xs:anySimpleType".equals(xsdElementDeclarationParticle.getTypeDefinition().getBaseType().getQName())) {
+                         dataType = xsdElementDeclarationParticle.getTypeDefinition().getBaseType().getQName();
+                     }
+diff --git a/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/connection/files/xml/XmlFileStep3Form.java b/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/connection/files/xml/XmlFileStep3Form.java
+index 09f5ee9..0c20e3c 100644
+--- a/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/connection/files/xml/XmlFileStep3Form.java
++++ b/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/connection/files/xml/XmlFileStep3Form.java
+@@ -440,8 +440,12 @@ public class XmlFileStep3Form extends AbstractXmlFileStepForm {
+                 if (curNode == null || retriever == null) {
+                     metadataColumn.setTalendType(MetadataTalendType.getDefaultTalendType());
+                 } else {
+-
+-                    metadataColumn.setTalendType(retriever.getDefaultSelectedTalendType("xs:" + curNode.getOriginalDataType())); //$NON-NLS-1$
++                    // TPS TPS-518(TDI-26579)
++                    String originalDataType = curNode.getOriginalDataType();
++                    if (originalDataType != null && !originalDataType.startsWith("xs:")) { //$NON-NLS-1$
++                        originalDataType = "xs:" + originalDataType; //$NON-NLS-1$
++                    }
++                    metadataColumn.setTalendType(retriever.getDefaultSelectedTalendType(originalDataType));
+                 }
+                 columns.add(metadataColumn);
+             }

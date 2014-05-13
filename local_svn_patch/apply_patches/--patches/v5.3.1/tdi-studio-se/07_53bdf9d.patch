@@ -1,0 +1,196 @@
+diff --git a/org.talend.designer.components.localprovider/components/tLDAPInput/tLDAPInput_begin.javajet b/org.talend.designer.components.localprovider/components/tLDAPInput/tLDAPInput_begin.javajet
+index c2781af..5b26afe 100644
+--- a/org.talend.designer.components.localprovider/components/tLDAPInput/tLDAPInput_begin.javajet
++++ b/org.talend.designer.components.localprovider/components/tLDAPInput/tLDAPInput_begin.javajet
+@@ -65,24 +65,6 @@ if(("false").equals(useExistingConn)){
+ 	env_<%=cid%>.put(javax.naming.Context.REFERRAL, "<%=referrals%>");
+ 	env_<%=cid%>.put("java.naming.ldap.derefAliases","<%=aliases%>");
+ <%	
+-	// Types binaires
+-	if(useFieldOptions){
+-		boolean isBinary = false;
+-		for(IMetadataColumn column:columnList){
+-			for(Map<String, String> line:fieldOptions){// search in the configuration table
+-				String columnName = line.get("SCHEMA_COLUMN");				
+-				if(column.getLabel().equals(columnName)){
+-					isBinary = "true".equals(line.get("BINARY"));
+-					break;
+-				}
+-			}
+-			if(isBinary){
+-%>
+-				env_<%=cid%>.put("java.naming.ldap.attributes.binary","<%=column.getOriginalDbColumnName()%>");
+-<%
+-			}
+-		}
+-	}
+ 	if(baseDN == null || baseDN.length()<=2){
+ %>
+ 	env_<%=cid%>.put(javax.naming.Context.PROVIDER_URL, "ldap://"+<%=host%>+":"+<%=port%>);
+@@ -145,6 +127,14 @@ if(("false").equals(useExistingConn)){
+ 	
+ 	javax.naming.directory.SearchControls searchCtls_<%=cid%> = new javax.naming.directory.SearchControls();
+     searchCtls_<%=cid%>.setSearchScope(javax.naming.directory.SearchControls.SUBTREE_SCOPE);
++<%
++	boolean isDynamic = metadata.isDynamicSchema();
++    if(isDynamic){
++%>
++        routines.system.Dynamic dcg_<%=cid%> =  new routines.system.Dynamic();
++<%
++	}else{
++%>
+     searchCtls_<%=cid%>.setReturningAttributes(new String[]{
+ <%
+ 					for(IMetadataColumn column:columnList){		
+@@ -154,6 +144,9 @@ if(("false").equals(useExistingConn)){
+                 	}
+ %>    
+     });
++<%
++	}
++%>
+     searchCtls_<%=cid%>.setTimeLimit(<%=timeout%>*1000);
+     searchCtls_<%=cid%>.setCountLimit(<%=limit %>);
+ <%
+@@ -180,6 +173,85 @@ if(("false").equals(useExistingConn)){
+ 					}
+ 				}
+ %>
++<%
++	String binaryColumns = "";
++	boolean hasDynamicBinary=false;
++	if(useFieldOptions){
++		for(int i = 0;i<fieldOptions.size();i++){// search in the configuration table
++			Map<String, String> line = fieldOptions.get(i);
++			String columnName = line.get("SCHEMA_COLUMN");
++			Boolean isBinary = "true".equals(line.get("BINARY"));
++			if(isBinary){
++				IMetadataColumn column = columnList.get(i);
++				if(!column.getTalendType().equals("id_Dynamic")){
++					if(binaryColumns.length()>0){
++						binaryColumns+=" ";
++					}
++					binaryColumns+=column.getOriginalDbColumnName();
++				}else{
++					hasDynamicBinary = true;
++				}
++			}
++		}
++	}
++	boolean hasBinaryColumn = binaryColumns.length()>0 || hasDynamicBinary;
++	if(hasBinaryColumn){
++%>
++		String binaryColumns_<%=cid%> = "<%=binaryColumns%>";
++<%
++	}
++    if(isDynamic){
++    	String columnsStr = "";
++		for(IMetadataColumn column:columnList){
++			columnsStr += column.getOriginalDbColumnName() + ",";
++		}
++%>
++		String[] columnsInSchema_<%=cid%> = "<%=columnsStr%>".split(",");
++		java.util.Arrays.sort(columnsInSchema_<%=cid%>);
++    	javax.naming.directory.Attributes attrsDyn_<%=cid%> = null;
++    	javax.naming.NamingEnumeration answerDyn_<%=cid%> = ctx_<%=cid%>.search(<%if(("false").equals(useExistingConn)){%>baseDN_<%=cid%><%}else{%>""<%}%>, <%=filter%>, searchCtls_<%=cid%>);
++    	while (answerDyn_<%=cid%> .hasMoreElements()) {
++    		javax.naming.directory.SearchResult srDyn_<%=cid%>  = (javax.naming.directory.SearchResult) answerDyn_<%=cid%>.next();
++            attrsDyn_<%=cid%> = srDyn_<%=cid%>.getAttributes();
++            javax.naming.NamingEnumeration ne_<%=cid%> =attrsDyn_<%=cid%>.getAll();
++			while(ne_<%=cid%>.hasMoreElements()){
++				String element_<%=cid%> = ne_<%=cid%>.nextElement().toString();
++				int splitorIndex_<%=cid%> = element_<%=cid%>.indexOf(":");
++				if(splitorIndex_<%=cid%>>0){
++					String columnName_<%=cid%> = element_<%=cid%>.substring(0,splitorIndex_<%=cid%>);
++					if(java.util.Arrays.binarySearch(columnsInSchema_<%=cid%>,columnName_<%=cid%>) < 0 || "<%=metadata.getDynamicColumn().getOriginalDbColumnName()%>".equals(columnName_<%=cid%>)){
++						DynamicMetadata dm_<%=cid%> = new DynamicMetadata();
++						dm_<%=cid%>.setName(columnName_<%=cid%>);
++						dm_<%=cid%>.setDbName(columnName_<%=cid%>);
++						dm_<%=cid%>.setType("id_String");
++						if(!dcg_<%=cid%>.metadatas.contains(dm_<%=cid%>)){
++							dcg_<%=cid%>.metadatas.add(dm_<%=cid%>);
++<%
++							if(hasDynamicBinary){
++								if(binaryColumns.length()==0){
++%>
++									if(binaryColumns_<%=cid%>.length()>0){
++										binaryColumns_<%=cid%>+=" ";
++									}
++<%
++								}else{
++%>
++									binaryColumns_<%=cid%>+=" ";
++<%
++								}
++%>
++								binaryColumns_<%=cid%>+=columnName_<%=cid%>;
++<%
++							}
++%>
++						}
++					}
++				}
++			}
++    	}
++<%
++	}
++%>
+ <%if(paging){%>
+     // Set the page size and initialize the cookie that we pass back in subsequent pages
+     int pageSize_<%=cid%> = <%=pageSize %>;
+@@ -190,6 +262,17 @@ if(("false").equals(useExistingConn)){
+     
+ do {
+ <%}%>
++<%
++	if(hasBinaryColumn){
++%>
++		if(binaryColumns_<%=cid%>.length()>0){
++			java.util.Hashtable orignal_env_<%=cid%>= ctx_<%=cid%>.getEnvironment();
++			orignal_env_<%=cid%>.put("java.naming.ldap.attributes.binary",binaryColumns_<%=cid%>);
++			ctx_<%=cid%> = new javax.naming.ldap.InitialLdapContext(orignal_env_<%=cid%>, null);
++		}
++<%
++	}
++%>
+ 
+     javax.naming.NamingEnumeration answer_<%=cid%> = ctx_<%=cid%>.search(<%if(("false").equals(useExistingConn)){%>baseDN_<%=cid%><%}else{%>""<%}%>, <%=filter%>, searchCtls_<%=cid%>);
+     while (answer_<%=cid%> .hasMoreElements()) {//a
+@@ -268,6 +351,29 @@ do {
+ <%
+ 							}else{
+ %>
++<%
++							if("id_Dynamic".equals(column.getTalendType())) {
++%>
++								dcg_<%=cid%>.clearColumnValues();
++								for(DynamicMetadata dm_<%=cid%> :dcg_<%=cid%>.metadatas){
++									javax.naming.directory.Attribute attr_<%=column.getLabel()%>_<%=cid%> = attrs_<%=cid%>.get(dm_<%=cid%>.getDbName());
++									if(attr_<%=column.getLabel()%>_<%=cid%> != null){
++										StringBuilder attrStr_<%=cid%> = new StringBuilder();
++						    			for (javax.naming.NamingEnumeration e_<%=cid%> = attr_<%=column.getLabel()%>_<%=cid%>.getAll(); e_<%=cid%>.hasMore();){
++						    				if(attrStr_<%=cid%>.length()>0){
++						    					attrStr_<%=cid%>.append(<%=separator%>);
++						    				}
++						    				attrStr_<%=cid%>.append(e_<%=cid%>.next().toString());
++						    			}
++										dcg_<%=cid%>.addColumnValue(attrStr_<%=cid%>.toString());
++									}else{
++										dcg_<%=cid%>.addColumnValue(null);
++									}
++								}
++								<%=conn.getName() %>.<%=column.getLabel() %> = dcg_<%=cid%>;
++<%
++							}else{
++%>
+ 			javax.naming.directory.Attribute attr_<%=column.getLabel()%>_<%=cid%> = attrs_<%=cid%>.get("<%=column.getOriginalDbColumnName()%>");
+ 			if(attr_<%=column.getLabel()%>_<%=cid%> != null){
+ <%
+@@ -297,6 +403,7 @@ do {
+ 			}
+ 			
+ <%
++								}
+ 							}
+ 						}
+                 	}//5

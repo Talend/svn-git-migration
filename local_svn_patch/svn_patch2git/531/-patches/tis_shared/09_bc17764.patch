@@ -1,0 +1,1198 @@
+diff --git a/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/RemoteRepositoryFactory.java b/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/RemoteRepositoryFactory.java
+index c5c7475..3a1971b 100644
+--- a/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/RemoteRepositoryFactory.java
++++ b/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/RemoteRepositoryFactory.java
+@@ -242,6 +242,7 @@ public class RemoteRepositoryFactory implements IRepositoryFactory {
+             ProjectReference projectRef = (ProjectReference) iterator.next();
+             if (validReferenceProject(projectRef, branchForMainProject)) {
+                 Project refProject = new Project(projectRef.getReferencedProject());
++                refProject.setMainProject(false);
+                 String refTechnicalLabel = refProject.getTechnicalLabel();
+                 String refBranch = refBranchesMap.get(refTechnicalLabel);
+                 String realReferencedBranch = projectRef.getReferencedBranch();
+diff --git a/org.talend.repository.svnprovider/src/messages.properties b/org.talend.repository.svnprovider/src/messages.properties
+index a0ff707..9143c4f 100644
+--- a/org.talend.repository.svnprovider/src/messages.properties
++++ b/org.talend.repository.svnprovider/src/messages.properties
+@@ -18,6 +18,7 @@ DetectConflictsDialog.button.deselectAll=Deselect All
+ DetectConflictsDialog.button.expandAll=Expand All
+ DetectConflictsDialog.button.collapseAll=Collapse All
+ DetectConflictsDialog.title1=Changes detected on non-locked items
++SvnRepositoryFactory_commitModifiedFiles=Commit modified files
+ SvnRevert.revert=Revert
+ SvnRevert.revertOrNot=If you choose to revert, you will lose all the modifications.\n Are you sure ?
+ ProcessSVNHistoryComposite.svnHistoryLabel=Job SVN History: 
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
+index 38c25f4..d9d7702 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnBaseRepositoryFactory.java
+@@ -33,11 +33,14 @@ import org.eclipse.core.resources.IProject;
+ import org.eclipse.core.resources.IProjectDescription;
+ import org.eclipse.core.resources.IResource;
+ import org.eclipse.core.resources.IWorkspace;
++import org.eclipse.core.resources.IWorkspaceRunnable;
+ import org.eclipse.core.resources.ResourcesPlugin;
+ import org.eclipse.core.runtime.CoreException;
+ import org.eclipse.core.runtime.IPath;
++import org.eclipse.core.runtime.IProgressMonitor;
+ import org.eclipse.core.runtime.NullProgressMonitor;
+ import org.eclipse.core.runtime.Path;
++import org.eclipse.core.runtime.jobs.ISchedulingRule;
+ import org.eclipse.emf.common.util.URI;
+ import org.eclipse.emf.ecore.resource.Resource;
+ import org.eclipse.emf.ecore.resource.ResourceSet;
+@@ -92,6 +95,7 @@ import org.talend.repository.remoteprovider.AdministratorClient;
+ import org.talend.repository.remoteprovider.ProjectUrl;
+ import org.talend.repository.remoteprovider.ProjectUrlHelper;
+ import org.talend.repository.remoteprovider.RemoteRepositoryFactory;
++import org.talend.repository.svnprovider.SvnFileGroup.FileGroupCommitHolder;
+ import org.talend.repository.svnprovider.SvnFileGroup.FileGroupHolder;
+ import org.talend.repository.svnprovider.ui.dialog.DetectConflictsDialog;
+ import org.talend.repository.svnprovider.utils.SVNConstants;
+@@ -195,7 +199,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+                             + ", will delete and recreate. Error:" + e.getMessage()); //$NON-NLS-1$
+                 }
+                 try {
+-                    removeProjectListeners(eclipseProject);
++                	removeProjectListener(eclipseProject);
+                     eclipseProject.close(new NullProgressMonitor());
+                     eclipseProject.delete(true, true, new NullProgressMonitor());
+                 } catch (CoreException e1) {
+@@ -237,7 +241,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+                                         + " / New branch = " + branchSelection); //$NON-NLS-1$
+                             }
+ 
+-                            removeProjectListeners(eclipseProject);
++                            removeProjectListener(eclipseProject);
+                             svnHandler.doSwitch(projectUrl.getLocation() + branchSelection, eclipseProject, true);
+                             projectUrl.setLocation(projectUrl.getLocation() + branchSelection);
+                             ProjectManager.getInstance().setCurrentBranchURL(project, ProjectUrlHelper.toUrl(projectUrl));
+@@ -263,7 +267,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+                         System.out.println("* Old url = " + localUrl + " / New url = " + projectUrl.getLocation()); //$NON-NLS-1$//$NON-NLS-2$
+                     }
+                     try {
+-                        removeProjectListeners(eclipseProject);
++                    	removeProjectListener(eclipseProject);
+                         eclipseProject.close(new NullProgressMonitor());
+                         eclipseProject.delete(true, true, new NullProgressMonitor());
+                     } catch (CoreException e1) {
+@@ -296,7 +300,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+             } catch (Exception e) {
+                 // on failure delete it and throw exception
+                 try {
+-                    removeProjectListeners(eclipseProject);
++                	removeProjectListener(eclipseProject);
+                     eclipseProject.close(new NullProgressMonitor());
+                     eclipseProject.delete(true, true, nullProgressMonitor);
+                 } catch (CoreException e1) {
+@@ -321,6 +325,10 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+             if (!offlineMode) {
+                 Info localInfo = svnHandler.info(eclipseProject);
+                 Info remoteInfo = svnHandler.info(localInfo.getUrl());
++                if (project.isMainProject()) {
++                    // only check if need to revert on the main projectg
++                    revertIfHasAnyChange(eclipseProject);
++                }
+                 statusArray = svnHandler.status(eclipseProject, true);
+                 statusChecked = true;
+                 revertIfHasAnyChange(eclipseProject);
+@@ -510,9 +518,13 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+                             svnLockStrategy.setStartingPoint(null);
+                             FileGroupHolder fileGroupHolder = svnCommitHelper.computeFileGroups(toCommit
+                                     .toArray(new Status[toCommit.size()]));
++                            FileGroupCommitHolder fileGroupCommitHolder = svnCommitStrategy
++                            .createFileGroupHolder(fileGroupHolder);
+                             svnCommitHelper.addLogtoFileGroup(fileGroupHolder, transaction.getLogs(), 0);
+                             transaction.clearLogs();
+-                            Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder, true);
++                            Collection<String> filesToCommit = svnCommitStrategy.getFilesToCommit(fileGroupCommitHolder);
++                            Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder, fileGroupCommitHolder,
++                                    filesToCommit);
+                             transaction.end();
+                             for (String file : filesCommited) {
+                                 if (CommonsPlugin.isDebugMode()) {
+@@ -721,7 +733,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+         try {
+             NullProgressMonitor npm = new NullProgressMonitor();
+             if (eclipseProject.exists()) {
+-                removeProjectListeners(eclipseProject);
++            	removeProjectListener(eclipseProject);
+                 eclipseProject.close(npm);
+                 eclipseProject.delete(true, true, npm);
+             }
+@@ -1024,30 +1036,36 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+         }
+     }
+ 
+-    private void removeProjectListeners(IProject project) {
++    private void removeProjectListener(IProject project) {
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
+-        for (SvnResourceChangeListener listener : previousListeners) {
++        Iterator<SvnResourceChangeListener> it = previousListeners.iterator();
++        while (it.hasNext()) {
++            SvnResourceChangeListener listener = it.next();
+             if (listener.getProject().equals(project)) {
+                 workspace.removeResourceChangeListener(listener);
++                it.remove();
+             }
+         }
+     }
+ 
+-    private void configureProject(IProject project) throws PersistenceException {
++    private void addProjectListener(IProject project) {
+         IWorkspace workspace = ResourcesPlugin.getWorkspace();
++        SvnResourceChangeListener listener = new SvnResourceChangeListener(svnHandler);
++        listener.setProject(project);
++        workspace.addResourceChangeListener(listener);
++        previousListeners.add(listener);
++    }
++
++    private void configureProject(IProject project) throws PersistenceException {
+         if (!project.isOpen()) {
+             try {
+                 project.open(new NullProgressMonitor());
+             } catch (CoreException e) {
+-                // TODO Auto-generated catch block
+-                e.printStackTrace();
++                ExceptionHandler.process(e);
+             }
+         }
+-        removeProjectListeners(project);
+-        SvnResourceChangeListener listener = new SvnResourceChangeListener(svnHandler);
+-        listener.setProject(project);
+-        workspace.addResourceChangeListener(listener);
+-        previousListeners.add(listener);
++        removeProjectListener(project);
++        addProjectListener(project);
+         try {
+             RepositoryProvider.map(project, SvnRepositoryProvider.ID);
+         } catch (TeamException e) {
+@@ -1187,9 +1205,8 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+         Project project = getRepositoryContext().getProject();
+         IProject eclipseProject = getEclipseProject(project);
+ 
+-        statusArray = svnHandler.status(eclipseProject, false);
+-
+         if (getRepositoryContext().isOffline()) {
++            statusArray = svnHandler.status(eclipseProject, false);
+             return;
+         }
+ 
+@@ -1200,48 +1217,13 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+                 return;
+             }
+ 
+-            Collection<String> changedPaths = null;
+-            Info localInfo = svnHandler.info(eclipseProject);
+-            Info remoteInfo = svnHandler.info(localInfo.getUrl());
+             if (this.isLoggedOnProject()) {
+                 // check if update needed
+-                referenceProjectUpdate(project);
+-                statusArray = svnHandler.status(eclipseProject, false);
+-                changedPaths = computeChangedPaths(statusArray);
+-                if (changedPaths.isEmpty() && localInfo.getRevision() == remoteInfo.getRevision()) {
+-                    // to avoid some strange bugs when documentation is activated
+-                    refreshEclipseProject(eclipseProject);
+-                    return;
+-                }
+-                statusArray = svnHandler.status(eclipseProject, true);
+-                changedPaths = computeChangedPaths(statusArray);
+-                // eventually revert conflicts
+-                if (statusArray != null) {
+-                    revert(statusArray);
+-                }
+-
+-                // unload emf resources
+-                unloadAndRemoveResources(changedPaths);
++                updateProject(project, true);
+             } else {
+                 svnHandler.revert(eclipseProject.getLocation().toOSString());
+ 
+                 statusArray = svnHandler.status(eclipseProject, true);
+-                changedPaths = computeChangedPaths(statusArray);
+-            }
+-
+-            if (changedPaths != null && !changedPaths.isEmpty()) {
+-                // update according to last info revision to be coherent
+-                svnHandler.update(eclipseProject, remoteInfo.getRevision());
+-                ProjectManager.getInstance().getFolders(project.getEmfProject()).clear();
+-                refreshEclipseProject(eclipseProject);
+-            }
+-
+-            // update statusArray after update
+-            statusArray = svnHandler.status(eclipseProject, false);
+-
+-            // only if in changed paths
+-            if (changedPaths != null && changedPaths.contains(talendProjectSvnPath)) {
+-                loadProjectAndSetContext(eclipseProject);
+             }
+ 
+         } catch (PersistenceException e) {
+@@ -1253,52 +1235,92 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+         }
+     }
+ 
+-    private void referenceProjectUpdate(Project project) throws PersistenceException {
+-        if (project.getEmfProject().getReferencedProjects() != null && !project.getEmfProject().getReferencedProjects().isEmpty()) {
+-            for (Iterator iterator = project.getEmfProject().getReferencedProjects().iterator(); iterator.hasNext();) {
+-                ProjectReference projectRef = (ProjectReference) iterator.next();
+-                Project referenceProject = new Project(projectRef.getReferencedProject());
++    protected void updateProject(Project project, boolean updateRefs) throws PersistenceException {
++        if (updateRefs) {
++            if (project.getEmfProject().getReferencedProjects() != null
++                    && !project.getEmfProject().getReferencedProjects().isEmpty()) {
++                for (Iterator iterator = project.getEmfProject().getReferencedProjects().iterator(); iterator.hasNext();) {
++                    ProjectReference projectRef = (ProjectReference) iterator.next();
++                    Project referenceProject = new Project(projectRef.getReferencedProject());
+ 
+-                // update sub-ref
+-                referenceProjectUpdate(referenceProject);
++                    // update sub-ref
++                    updateProject(referenceProject, updateRefs);
+ 
+-                IProject eclipseReferenceProject = getEclipseProject(referenceProject);
+-                Info reLocalInfo = svnHandler.info(eclipseReferenceProject);
+-                Info reRemoteInfo = svnHandler.info(reLocalInfo.getUrl());
+-                if (reLocalInfo.getRevision() != reRemoteInfo.getRevision() && this.isLoggedOnProject()) {
+-                    try {
+-                        statusArray = svnHandler.status(eclipseReferenceProject, true);
+-                        Collection<String> changedPaths = computeChangedPaths(statusArray);
+-                        // eventually revert conflicts
+-                        if (statusArray != null) {
+-                            revert(statusArray);
+-                        }
+-                        // compute path before unloading project
+-                        String talendProjectSvnPath = SvnEclipseHandler.getSvnLocalPath(referenceProject.getEmfProject()
+-                                .eResource());
+-                        // unload emf resources
+-                        unloadAndRemoveResources(changedPaths);
++                }
++            }
++        }
++        final IProject eclipseProject = getEclipseProject(project);
++        Info localInfo = svnHandler.info(eclipseProject);
++        final Info remoteInfo = svnHandler.info(localInfo.getUrl());
++
++        if ((localInfo.getLastChangedRevision() + svnHandler.getNbCommitSinceLastUpdate()) < remoteInfo.getLastChangedRevision()) {
++            if (CommonsPlugin.isDebugMode()) {
++                System.out.println("SVN Update: Project:" + project.getLabel() + " / local revision=" //$NON-NLS-1$ //$NON-NLS-2$
++                        + localInfo.getLastChangedRevision() + " remote revision=" + remoteInfo.getLastChangedRevision()); //$NON-NLS-1$
++            }
++            try {
++            	if (project.isMainProject()) {
++                    svnHandler.setNbCommitSinceLastUpdate(0);
++                }
++                removeProjectListener(eclipseProject);
++                ProjectManager.getInstance().getFolders(project.getEmfProject()).clear();
++                final IWorkspaceRunnable op = new IWorkspaceRunnable() {
+ 
++                    @Override
++                    public void run(IProgressMonitor monitor) {
+                         // update according to last info revision to be coherent
+-                        svnHandler.update(eclipseReferenceProject, reRemoteInfo.getRevision());
+-                        ProjectManager.getInstance().getFolders(referenceProject.getEmfProject()).clear();
+-                        if (talendProjectSvnPath == null) {
+-                            return;
++                        try {
++                            IFile file = ResourcesPlugin.getWorkspace().getRoot()
++                                    .getFile(eclipseProject.getFullPath().append(xmiResourceManager.getProjectFilename()));
++                            boolean projectInSvn = svnHandler.isInSvn(file);
++                            Status status = null;
++                            if (projectInSvn) {
++                                status = svnHandler.status(eclipseProject, file.getLocation().toOSString(), true);
++                            }
++                            // update according to last info revision to be coherent
++                            svnHandler.update(eclipseProject, remoteInfo.getRevision());
++
++                            if (projectInSvn) {
++                                if (status != null
++                                        && status.getReposLastCmtRevision() != null
++                                        && status.getReposLastCmtRevision().getNumber() > status.getLastChangedRevision()
++                                                .getNumber()) {
++                                    loadProjectAndSetContext(eclipseProject);
++                                }
++                            }
++                            refreshEclipseProject(eclipseProject);
++                            // update statusArray after update
++                            statusArray = svnHandler.status(eclipseProject, false);
++                        } catch (PersistenceException e) {
++                            // nothing
+                         }
+-                        // update statusArray after update
+-                        statusArray = svnHandler.status(eclipseReferenceProject, false);
+-                        refreshEclipseProject(eclipseReferenceProject);
+-                    } catch (PersistenceException e) {
+-                        loadProjectAndSetContext(eclipseReferenceProject);
+-                        throw e;
+-                    } catch (Exception e) {
+-                        loadProjectAndSetContext(eclipseReferenceProject);
+-                        throw new PersistenceException(e);
+                     }
++                };
++
++                IWorkspace workspace = ResourcesPlugin.getWorkspace();
++                try {
++                    ISchedulingRule schedulingRule = workspace.getRoot();
++                    // the update the project files need to be done in the workspace runnable to avoid all
++                    // notification
++                    // of changes before the end of the modifications.
++                    workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, new NullProgressMonitor());
++                } catch (CoreException e) {
++                    throw new PersistenceException(e);
+                 }
++                addProjectListener(eclipseProject);
++            } catch (PersistenceException e) {
++                loadProjectAndSetContext(eclipseProject);
++                throw e;
++            } catch (Exception e) {
++                loadProjectAndSetContext(eclipseProject);
++                throw new PersistenceException(e);
++            }
++        } else {
++            if (CommonsPlugin.isDebugMode()) {
++                System.out.println("NO SVN Update: Project:" + project.getLabel() + " / local revision=" //$NON-NLS-1$ //$NON-NLS-2$
++                        + localInfo.getLastChangedRevision() + " remote revision=" + remoteInfo.getLastChangedRevision()); //$NON-NLS-1$
+             }
+         }
+-
+     }
+ 
+     private void refreshEclipseProject(IProject eclipseProject) throws PersistenceException {
+@@ -1641,7 +1663,7 @@ public abstract class SvnBaseRepositoryFactory extends LocalRepositoryFactory {
+         try {
+             if (getRepositoryContext().getProject() != null) {
+                 IProject project = ResourceModelUtils.getProject(getRepositoryContext().getProject());
+-                removeProjectListeners(project);
++                removeProjectListener(project);
+             }
+         } catch (PersistenceException e) {
+             ExceptionHandler.process(e);
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitAbstractStrategy.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitAbstractStrategy.java
+index 556609b..ff1656c 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitAbstractStrategy.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitAbstractStrategy.java
+@@ -63,79 +63,26 @@ public abstract class SvnCommitAbstractStrategy {
+         return pathToCommit;
+     }
+ 
+-    public Collection<String> commit(final FileGroupHolder fileGroupHolder) throws PersistenceException {
+-        return commit(fileGroupHolder, false);
+-    }
+-
+-    public Collection<String> commit(final FileGroupHolder fileGroupHolder, boolean bypassWorkbenchRunningCheck)
+-            throws PersistenceException {
+-        Collection<String> filesToCommit = Collections.emptyList();
++    public boolean isNeedSvnCommitWizard() {
+         final boolean useLog = svnRepositoryFactory.isSvnCustomLog();
+         final boolean useSelection = useSelection();
+-        final FileGroupCommitHolder fileGroupCommitHolder = createFileGroupHolder(fileGroupHolder);
+-        filesToCommit = getFilesToCommit(fileGroupCommitHolder);
++        return !CommonsPlugin.isHeadless() && (useLog || useSelection);
++    }
++    
++    public Collection<String> commit(final FileGroupHolder fileGroupHolder, FileGroupCommitHolder fileGroupCommitHolder,
++            Collection<String> filesToCommit) throws PersistenceException {
+         if (filesToCommit.size() > 0) {
+-            commit = true;
+-            if (!CommonsPlugin.isHeadless() && (useLog || useSelection)) {
+-                // if we're running the studio, and not commandline and if the workbench is not created yet, don't
+-                // commit anything.
+-                if (!PlatformUI.isWorkbenchRunning()) {
+-                    return Collections.emptyList();
+-                }
+-                commit = false;
+-                SvnCommitWizard svnCommitWizard = new SvnCommitWizard(svnRepositoryFactory, fileGroupHolder,
+-                        fileGroupCommitHolder, useSelection, useLog);
+-                Shell shell = DisplayUtils.getDefaultShell();
+-                if (shell != null) {
+-                    WizardDialog wizardDialog = new WizardDialog(shell, svnCommitWizard);
+-                    wizardDialog.setPageSize(200, 400);
+-                    wizardDialog.addPageChangedListener(svnCommitWizard);
+-                    commit = wizardDialog.open() == Window.OK;
+-                    wizardDialog.removePageChangedListener(svnCommitWizard);
+-                }
++            if (!isNeedSvnCommitWizard()) {
++                commit = true;
+             }
+-
+             if (commit) {
+                 String message = fileGroupCommitHolder.message;
+                 Map<String, String> revProps = fileGroupCommitHolder.revProps;
+ 
+-                if (message == null || "".equals(message)) {
++                if (message == null || "".equals(message)) { //$NON-NLS-1$
+                     message = defaultComment;
+                 }
+-
+-                boolean needRevertProject = false;
+-                for (String file : new ArrayList<String>(filesToCommit)) {
+-                    if (file.contains(FileConstants.LOCAL_PROJECT_FILENAME)) {
+-                        svnRepositoryFactory.svnHandler.update(file);
+-                        if (svnRepositoryFactory.svnHandler.status(eclipseProject, file).getTextStatus() == Status.Kind.conflicted) {
+-                            svnRepositoryFactory.svnHandler.revert(file);
+-                            filesToCommit.remove(file);
+-                        }
+-                        if (svnRepositoryFactory.svnHandler.status(eclipseProject, file).getTextStatus() == Status.Kind.missing) {
+-                            // this means there is: talend.project.mine + talend.project.r<oldRev> +
+-                            // talend.project.r<newRev>
+-                            // talend.project.r<oldRev> + talend.project.r<newRev> : have missing status
+-                            // talend.project : have modified status, but need to revert since it could be a merged file
+-
+-                            // solution: remove from list this file (.r<number> from merge) + revert main project later.
+-                            filesToCommit.remove(file);
+-                            needRevertProject = true;
+-                            svnRepositoryFactory.svnHandler.revert(file);
+-                        }
+-                    }
+-                }
+-                if (needRevertProject) {
+-                    for (String file : new ArrayList<String>(filesToCommit)) {
+-                        if (file.contains(FileConstants.LOCAL_PROJECT_FILENAME)) {
+-                            svnRepositoryFactory.svnHandler.revert(file);
+-                            filesToCommit.remove(file);
+-                        }
+-                    }
+-                }
+                 svnRepositoryFactory.svnHandler.commit(eclipseProject, filesToCommit, message, revProps);
+-                // commit, then update just after, if don't update, the svn info of the project is not updated locally
+-                // with last revision.
+-                svnRepositoryFactory.svnHandler.update(eclipseProject);
+                 svnRepositoryFactory.getSvnCommitHelper().deleteMessage(fileGroupCommitHolder.groups);
+             }
+         }
+@@ -193,4 +140,38 @@ public abstract class SvnCommitAbstractStrategy {
+     public void setDefaultComment(String defaultComment) {
+         this.defaultComment = defaultComment;
+     }
++    
++    public Collection<String> getFilesModified(FileGroupHolder fileGroupHolder) {
++        Collection<String> filesModified = new ArrayList<String>();
++        if (fileGroupHolder.mainGroup != null && fileGroupHolder.mainGroup.mainStatusWrapper != null) {
++            filesModified.add(fileGroupHolder.mainGroup.mainStatusWrapper.status.getPath());
++            for (StatusWrapper statusWrapper : fileGroupHolder.mainGroup.associatedStatusWrapper) {
++                filesModified.add(statusWrapper.status.getPath());
++            }
++        }
++        for (SvnFileGroup fileGroup : fileGroupHolder.groups) {
++            filesModified.add(fileGroup.mainStatusWrapper.status.getPath());
++            for (StatusWrapper statusWrapper : fileGroup.associatedStatusWrapper) {
++                filesModified.add(statusWrapper.status.getPath());
++            }
++        }
++        return filesModified;
++    }
++    
++    public void launchSvnCommitWizard(final FileGroupHolder fileGroupHolder, FileGroupCommitHolder fileGroupCommitHolder) {
++        commit = false;
++        final boolean useLog = svnRepositoryFactory.isSvnCustomLog();
++        final boolean useSelection = useSelection();
++        SvnCommitWizard svnCommitWizard = new SvnCommitWizard(svnRepositoryFactory, fileGroupHolder, fileGroupCommitHolder,
++                useSelection, useLog);
++        Shell shell = DisplayUtils.getDefaultShell();
++        if (shell != null) {
++            WizardDialog wizardDialog = new WizardDialog(shell, svnCommitWizard);
++            wizardDialog.setPageSize(200, 400);
++            wizardDialog.addPageChangedListener(svnCommitWizard);
++            commit = wizardDialog.open() == Window.OK;
++            wizardDialog.removePageChangedListener(svnCommitWizard);
++        }
++
++    }
+ }
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitManualStrategy.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitManualStrategy.java
+index 285f0af..7bbff0b 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitManualStrategy.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitManualStrategy.java
+@@ -21,6 +21,7 @@ import org.eclipse.ui.IActionBars;
+ import org.eclipse.ui.IViewPart;
+ import org.talend.commons.exception.PersistenceException;
+ import org.talend.core.model.utils.RepositoryManagerHelper;
++import org.talend.repository.svnprovider.SvnFileGroup.FileGroupCommitHolder;
+ import org.talend.repository.svnprovider.SvnFileGroup.FileGroupHolder;
+ import org.talend.repository.svnprovider.ui.SvnCommitAction;
+ 
+@@ -36,10 +37,11 @@ public class SvnCommitManualStrategy extends SvnCommitAbstractStrategy {
+     }
+ 
+     @Override
+-    public Collection<String> commit(FileGroupHolder fileGroupHolder) throws PersistenceException {
++    public Collection<String> commit(FileGroupHolder fileGroupHolder, FileGroupCommitHolder fileGroupCommitHolder,
++            Collection<String> filesToCommit) throws PersistenceException {
+         if (action != null && action.isHookActivated()) {
+             action.desactivateHook();
+-            return super.commit(fileGroupHolder);
++            return super.commit(fileGroupHolder, fileGroupCommitHolder, filesToCommit);
+         }
+         return Collections.emptyList();
+     }
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitSemiStrategy.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitSemiStrategy.java
+index d7fa636..7235846 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitSemiStrategy.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnCommitSemiStrategy.java
+@@ -86,17 +86,21 @@ public class SvnCommitSemiStrategy extends SvnCommitAbstractStrategy {
+     }
+ 
+     private void sortGroup(SvnFileGroup fileGroup) {
+-        ERepositoryStatus status = ProxyRepositoryFactory.getInstance().getStatus(fileGroup.property.getItem());
+-        boolean unlocked = status != ERepositoryStatus.LOCK_BY_USER && status != ERepositoryStatus.LOCK_BY_OTHER;
+-        if (unlocked) {
+-            ERepositoryObjectType type = ERepositoryObjectType.getItemType(fileGroup.property.getItem());
+-            if (type == ERepositoryObjectType.JOB_DOC || type == ERepositoryObjectType.JOBLET_DOC) {
+-                technicalGroups.add(fileGroup);
++        boolean unlocked = false;
++        if (fileGroup.property != null) { // means should have nothing to commit or at least not an item
++            ERepositoryStatus status = ProxyRepositoryFactory.getInstance().getStatus(fileGroup.property.getItem());
++            unlocked = status != ERepositoryStatus.LOCK_BY_USER && status != ERepositoryStatus.LOCK_BY_OTHER;
++
++            if (unlocked) {
++                ERepositoryObjectType type = ERepositoryObjectType.getItemType(fileGroup.property.getItem());
++                if (type == ERepositoryObjectType.JOB_DOC || type == ERepositoryObjectType.JOBLET_DOC) {
++                    technicalGroups.add(fileGroup);
++                } else {
++                    standardUnlocked.add(fileGroup);
++                }
+             } else {
+-                standardUnlocked.add(fileGroup);
++                haveAnyLockedItem = true;
+             }
+-        } else {
+-            haveAnyLockedItem = true;
+         }
+     }
+ }
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnEclipseHandler.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnEclipseHandler.java
+index 439aaa1..aa99822 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnEclipseHandler.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnEclipseHandler.java
+@@ -43,6 +43,8 @@ import org.tigris.subversion.javahl.Status;
+ public class SvnEclipseHandler {
+ 
+     protected SvnHandler delegate;
++    
++    private int nbCommitSinceLastUpdate;
+ 
+     public SvnEclipseHandler(SvnHandler svnHandler) {
+         delegate = svnHandler;
+@@ -410,6 +412,7 @@ public class SvnEclipseHandler {
+         try {
+             log("Commit ", getFilePath(rootResource));
+             delegate.commit(filesPaths.toArray(new String[0]), message, revProps);
++            nbCommitSinceLastUpdate++;
+         } catch (ClientException e) {
+             if (delegate.isNeedCleanupException(e)) {
+                 try {
+@@ -619,4 +622,22 @@ public class SvnEclipseHandler {
+     public SvnHandler getSvnHandler() {
+         return this.delegate;
+     }
++    
++    /**
++     * Getter for nbCommitSinceLastUpdate.
++     * 
++     * @return the nbCommitSinceLastUpdate
++     */
++    public int getNbCommitSinceLastUpdate() {
++        return this.nbCommitSinceLastUpdate;
++    }
++
++    /**
++     * Sets the nbCommitSinceLastUpdate.
++     * 
++     * @param nbCommitSinceLastUpdate the nbCommitSinceLastUpdate to set
++     */
++    public void setNbCommitSinceLastUpdate(int nbCommitSinceLastUpdate) {
++        this.nbCommitSinceLastUpdate = nbCommitSinceLastUpdate;
++    }
+ }
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnRepositoryFactory.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnRepositoryFactory.java
+index 920a6b7..20c94ed 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnRepositoryFactory.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnRepositoryFactory.java
+@@ -31,6 +31,7 @@ import org.eclipse.core.runtime.IStatus;
+ import org.eclipse.core.runtime.Path;
+ import org.eclipse.core.runtime.SubMonitor;
+ import org.eclipse.core.runtime.jobs.IJobChangeEvent;
++import org.eclipse.core.runtime.jobs.ISchedulingRule;
+ import org.eclipse.core.runtime.jobs.Job;
+ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+ import org.eclipse.emf.ecore.resource.Resource;
+@@ -67,8 +68,10 @@ import org.talend.repository.remoteprovider.ProjectUrl;
+ import org.talend.repository.remoteprovider.ProjectUrl.Settings;
+ import org.talend.repository.remoteprovider.ProjectUrlHelper;
+ import org.talend.repository.remoteprovider.RemoteRepositoryFactory;
++import org.talend.repository.svnprovider.SvnFileGroup.FileGroupCommitHolder;
+ import org.talend.repository.svnprovider.SvnFileGroup.FileGroupHolder;
+ import org.talend.repository.svnprovider.SvnFileGroup.StatusWrapper;
++import org.talend.repository.svnprovider.i18n.Messages;
+ import org.talend.repository.svnprovider.utils.SVNUtil;
+ import org.tigris.subversion.javahl.Info;
+ import org.tigris.subversion.javahl.ScheduleKind;
+@@ -235,6 +238,19 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+     private final Object lock1 = new Object();
+ 
+     private final Object lock2 = new Object();
++    
++    private ISchedulingRule svnRule = new ISchedulingRule() {
++
++        @Override
++        public boolean isConflicting(ISchedulingRule rule) {
++            return rule == this;
++        }
++
++        @Override
++        public boolean contains(ISchedulingRule rule) {
++            return rule == this;
++        }
++    };
+ 
+     @SuppressWarnings("unchecked")
+     @Override
+@@ -248,7 +264,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                 System.out.println("## other SVN operation detected, wait for full end of this one");
+             }
+ 
+-            ProgressDialog progressMonitorDialog = new ProgressDialog(DisplayUtils.getDefaultShell(), 500) {
++            ProgressDialog progressMonitorDialog = new ProgressDialog(DisplayUtils.getDefaultShell(), 0) {
+ 
+                 @Override
+                 public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+@@ -259,6 +275,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                     while (isSvnOperationInProgress() || !hasNoSvnAccess()) {
+                         try {
+                             Thread.sleep(10);
++                            DisplayUtils.getDisplay().readAndDispatch();
+                         } catch (InterruptedException e) {
+                             // nothing
+                         }
+@@ -282,6 +299,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                         + " / hasNoSvnAccess=" + hasNoSvnAccess() + ")");
+             }
+         }
++        isBackground = isBackground && !forceAccess;
+         if (hasNoSvnAccess()) {
+             svnAccess = 0; // this should never be below 0, but just in case
+             setSvnOperationInProgress(false);
+@@ -306,7 +324,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+             }
+ 
+             try {
+-                if (ProxyRepositoryFactory.getInstance().isFullLogonFinished() && !getRepositoryContext().isOffline()) {
++            	if (!workUnit.isAvoidSvnUpdate() && ProxyRepositoryFactory.getInstance().isFullLogonFinished() && !getRepositoryContext().isOffline()) {
+                     // don't unload item if want to lock since item will be unloaded so can't be locked
+                     if (!workUnit.isAvoidUnloadResources()) {
+                         // force only used to lock right now
+@@ -325,47 +343,8 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                     if (debugSvnAccess) {
+                         Timer.getTimer("SVN update").start();
+                     }
+-
+-                    IProject project = this.getEclipseProject(getRepositoryContext().getProject());
+-                    List<Project> referencedProjects = ProjectManager.getInstance().getReferencedProjects();
+-                    for (Project refProject : referencedProjects) {
+-                        IProject eclipseRef = getEclipseProject(refProject);
+-                        updateRefProjectInWorkUnit(eclipseRef, refProject);
+-                    }
+-                    Info localInfo = svnHandler.info(project);
+-                    Info remoteInfo = svnHandler.info(localInfo.getUrl());
+-                    if (localInfo.getLastChangedRevision() < remoteInfo.getLastChangedRevision()) {
+-                        if (CommonsPlugin.isDebugMode()) {
+-                            System.out.println("SVN Update: Project:" + project.getName() + " / local revision="
+-                                    + localInfo.getLastChangedRevision() + " remote revision="
+-                                    + remoteInfo.getLastChangedRevision());
+-                        }
+-
+-                        IFile file = ResourcesPlugin.getWorkspace().getRoot()
+-                                .getFile(project.getFullPath().append(xmiResourceManager.getProjectFilename()));
+-
+-                        boolean projectInSvn = svnHandler.isInSvn(file);
+-                        Status status = null;
+-                        if (projectInSvn) {
+-                            status = svnHandler.status(project, file.getLocation().toOSString(), true);
+-                        }
+-
+-                        svnHandler.update(project, remoteInfo.getRevision());
+-
+-                        if (projectInSvn) {
+-                            if (status.getReposLastCmtRevision() != null
+-                                    && status.getReposLastCmtRevision().getNumber() > status.getLastChangedRevision().getNumber()) {
+-                                loadProjectAndSetContext(project);
+-                            }
+-                        }
+-                        project.refreshLocal(IResource.DEPTH_INFINITE, null);
+-                    } else {
+-                        if (CommonsPlugin.isDebugMode()) {
+-                            System.out.println("NO SVN Update: Project:" + project.getName() + " / local revision="
+-                                    + localInfo.getLastChangedRevision() + " remote revision="
+-                                    + remoteInfo.getLastChangedRevision());
+-                        }
+-                    }
++                    Project project = getRepositoryContext().getProject();
++                    updateProject(project, true);
+                     if (debugSvnAccess) {
+                         Timer.getTimer("SVN update").stop();
+                         PrintWriter pw = new PrintWriter(System.out);
+@@ -375,9 +354,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                 }
+             } catch (PersistenceException e) {
+                 ExceptionHandler.process(e);
+-            } catch (CoreException e) {
+-                ExceptionHandler.process(e);
+-            }
++            } 
+             String log = SvnMessageHelper.INSTANCE.getHeadMsg();
+             transaction.addLog(log);
+             svnLockStrategy.setStartingPoint(workUnit.getStartingPoint());
+@@ -391,215 +368,247 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+         svnCommitStrategy.installActions();
+         final long startingTime = System.currentTimeMillis();
+ 
+-        isBackground = isBackground && !forceAccess;
+         try {
+             super.executeRepositoryWorkUnit(workUnit);
+         } finally {
+             transaction.end();
+-            commitChanges(workUnit, isBackground, main, debugSvnAccess, startingTime);
++            if (isBackground) {
++                commitChangesInBackground(workUnit, main, debugSvnAccess, startingTime);
++            } else {
++                commitChangesInMainThread(workUnit, main, debugSvnAccess, startingTime);
++            }
+         }
+ 
+     }
+ 
+-    private void commitChanges(final RepositoryWorkUnit workUnit, final boolean background, final boolean main,
+-            final boolean debugSvnAccess, final long startingTime) {
+-        if (background) {
+-            if (main) {
+-                Job job = new Job("Waiting for SVN Update") {
++    private void commitChangesInMainThread(final RepositoryWorkUnit workUnit, final boolean main, final boolean debugSvnAccess,
++            final long startingTime) {
++        // if not logged on the project already, do all operation in foreground.
++        try {
++            try {
++                if (!transaction.isRunning() || workUnit.isForceTransaction()) {
++                    if (svnLockStrategy.getStartingPoint() == null) {
++                        // note, just in case of NPE, but the code should never go here.
++                        svnCommitStrategy.setDefaultComment("[auto comment]"); //$NON-NLS-1$
++                    } else {
++                        svnCommitStrategy.setDefaultComment("[auto comment] from: " //$NON-NLS-1$
++                                + svnLockStrategy.getStartingPoint().getClass().getName());
++                    }
+ 
+-                    @Override
+-                    protected IStatus run(IProgressMonitor monitor) {
+-                        try {
++                    svnLockStrategy.setStartingPoint(null);
++                    if (CommonsPlugin.isHeadless() || PlatformUI.isWorkbenchRunning()) {
++                        // if we're running the studio, and not commandline and if the workbench is not created yet,
++                        // don't
++                        // commit anything.
++
++                        FileGroupHolder fileGroupHolder = svnCommitHelper.computeFileGroups();
++                        FileGroupCommitHolder fileGroupCommitHolder = svnCommitStrategy.createFileGroupHolder(fileGroupHolder);
++                        svnCommitHelper.addLogtoFileGroup(fileGroupHolder, transaction.getLogs(), startingTime);
++                        Collection<String> filesToCommit = svnCommitStrategy.getFilesToCommit(fileGroupCommitHolder);
++                        if (!filesToCommit.isEmpty()) {
++                            // if got any file to commit
++                            if (debugSvnAccess) {
++                                Timer.getTimer("SVN commit").start(); //$NON-NLS-1$
++                            }
++                            Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder, fileGroupCommitHolder,
++                                    filesToCommit);
++                            IProject project = getEclipseProject(getRepositoryContext().getProject());
++                            statusArray = svnHandler.status(project, false);
++                            if (debugSvnAccess) {
++                                Timer.getTimer("SVN commit").stop(); //$NON-NLS-1$
++                                PrintWriter pw = new PrintWriter(System.out);
++                                Timer.getTimer("SVN commit").print(pw); //$NON-NLS-1$
++                                pw.flush();
++
++                            }
++                        } else if (debugSvnAccess) {
++                            System.out.println("=== (Sync) Nothing to commit"); //$NON-NLS-1$
++                        }
++                    }
++                    transaction.clearLogs();
++
++                    if (workUnit.isUnloadResourcesAfterRun()) {
++                        // force only used to lock right now
++                        // so don't unload item if want to lock since item will be unloaded so can't be locked
++                        if (debugSvnAccess) {
++                            Timer.getTimer("unloadUnlockedResources").start(); //$NON-NLS-1$
++                        }
++                        unloadUnlockedResources();
++                        if (debugSvnAccess) {
++                            Timer.getTimer("unloadUnlockedResources").stop(); //$NON-NLS-1$
++                            PrintWriter pw = new PrintWriter(System.out);
++                            Timer.getTimer("unloadUnlockedResources").print(pw); //$NON-NLS-1$
++                            pw.flush();
++                        }
++                    }
++                    runRepositoryWorkUnitListeners();
++                }
++            } catch (SvnAuthorizationException e) {
++                removeSvnAccess();
++                throw e;
++            } catch (PersistenceException e) {
++                removeSvnAccess();
++                initialize();
++                throw e;
++            }
++        } catch (PersistenceException e) {
++            removeSvnAccess();
++            if (debugSvnAccess) {
++                System.out.println("*** (Sync) Finished with error: svnAccess=" + svnAccess + " / unit=" + workUnit.getName()); //$NON-NLS-1$ //$NON-NLS-2$
++            }
++            workUnit.setPersistenceException(e);
++            MessageBoxExceptionHandler.process(e);
++            return;
++        }
++        removeSvnAccess();
++        if (debugSvnAccess) {
++            System.out.println("=== (Sync) Finished: svnAccess=" + svnAccess + " / unit=" + workUnit.getName()); //$NON-NLS-1$ //$NON-NLS-2$
++        }
++    }
++    
++    private void commitChangesInBackground(final RepositoryWorkUnit workUnit, final boolean main, final boolean debugSvnAccess,
++            final long startingTime) {
++        if (main) {
++            Job job = new Job(Messages.getString("SvnRepositoryFactory_commitModifiedFiles")) { //$NON-NLS-1$
++
++                @Override
++                protected IStatus run(IProgressMonitor monitor) {
++                    try {
+                             while (hasOtherSvnAccess() && !monitor.isCanceled()) {
+                                 if (debugSvnAccess) {
+-                                    System.out.println("** still, " + svnAccess
+-                                            + " svn access, waiting to have only one (the main one)");
++                                    System.out.println("** still, " + svnAccess //$NON-NLS-1$
++                                            + " svn access, waiting to have only one (the main one)"); //$NON-NLS-1$
+                                 }
+                                 Thread.sleep(10);
+                             }
+-                        } catch (InterruptedException e) {
+-                            removeSvnAccess();
+-                            setSvnOperationInProgress(false);
+                             if (debugSvnAccess) {
+-                                System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit="
+-                                        + workUnit.getName());
++                                System.out.println("** no more svnAccess, prepare to commit"); //$NON-NLS-1$
++                            }
++                            if (svnLockStrategy.getStartingPoint() == null) {
++                                // note, just in case of NPE, but the code should never go here.
++                                svnCommitStrategy.setDefaultComment("[auto comment]"); //$NON-NLS-1$
++                            } else {
++                                svnCommitStrategy.setDefaultComment("[auto comment] from: " //$NON-NLS-1$
++                                        + svnLockStrategy.getStartingPoint().getClass().getName());
+                             }
+-                            PersistenceException e1 = new PersistenceException(e);
+-                            workUnit.setPersistenceException(e1);
+-                            return new org.eclipse.core.runtime.Status(IStatus.CANCEL, "svn", 1, "", e);
+-                        }
+-                        return org.eclipse.core.runtime.Status.OK_STATUS;
+-                    }
+-                };
+-                job.addJobChangeListener(new JobChangeAdapter() {
+ 
+-                    @Override
+-                    public void done(IJobChangeEvent event) {
+-                        new UIJob("SVN Update") {
+-
+-                            @Override
+-                            public IStatus runInUIThread(IProgressMonitor monitor) {
+-                                try {
+-                                    if (debugSvnAccess) {
+-                                        System.out.println("** no more svnAccess, prepare to commit");
+-                                    }
+-                                    if (svnLockStrategy.getStartingPoint() == null) {
+-                                        // note, just in case of NPE, but the code should never go here.
+-                                        svnCommitStrategy.setDefaultComment("[auto comment]");
+-                                    } else {
+-                                        svnCommitStrategy.setDefaultComment("[auto comment] from: "
+-                                                + svnLockStrategy.getStartingPoint().getClass().getName());
+-                                    }
++                            setSvnOperationInProgress(true);
++                            svnLockStrategy.setStartingPoint(null);
++                            final FileGroupHolder fileGroupHolder = svnCommitHelper.computeFileGroups();
++                            Collection<String> filesModified = svnCommitStrategy.getFilesModified(fileGroupHolder);
++                            final FileGroupCommitHolder fileGroupCommitHolder = svnCommitStrategy
++                                    .createFileGroupHolder(fileGroupHolder);
++                            svnCommitHelper.addLogtoFileGroup(fileGroupHolder, transaction.getLogs(), startingTime);
++                            transaction.clearLogs();
++                            Collection<String> filesToCommit = svnCommitStrategy.getFilesToCommit(fileGroupCommitHolder);
++                            if (!filesToCommit.isEmpty()) {
++                                if (svnCommitStrategy.isNeedSvnCommitWizard()) {
++                                    // if got any file to commit
++                                    PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
++
++                                        @Override
++                                        public void run() {
++                                            svnCommitStrategy.launchSvnCommitWizard(fileGroupHolder, fileGroupCommitHolder);
++                                        }
++                                    });
++                                }
+ 
+-                                    setSvnOperationInProgress(true);
+-                                    svnLockStrategy.setStartingPoint(null);
+-                                    FileGroupHolder fileGroupHolder = svnCommitHelper.computeFileGroups();
+-                                    svnCommitHelper.addLogtoFileGroup(fileGroupHolder, transaction.getLogs(), startingTime);
+-                                    transaction.clearLogs();
+-                                    if (debugSvnAccess) {
+-                                        Timer.getTimer("SVN commit").start();
+-                                    }
+-                                    Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder);
++                                if (debugSvnAccess) {
++                                    Timer.getTimer("SVN commit").start(); //$NON-NLS-1$
++                                }
++                                Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder,
++                                        fileGroupCommitHolder, filesToCommit);
++                                IProject project = getEclipseProject(getRepositoryContext().getProject());
++                                statusArray = svnHandler.status(project, false);
++                                if (workUnit.isRefreshRepository()) {
++                                    new SVNUtil().notifySvnStatusToRepository(filesCommited);
++                                }
++                                if (debugSvnAccess) {
++                                    Timer.getTimer("SVN commit").stop(); //$NON-NLS-1$
++                                    PrintWriter pw = new PrintWriter(System.out);
++                                    Timer.getTimer("SVN commit").print(pw); //$NON-NLS-1$
++                                    pw.flush();
++
++                                }
++                            } else {
++                                if (!filesModified.isEmpty()) {
+                                     IProject project = getEclipseProject(getRepositoryContext().getProject());
+                                     statusArray = svnHandler.status(project, false);
+-                                    new SVNUtil().notifySvnStatusToRepository(filesCommited);
+-                                    if (debugSvnAccess) {
+-                                        Timer.getTimer("SVN commit").stop();
+-                                        PrintWriter pw = new PrintWriter(System.out);
+-                                        Timer.getTimer("SVN commit").print(pw);
+-                                        pw.flush();
+-                                    }
+-                                    if (workUnit.isUnloadResourcesAfterRun()) {
+-                                        // force only used to lock right now
+-                                        // so don't unload item if want to lock since item will be unloaded so can't be
+-                                        // locked
+-                                        if (debugSvnAccess) {
+-                                            Timer.getTimer("unloadUnlockedResources").start();
+-                                        }
+-                                        unloadUnlockedResources();
+-                                        if (debugSvnAccess) {
+-                                            Timer.getTimer("unloadUnlockedResources").stop();
+-                                            PrintWriter pw = new PrintWriter(System.out);
+-                                            Timer.getTimer("unloadUnlockedResources").print(pw);
+-                                            pw.flush();
+-                                        }
+-                                    }
+-                                } catch (SvnAuthorizationException e) {
+-                                    removeSvnAccess();
+-                                    setSvnOperationInProgress(false);
+-                                    if (debugSvnAccess) {
+-                                        System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit="
+-                                                + workUnit.getName());
+-                                    }
+-                                    PersistenceException e1 = new PersistenceException(e);
+-                                    workUnit.setPersistenceException(e1);
+-                                    return new org.eclipse.core.runtime.Status(IStatus.ERROR, "svn", 1, "", e);
+-                                } catch (PersistenceException e) {
+-                                    removeSvnAccess();
+-                                    setSvnOperationInProgress(false);
+-                                    if (debugSvnAccess) {
+-                                        System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit="
+-                                                + workUnit.getName());
++                                    if (workUnit.isRefreshRepository()) {
++                                        new SVNUtil().notifySvnStatusToRepository(filesModified);
+                                     }
+-                                    try {
+-                                        ProxyRepositoryFactory.getInstance().initialize();
+-                                    } catch (PersistenceException e2) {
+-                                        // do nothing
+-                                    }
+-                                    workUnit.setPersistenceException(e);
+-                                    return new org.eclipse.core.runtime.Status(IStatus.ERROR, "svn", 1, "", e);
+                                 }
+-                                removeSvnAccess();
+-                                setSvnOperationInProgress(false);
+                                 if (debugSvnAccess) {
+-                                    System.out.println("=== (Async) Finished: svnAccess=" + svnAccess + " / unit="
+-                                            + workUnit.getName());
++                                    System.out.println("=== (Async) Nothing to commit"); //$NON-NLS-1$
+                                 }
+-                                runRepositoryWorkUnitListeners();
+-                                return org.eclipse.core.runtime.Status.OK_STATUS;
+                             }
+-                        }.schedule();
+-                        super.done(event);
+-                    }
+-                });
+-
+-                job.setUser(false);
+-                job.setPriority(Job.INTERACTIVE);
+-                job.schedule(); // start as soon as possible
+-            } else {
+-                removeSvnAccess();
+-                if (debugSvnAccess) {
+-                    System.out.println("(Async) svnAccess=" + svnAccess + " / unit=" + workUnit.getName());
+-                }
+-            }
+-        } else {
+-            // if not logged on the project already, do all operation in foreground.
+-            try {
+-                try {
+-                    if (!transaction.isRunning() || workUnit.isForceTransaction()) {
+-                        if (svnLockStrategy.getStartingPoint() == null) {
+-                            // note, just in case of NPE, but the code should never go here.
+-                            svnCommitStrategy.setDefaultComment("[auto comment]");
+-                        } else {
+-                            svnCommitStrategy.setDefaultComment("[auto comment] from: "
+-                                    + svnLockStrategy.getStartingPoint().getClass().getName());
+-                        }
+-
+-                        svnLockStrategy.setStartingPoint(null);
+-                        FileGroupHolder fileGroupHolder = svnCommitHelper.computeFileGroups();
+-                        svnCommitHelper.addLogtoFileGroup(fileGroupHolder, transaction.getLogs(), startingTime);
+-                        transaction.clearLogs();
+-                        if (debugSvnAccess) {
+-                            Timer.getTimer("SVN commit").start();
+-                        }
+-                        Collection<String> filesCommited = svnCommitStrategy.commit(fileGroupHolder);
+-                        IProject project = getEclipseProject(getRepositoryContext().getProject());
+-                        statusArray = svnHandler.status(project, false);
+-                        new SVNUtil().notifySvnStatusToRepository(filesCommited);
+-                        if (debugSvnAccess) {
+-                            Timer.getTimer("SVN commit").stop();
+-                            PrintWriter pw = new PrintWriter(System.out);
+-                            Timer.getTimer("SVN commit").print(pw);
+-                            pw.flush();
+-
+-                        }
+                         if (workUnit.isUnloadResourcesAfterRun()) {
+                             // force only used to lock right now
+-                            // so don't unload item if want to lock since item will be unloaded so can't be locked
++                            // so don't unload item if want to lock since item will be unloaded so can't be
++                            // locked
+                             if (debugSvnAccess) {
+-                                Timer.getTimer("unloadUnlockedResources").start();
++                                Timer.getTimer("unloadUnlockedResources").start(); //$NON-NLS-1$
+                             }
+                             unloadUnlockedResources();
+                             if (debugSvnAccess) {
+-                                Timer.getTimer("unloadUnlockedResources").stop();
++                                Timer.getTimer("unloadUnlockedResources").stop(); //$NON-NLS-1$
+                                 PrintWriter pw = new PrintWriter(System.out);
+-                                Timer.getTimer("unloadUnlockedResources").print(pw);
++                                Timer.getTimer("unloadUnlockedResources").print(pw); //$NON-NLS-1$
+                                 pw.flush();
+                             }
+                         }
+-                        runRepositoryWorkUnitListeners();
++                    } catch (InterruptedException e) {
++                        removeSvnAccess();
++                        setSvnOperationInProgress(false);
++                        if (debugSvnAccess) {
++                            System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit=" //$NON-NLS-1$ //$NON-NLS-2$
++                                    + workUnit.getName());
++                        }
++                        PersistenceException e1 = new PersistenceException(e);
++                        workUnit.setPersistenceException(e1);
++                        return new org.eclipse.core.runtime.Status(IStatus.CANCEL, "svn", 1, "", e); //$NON-NLS-1$ //$NON-NLS-2$
++                    } catch (SvnAuthorizationException e) {
++                        removeSvnAccess();
++                        setSvnOperationInProgress(false);
++                        if (debugSvnAccess) {
++                            System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit=" //$NON-NLS-1$ //$NON-NLS-2$
++                                    + workUnit.getName());
++                        }
++                        PersistenceException e1 = new PersistenceException(e);
++                        workUnit.setPersistenceException(e1);
++                        return new org.eclipse.core.runtime.Status(IStatus.ERROR, "svn", 1, "", e); //$NON-NLS-1$ //$NON-NLS-2$
++                    } catch (PersistenceException e) {
++                        removeSvnAccess();
++                        setSvnOperationInProgress(false);
++                        if (debugSvnAccess) {
++                            System.out.println("*** (Async) Finished with error: svnAccess=" + svnAccess + " / unit=" //$NON-NLS-1$ //$NON-NLS-2$
++                                    + workUnit.getName());
++                        }
++                        try {
++                            ProxyRepositoryFactory.getInstance().initialize();
++                        } catch (PersistenceException e2) {
++                            // do nothing
++                        }
++                        workUnit.setPersistenceException(e);
++                        return new org.eclipse.core.runtime.Status(IStatus.ERROR, "svn", 1, "", e); //$NON-NLS-1$ //$NON-NLS-2$
+                     }
+-                } catch (SvnAuthorizationException e) {
+                     removeSvnAccess();
+-                    throw e;
+-                } catch (PersistenceException e) {
+-                    removeSvnAccess();
+-                    initialize();
+-                    throw e;
+-                }
+-            } catch (PersistenceException e) {
+-                removeSvnAccess();
+-                if (debugSvnAccess) {
+-                    System.out
+-                            .println("*** (Sync) Finished with error: svnAccess=" + svnAccess + " / unit=" + workUnit.getName());
++                    setSvnOperationInProgress(false);
++                    if (debugSvnAccess) {
++                        System.out.println("=== (Async) Finished: svnAccess=" + svnAccess + " / unit=" + workUnit.getName()); //$NON-NLS-1$ //$NON-NLS-2$
++                    }
++                    runRepositoryWorkUnitListeners();
++                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                 }
+-                workUnit.setPersistenceException(e);
+-                MessageBoxExceptionHandler.process(e);
+-                return;
+-            }
++            };
++            job.setRule(svnRule);
++            job.setUser(false);
++            job.setPriority(Job.INTERACTIVE);
++            job.schedule(); // start as soon as possible
++        } else {
+             removeSvnAccess();
+             if (debugSvnAccess) {
+-                System.out.println("=== (Sync) Finished: svnAccess=" + svnAccess + " / unit=" + workUnit.getName());
++                System.out.println("(Async) svnAccess=" + svnAccess + " / unit=" + workUnit.getName()); //$NON-NLS-1$ //$NON-NLS-2$
+             }
+         }
+     }
+@@ -740,6 +749,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+                     }
+                 };
+                 repositoryWorkUnit.setAvoidUnloadResources(true);
++                repositoryWorkUnit.setAvoidSvnUpdate(true);
+                 executeRepositoryWorkUnit(repositoryWorkUnit);
+                 repositoryWorkUnit.throwPersistenceExceptionIfAny();
+             }
+@@ -965,16 +975,16 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+         if (path.lastSegment().equalsIgnoreCase(label)) {
+             String tmpLabel = label.concat(this.getNextId());
+             forceAccess = true;
+-            renameTheFolder(type, path, tmpLabel, true);
++            renameTheFolder(type, path, tmpLabel, true, false);
+             forceAccess = false;
+             lastPath = path.removeLastSegments(1).append(tmpLabel);
+         }
+ 
+-        renameTheFolder(type, lastPath, label, false);
++        renameTheFolder(type, lastPath, label, false, true);
+     }
+ 
+-    private void renameTheFolder(final ERepositoryObjectType type, final IPath path, final String label, boolean forceTransaction)
+-            throws PersistenceException {
++    private void renameTheFolder(final ERepositoryObjectType type, final IPath path, final String label,
++            boolean forceTransaction, boolean refreshRepository) throws PersistenceException {
+         String log = SvnMessageHelper.INSTANCE.getRenameFolderMsg(type, path, label);
+         RepositoryWorkUnit repositoryWorkUnit = new RepositoryWorkUnit(log) {
+ 
+@@ -984,6 +994,7 @@ public class SvnRepositoryFactory extends SvnBaseRepositoryFactory {
+             }
+         };
+         repositoryWorkUnit.setForceTransaction(forceTransaction);
++        repositoryWorkUnit.setRefreshRepository(refreshRepository);
+         executeRepositoryWorkUnit(repositoryWorkUnit);
+         repositoryWorkUnit.throwPersistenceExceptionIfAny();
+     }

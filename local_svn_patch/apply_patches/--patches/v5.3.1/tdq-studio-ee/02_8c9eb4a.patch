@@ -1,0 +1,42 @@
+diff --git a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
+index cb17bfb..30acf57 100644
+--- a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
++++ b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
+@@ -116,6 +116,12 @@ public class StandaloneReportDocGenerator extends ReportDocGenerator {
+                 folderOK = outputFolder.mkdirs();
+             }
+ 
++            // if the output folder doesn't exist, create it under the current folder
++            if (!folderOK) {
++                outputFolder = new File(new File("").getAbsolutePath() + File.separator + outputFolderPath); //$NON-NLS-1$
++                folderOK = outputFolder.mkdirs();
++            }
++
+             if (folderOK) {
+                 if (generateReport(outputFolder)) {
+                     System.out.println("Report \"" + report.getName() + "\" generated."); //$NON-NLS-1$ //$NON-NLS-2$
+@@ -124,7 +130,6 @@ public class StandaloneReportDocGenerator extends ReportDocGenerator {
+                     rc.setOk(false);
+                 }
+             }
+-
+         } catch (ClassNotFoundException e) {
+             e.printStackTrace();
+             rc.setOk(false);
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet b/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
+index 3fcd1a2..6bd2aaa 100644
+--- a/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
+@@ -82,7 +82,11 @@
+             generator_<%=cid%>.generate();
+         }catch(Exception e){
+             generator_<%=cid%>.setSucceeded(false);
+-            generator_<%=cid%>.setErrorMessage(e.getMessage());
++            if(e.getMessage() != null){
++            	generator_<%=cid%>.setErrorMessage(e.getMessage());
++            }else{
++            	generator_<%=cid%>.setErrorMessage(e.getStackTrace()[0].toString());
++            }
+         }
+         double endTime = System.currentTimeMillis();
+         double duration = (endTime - startTime)/1000;

@@ -1,0 +1,13 @@
+diff --git a/org.talend.designer.jobtemplate/src/main/java/org/talend/designer/jobtemplate/ui/CreateProcessWithTemplatesAction.java b/org.talend.designer.jobtemplate/src/main/java/org/talend/designer/jobtemplate/ui/CreateProcessWithTemplatesAction.java
+index 1f0006a..28418d8 100644
+--- a/org.talend.designer.jobtemplate/src/main/java/org/talend/designer/jobtemplate/ui/CreateProcessWithTemplatesAction.java
++++ b/org.talend.designer.jobtemplate/src/main/java/org/talend/designer/jobtemplate/ui/CreateProcessWithTemplatesAction.java
+@@ -1102,7 +1102,7 @@ public class CreateProcessWithTemplatesAction extends AContextualAction {
+                                 boolean changename = false;
+                                 Set<MetadataTable> tables = ConnectionHelper.getTables(dbConn);
+                                 for (MetadataTable table : tables) {
+-                                    if (table.getLabel().equals(tableName.trim())) {
++                                    if (!table.getLabel().equals(tableName.trim())) {
+                                         changename = true;
+                                         break;
+                                     }

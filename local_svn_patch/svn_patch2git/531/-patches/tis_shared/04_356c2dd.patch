@@ -1,0 +1,147 @@
+diff --git a/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java b/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
+index e834b2d..25fc8b2 100644
+--- a/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
++++ b/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
+@@ -132,6 +132,10 @@ public class BodyHeader extends Composite {
+ 
+     private DiffOfCurrentAndSVNRoot compareInput;
+ 
++    private static String BRANCHS_P = "/branches";
++
++    private static String BRANCHS_PS = "/branches/";
++
+     public BodyHeader(CompareResultView comResView, int style) {
+         super(comResView.getForm().getHead(), style);
+         this.comResView = comResView;
+@@ -690,9 +694,15 @@ public class BodyHeader extends Composite {
+     public void initCopyCompare(DirEntry branchEntry, DirEntry jobEntry) {
+         IRepositoryObject version1 = (IRepositoryObject) ((IStructuredSelection) currentVersionCombo.getSelection())
+                 .getFirstElement();
+-        anotherBranchCombo.getCombo().setText(branchEntry.getPath());
+         String path = branchEntry.getPath();
+-        compareTool.initCurrentBranchSVNJob(path, null);
++        if (path != null && path.equals(SVNConstant.NAME_TRUNK)) {
++            anotherBranchCombo.getCombo().setText(path);
++            compareTool.initCurrentBranchSVNJob(path, null);
++        } else {
++            String branchPath = BRANCHS_PS + path;
++            anotherBranchCombo.getCombo().setText(branchPath);
++            compareTool.initCurrentBranchSVNJob(branchPath, null);
++        }
+         svnJobList = initSvnJobList();
+         anotherVersionCombo.getCombo().removeAll();
+         String jobpath = jobEntry.getPath();
+diff --git a/org.talend.repository.svnprovider/src/messages.properties b/org.talend.repository.svnprovider/src/messages.properties
+index b9ff5df..a0ff707 100644
+--- a/org.talend.repository.svnprovider/src/messages.properties
++++ b/org.talend.repository.svnprovider/src/messages.properties
+@@ -48,4 +48,5 @@ CompareWithForm.checkFieldsValue.chooseSVNjobletVersion=Please choose SVN joblet
+ 
+ SwitchBranchAction.btn.branchmanagement=Branch Management
+ SwitchBranchAction.warning=Warning
+-SwitchBranchAction.offlinewarning=Can not use the Branch Management when the project is in offline mode.
+\ No newline at end of file
++SwitchBranchAction.offlinewarning=Can not use the Branch Management when the project is in offline mode.
++SwitchBranchAction.choosefolder=Choose the destination folder
+\ No newline at end of file
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/FolderContentProvider.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/FolderContentProvider.java
+index 2a84fa4..b6f9025 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/FolderContentProvider.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/FolderContentProvider.java
+@@ -52,6 +52,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * 
+      * @see org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java.lang.Object)
+      */
++    @Override
+     public Object[] getElements(Object inputElement) {
+         List<DirEntry> dirList = new ArrayList<DirEntry>();
+         if (inputElement instanceof DirEntry) {
+@@ -62,6 +63,9 @@ public class FolderContentProvider implements ITreeContentProvider {
+             Project project = ProjectManager.getInstance().getCurrentProject();
+             try {
+                 url = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
++                if (url != null && !url.endsWith(SVNConstants.SEP_CHAR)) {
++                    url = url + SVNConstants.SEP_CHAR;
++                }
+                 StringBuffer urlBuff = new StringBuffer(url);
+                 if (root.getAbsPath().contains(SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES)) {
+                     urlBuff.append(SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES);
+@@ -101,6 +105,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * 
+      * @see org.eclipse.jface.viewers.IContentProvider#dispose()
+      */
++    @Override
+     public void dispose() {
+         // TODO Auto-generated method stub
+ 
+@@ -112,6 +117,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * @see org.eclipse.jface.viewers.IContentProvider#inputChanged(org.eclipse.jface.viewers.Viewer, java.lang.Object,
+      * java.lang.Object)
+      */
++    @Override
+     public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+         // TODO Auto-generated method stub
+ 
+@@ -122,6 +128,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * 
+      * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
+      */
++    @Override
+     public Object[] getChildren(Object parentElement) {
+         List<DirEntry> dirList = new ArrayList<DirEntry>();
+         if (parentElement instanceof DirEntry) {
+@@ -170,6 +177,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * 
+      * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
+      */
++    @Override
+     public Object getParent(Object element) {
+         // TODO Auto-generated method stub
+         return null;
+@@ -180,6 +188,7 @@ public class FolderContentProvider implements ITreeContentProvider {
+      * 
+      * @see org.eclipse.jface.viewers.ITreeContentProvider#hasChildren(java.lang.Object)
+      */
++    @Override
+     public boolean hasChildren(Object element) {
+         List<DirEntry> dirList = new ArrayList<DirEntry>();
+         if (element instanceof DirEntry) {
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNSwitchDialog.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNSwitchDialog.java
+index fe573af..4b77f20 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNSwitchDialog.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNSwitchDialog.java
+@@ -76,6 +76,7 @@ import org.talend.repository.remoteprovider.AdministratorClient;
+ import org.talend.repository.remoteprovider.ProjectUrlHelper;
+ import org.talend.repository.remoteprovider.RemoteRepositoryFactory;
+ import org.talend.repository.svnprovider.SvnHandler;
++import org.talend.repository.svnprovider.i18n.Messages;
+ import org.talend.repository.svnprovider.utils.SVNConstants;
+ import org.talend.repository.svnprovider.utils.SVNUtil;
+ import org.talend.repository.ui.views.IRepositoryView;
+@@ -261,7 +262,7 @@ public class SVNSwitchDialog extends Dialog {
+                 svnPath += SVNConstant.SEP_CHAR;
+             }
+             svnPath += folder.getPath();
+-            if (mainProjectBranch.equals(svnPath)) {
++            if (mainProjectBranch.equals(svnPath) || svnPath.endsWith(mainProjectBranch)) {
+                 isCurrent = true;
+             }
+         }
+@@ -290,6 +291,7 @@ public class SVNSwitchDialog extends Dialog {
+         dialog.setInput(folder);
+         dialog.setContentProvider(new FolderContentProvider(svnHandler));
+         dialog.setLabelProvider(new FolderLabelProvider());
++        dialog.setMessage(Messages.getString("SwitchBranchAction.choosefolder"));
+         return dialog;
+     }
+ 
+@@ -496,6 +498,9 @@ public class SVNSwitchDialog extends Dialog {
+             SVNUtil svnUtil = new SVNUtil();
+             String fromUrl = SVNUtil.getSVNProjectURL(project.getEmfProject());
+             String url = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
++            if (url != null && !url.endsWith(SVNConstants.SEP_CHAR)) {
++                url = url + SVNConstants.SEP_CHAR;
++            }
+             String switchUrl = url + switchPath;// https://gldu:8443/svn/errrr/trunk
+             if (svnHandler.list(switchUrl).length <= 0) { // if the branch is empty, need init the branch first.
+                 copyBranchFolder(fromUrl, switchUrl, path);

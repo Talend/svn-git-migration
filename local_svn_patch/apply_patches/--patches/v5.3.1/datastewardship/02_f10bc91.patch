@@ -1,0 +1,499 @@
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfig.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfig.java
+index fe7829b..2e7d335 100644
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfig.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfig.java
+@@ -22,17 +22,17 @@ public class TRConfig {
+     public static final boolean DEFAULT_VALUE_OF_EQUAL = true;
+     public static final boolean DEFAULT_VALUE_OF_SCORE = false;
+ 
+-    public static final boolean DEFAULT_VALUE_OF_USEAS = true;
+-    public static final boolean DEFAULT_VALUE_OF_USEMTS = true;
+-    public static final boolean DEFAULT_VALUE_OF_USEMCV = true;
++    public static final boolean DEFAULT_VALUE_OF_USEAS = false;
++    public static final boolean DEFAULT_VALUE_OF_USEMTS = false;
++    public static final boolean DEFAULT_VALUE_OF_USEMCV = false;
+ 
+-    public static final boolean DEFAULT_VALUE_OF_DISUSEMTS = false;
++    public static final boolean DEFAULT_VALUE_OF_DISUSEMTS = true;
+ 
+-    public static final boolean DEFAULT_VALUE_OF_DISUSEMCV = false;
++    public static final boolean DEFAULT_VALUE_OF_DISUSEMCV = true;
+ 
+-    public static final boolean DEFAULT_VALUE_OF_DISASRESET = false;
++    public static final boolean DEFAULT_VALUE_OF_DISASRESET = true;
+ 
+-    public static final boolean DEFAULT_VALUE_OF_DISASREAPPLY = false;
++    public static final boolean DEFAULT_VALUE_OF_DISASREAPPLY = true;
+ 
+     private boolean isMarkSimilar;
+     
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfigFactory.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfigFactory.java
+index 0b2e7e9..557b25e 100644
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfigFactory.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/task/resolution/TRConfigFactory.java
+@@ -20,31 +20,36 @@ import org.talend.datastewardship.shared.dto.TaskDTO;
+ 
+ public class TRConfigFactory {
+ 
+-
+-    public static TRConfig newGlobalTRConfig() {
++    public static TRConfig createDefaultConfig() {
+         return new TRConfig();
+     }
+ 
+-    public static TRConfig getTRConfig(TaskDTO taskDTO, TRConfig defaultTrConfig) {
++    public static TRConfig getTRConfig(TaskDTO taskDTO, TRConfig currentTrConfig) {
+ 
++        if (currentTrConfig == null) {
++            return createDefaultConfig();
++        }
+         // Special cases
+-        if (checkDuplicateSourceTask(taskDTO)) {
+-            TRConfig trConfig = new TRConfig();
+-            trConfig.setUseTrustedScore(false);
+-            trConfig.setDisableUseTrustedScoreToggle(true);
+-            trConfig.setDisableASResetButton(true);
+-            return trConfig;
+-        }else{
+-            return defaultTrConfig == null ? newGlobalTRConfig() : defaultTrConfig;
++        if (currentTrConfig.isUseAutoSuggest() == true) {
++            if (checkDuplicateSourceTask(taskDTO)) {
++                currentTrConfig.setUseTrustedScore(false);
++                currentTrConfig.setDisableUseTrustedScoreToggle(true);
++                currentTrConfig.setDisableASResetButton(true);
++            } else if (currentTrConfig.isDisableUseTrustedScoreToggle()) {
++                currentTrConfig.setUseTrustedScore(true);
++                currentTrConfig.setDisableUseTrustedScoreToggle(false);
++                currentTrConfig.setDisableASResetButton(false);
++            }
+         }
+-
++        return currentTrConfig;
+     }
+ 
+-    private static boolean checkDuplicateSourceTask(TaskDTO taskDTO) {
++    public static boolean checkDuplicateSourceTask(TaskDTO taskDTO) {
+ 
+         boolean findDuplicateSource = false;
+-        if (taskDTO == null)
++        if (taskDTO == null) {
+             return findDuplicateSource;
++        }
+ 
+         HashSet<String> recordedSources = new HashSet<String>();
+         Set<SrcrecordsDTO> srcrecordses = taskDTO.getSrcrecordses();
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskProcessingPanel.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskProcessingPanel.java
+index 8be4e1c..89a39b6 100644
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskProcessingPanel.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskProcessingPanel.java
+@@ -25,22 +25,21 @@ import com.extjs.gxt.ui.client.widget.HtmlContainer;
+ import com.extjs.gxt.ui.client.widget.layout.RowData;
+ import com.extjs.gxt.ui.client.widget.layout.RowLayout;
+ 
+-
+ /**
+- * DOC Starkey  class global comment. Detailled comment
++ * DOC Starkey class global comment. Detailled comment
+  */
+ public class TaskProcessingPanel extends ContentPanel {
+-    
++
+     TaskResolutionToolBar taskResolutionToolBar;
+-    
++
+     public TaskResolutionToolBar getTaskResolutionToolBar() {
+         return taskResolutionToolBar;
+     }
+ 
+     RecordMergePanel recodrMergePanel;
+ 
+-    TRConfig trConfig = TRConfigFactory.newGlobalTRConfig();
+-    
++    TRConfig trConfig = TRConfigFactory.createDefaultConfig();
++
+     /**
+      * DOC Starkey TaskProcessingPanel constructor comment.
+      */
+@@ -49,100 +48,93 @@ public class TaskProcessingPanel extends ContentPanel {
+         setHeaderVisible(false);
+         setBodyBorder(false);
+     }
+-    
+-    
++
+     /**
+      * DOC Starkey Comment method "init".
+      */
+-    public void init(TRParameters trParameters,int tabWidth,int tabHeight) {
+-        
+-        TRUpdater trUpdater=new TRUpdater();
+-        
++    public void init(TRParameters trParameters, int tabWidth, int tabHeight) {
++
++        TRUpdater trUpdater = new TRUpdater();
++
+         removeAll();
+-        
+-        TRConfig useTRConfig = TRConfigFactory.getTRConfig(
+-                trParameters.getTaskDTO(), trConfig);
+-        taskResolutionToolBar=new TaskResolutionToolBar(
+-                trParameters.getTaskDTO(),
+-                trUpdater,
+-                useTRConfig
+-                );
+-        if(trParameters.getErrorMessage()!=null&&trParameters.getErrorMessage().length()>0){
++
++        TRConfig useTRConfig = TRConfigFactory.getTRConfig(trParameters.getTaskDTO(), trConfig);
++        taskResolutionToolBar = new TaskResolutionToolBar(trParameters.getTaskDTO(), trUpdater, useTRConfig);
++        if (trParameters.getErrorMessage() != null && trParameters.getErrorMessage().length() > 0) {
+             taskResolutionToolBar.setEditable(false);
+         }
+         add(taskResolutionToolBar, new RowData(1, -1));
+-        
+-        if(trParameters.getErrorMessage()!=null&&trParameters.getErrorMessage().length()>0){
+-            //build error panel
++
++        if (trParameters.getErrorMessage() != null && trParameters.getErrorMessage().length() > 0) {
++            // build error panel
+             StringBuffer sb = new StringBuffer();
+-            
++
+             sb.append("<CENTER style=\"color:red;font-size:30\">") //$NON-NLS-1$
+-              .append(trParameters.getErrorMessage())
+-              .append("</CENTER>"); //$NON-NLS-1$
+-          
+-            add(new HtmlContainer(sb.toString()), new RowData(1,1));
+-        }else{
++                    .append(trParameters.getErrorMessage()).append("</CENTER>"); //$NON-NLS-1$
++
++            add(new HtmlContainer(sb.toString()), new RowData(1, 1));
++        } else {
+             recodrMergePanel = new RecordMergePanel(trParameters, trUpdater);
+             synStatus(useTRConfig);
+             recodrMergePanel.setSize(tabWidth, tabHeight);
+ 
+-            add(recodrMergePanel, new RowData(1,1));
++            add(recodrMergePanel, new RowData(1, 1));
+         }
+-        
++
+         taskResolutionToolBar.setRecodrMergePanel(recodrMergePanel);
+-        
+-        if (recodrMergePanel.readOnly)
++
++        if (recodrMergePanel.readOnly) {
+             taskResolutionToolBar.setEditable(false);
++        }
+ 
+     }
+ 
++    private void synStatus(TRConfig aTRConfig) {
++        recodrMergePanel.setHighlight(aTRConfig.isHighlightEqual());
++        recodrMergePanel.setMarkSimilar(aTRConfig.isMarkSimilar());
++        recodrMergePanel.setShowScores(aTRConfig.isShowScores());
+ 
+-    private void synStatus(TRConfig trConfig) {
+-        recodrMergePanel.isHighlight = trConfig.isHighlightEqual();
+-        recodrMergePanel.isMarkSimilar = trConfig.isMarkSimilar();
+-        recodrMergePanel.isShowScores = trConfig.isShowScores();
+-
+-        recodrMergePanel.useAutoSuggest = trConfig.isUseAutoSuggest();
+-        recodrMergePanel.useCommonValue = trConfig.isUseCommonValue();
+-        recodrMergePanel.useTrustedScore = trConfig.isUseTrustedScore();
++        recodrMergePanel.setUseAutoSuggest(aTRConfig.isUseAutoSuggest());
++        recodrMergePanel.setUseCommonValue(aTRConfig.isUseCommonValue());
++        recodrMergePanel.setUseTrustedScore(aTRConfig.isUseTrustedScore());
+ 
+-        recodrMergePanel.disableASReapplyButton = trConfig.isDisableASReapplyButton();
+-        recodrMergePanel.disableASResetButton = trConfig.isDisableASResetButton();
+-        recodrMergePanel.disableUseCommonValueToggle = trConfig.isDisableUseCommonValueToggle();
+-        recodrMergePanel.disableUseTrustedScoreToggle = trConfig.isDisableUseTrustedScoreToggle();
++        recodrMergePanel.setDisableASReapplyButton(aTRConfig.isDisableASReapplyButton());
++        recodrMergePanel.setDisableASResetButton(aTRConfig.isDisableASResetButton());
++        recodrMergePanel.setDisableUseCommonValueToggle(aTRConfig.isDisableUseCommonValueToggle());
++        recodrMergePanel.setDisableUseTrustedScoreToggle(aTRConfig.isDisableUseTrustedScoreToggle());
+     }
+ 
+     public void refresh() {
+         recodrMergePanel.refresh();
+     }
+-    
++
+     public void removeLabelStyle() {
+         recodrMergePanel.removeLabelStyle(""); //$NON-NLS-1$
+     }
+-    
++
+     public void setLabelHL() {
+         recodrMergePanel.setHighlight(trConfig.isHighlightEqual());
+         recodrMergePanel.setLabelStyle();
+-        
+-        if(!trConfig.isHighlightEqual()) {
+-//            recodrMergePanel.removeLabelStyle("");
++
++        if (!trConfig.isHighlightEqual()) {
++            // recodrMergePanel.removeLabelStyle("");
+         }
+     }
+-    
++
+     public void setLabelMS() {
+         recodrMergePanel.setMarkSimilar(trConfig.isMarkSimilar());
+         recodrMergePanel.setLabelStyle();
+-        
+-        if(!recodrMergePanel.isMarkSimilar) {
++
++        if (!recodrMergePanel.isMarkSimilar) {
+             recodrMergePanel.removeLabelStyle(""); //$NON-NLS-1$
+         }
+     }
+-    
++
+     public void updateASSwitchers(AppEvent event) {
+ 
+         boolean isReEnableAs = false;
+ 
+-        if (event.getData() != null&&event.getData().toString().equals(TaskResolutionToolBar.RE_ENABLE_AUTOSUGGEST)) {
++        if (event.getData() != null && event.getData().toString().equals(TaskResolutionToolBar.RE_ENABLE_AUTOSUGGEST)) {
+             isReEnableAs = true;
+         }
+ 
+@@ -153,65 +145,61 @@ public class TaskProcessingPanel extends ContentPanel {
+ 
+             if (isReEnableAs) {
+ 
+-                // enable all
++                boolean isMTSForbidden = TRConfigFactory.checkDuplicateSourceTask(recodrMergePanel.trParameters.getTaskDTO());
+                 trConfig.setUseCommonValue(true);
+-                trConfig.setUseTrustedScore(true);
+-                recodrMergePanel.setUseTrustedScore(true);
++                trConfig.setUseTrustedScore(!isMTSForbidden);
++                recodrMergePanel.setUseTrustedScore(!isMTSForbidden);
+                 recodrMergePanel.setUseCommonValue(true);
+ 
+-                trConfig.setDisableUseTrustedScoreToggle(false);
++                trConfig.setDisableUseTrustedScoreToggle(isMTSForbidden);
+                 trConfig.setDisableUseCommonValueToggle(false);
+-                trConfig.setDisableASResetButton(false);
++                trConfig.setDisableASResetButton(isMTSForbidden);
+                 trConfig.setDisableASReapplyButton(false);
+-                recodrMergePanel.setDisableUseTrustedScoreToggle(false);
++                recodrMergePanel.setDisableUseTrustedScoreToggle(isMTSForbidden);
+                 recodrMergePanel.setDisableUseCommonValueToggle(false);
+-                recodrMergePanel.setDisableASResetButton(false);
++                recodrMergePanel.setDisableASResetButton(isMTSForbidden);
+                 recodrMergePanel.setDisableASReapplyButton(false);
+ 
+                 taskResolutionToolBar.getUseMCVToggle().enable();
+                 taskResolutionToolBar.getUseMCVToggle().toggle(true);
+-                taskResolutionToolBar.getUseMTSToggle().enable();
+-                taskResolutionToolBar.getUseMTSToggle().toggle(true);
+-
+-                taskResolutionToolBar.getResetTrustScoreBtn().enable();
++                if (isMTSForbidden) {
++                    taskResolutionToolBar.getUseMTSToggle().disable();
++                } else {
++                    taskResolutionToolBar.getUseMTSToggle().enable();
++                    taskResolutionToolBar.getUseMTSToggle().toggle(true);
++                }
++                if (isMTSForbidden) {
++                    taskResolutionToolBar.getResetTrustScoreBtn().disable();
++                } else {
++                    taskResolutionToolBar.getResetTrustScoreBtn().enable();
++                }
+                 taskResolutionToolBar.getReapplyAutoSuggestBtn().enable();
+ 
++                recodrMergePanel.doAutoSuggestTargetValuesWithDataOverrideCheck(true, recodrMergePanel.taskStatus);
++
+             } else {
+ 
+                 if (trConfig.isUseCommonValue()) {
+-                    trConfig.setUseCommonValue(true);
+-                    trConfig.setDisableUseCommonValueToggle(false);
+                     recodrMergePanel.setUseCommonValue(true);
+                     recodrMergePanel.setDisableUseCommonValueToggle(false);
+-                    taskResolutionToolBar.getUseMCVToggle().enable();
+-                    taskResolutionToolBar.getUseMCVToggle().toggle(true);
+                 } else {
+-                    trConfig.setUseCommonValue(false);
+                     recodrMergePanel.setUseCommonValue(false);
+                 }
+ 
+                 if (trConfig.isUseTrustedScore()) {
+-                    trConfig.setUseTrustedScore(true);
+-                    trConfig.setDisableUseTrustedScoreToggle(false);
+                     recodrMergePanel.setUseTrustedScore(true);
+                     recodrMergePanel.setDisableUseTrustedScoreToggle(false);
+-                    taskResolutionToolBar.getUseMTSToggle().enable();
+-                    taskResolutionToolBar.getUseMTSToggle().toggle(true);
+ 
+                     trConfig.setDisableASResetButton(false);
+                     recodrMergePanel.setDisableASResetButton(false);
+                     taskResolutionToolBar.getResetTrustScoreBtn().enable();
+-                    // taskResolutionToolBar.getReapplyAutoSuggestBtn().enable();
+                 } else {
+-                    trConfig.setUseTrustedScore(false);
+                     recodrMergePanel.setUseTrustedScore(false);
+ 
+                     trConfig.setDisableASResetButton(true);
+                     recodrMergePanel.setDisableASResetButton(true);
+                     taskResolutionToolBar.getResetTrustScoreBtn().disable();
+-                    // taskResolutionToolBar.getReapplyAutoSuggestBtn().disable();
+                 }
+-
+             }
+ 
+         } else {
+@@ -243,7 +231,7 @@ public class TaskProcessingPanel extends ContentPanel {
+         }
+ 
+     }
+-    
++
+     public void showScores() {
+         recodrMergePanel.setShowScores(trConfig.isShowScores());
+         recodrMergePanel.ShowScores();
+diff --git a/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/TRConfigFactoryTest.java b/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/TRConfigFactoryTest.java
+index 7b6cc49..2d42543 100644
+--- a/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/TRConfigFactoryTest.java
++++ b/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/TRConfigFactoryTest.java
+@@ -24,10 +24,14 @@ import org.talend.datastewardship.shared.dto.TaskDTO;
+ 
+ @SuppressWarnings("nls")
+ public class TRConfigFactoryTest extends TestCase {
+-    
+-    private TaskDTO taskDTO;
+ 
+-    private TaskDTO taskDTO2;
++    private TaskDTO taskDTOWithDupSources;
++
++    private TaskDTO taskDTOWithoutDupSources;
++
++    private TRConfig trConfigOff;
++
++    private TRConfig trConfigOn;
+ 
+     /*
+      * (non-Javadoc)
+@@ -37,9 +41,9 @@ public class TRConfigFactoryTest extends TestCase {
+     @Override
+     protected void setUp() throws Exception {
+ 
+-        taskDTO = new TaskDTO();
+-        taskDTO.setTaskId("40289e4d3a0c4409013a0c53b5910001");
+-        taskDTO.setTaskName("ToTestTask");
++        taskDTOWithDupSources = new TaskDTO();
++        taskDTOWithDupSources.setTaskId("40289e4d3a0c4409013a0c53b5910001");
++        taskDTOWithDupSources.setTaskName("ToTestTask");
+         Set<SrcrecordsDTO> srcrecordses = new HashSet<SrcrecordsDTO>();
+         SrcrecordsDTO src11 = new SrcrecordsDTO("40289e4d3a0c4409013a0c53b66d0002");
+         src11.setSource("DRH file");
+@@ -53,11 +57,11 @@ public class TRConfigFactoryTest extends TestCase {
+         srcrecordses.add(src12);
+         srcrecordses.add(src13);
+         srcrecordses.add(src14);
+-        taskDTO.setSrcrecordses(srcrecordses);
++        taskDTOWithDupSources.setSrcrecordses(srcrecordses);
+ 
+-        taskDTO2 = new TaskDTO();
+-        taskDTO2.setTaskId("40289e4d3a0c4409013a0c53b5910002");
+-        taskDTO2.setTaskName("ToTestTask2");
++        taskDTOWithoutDupSources = new TaskDTO();
++        taskDTOWithoutDupSources.setTaskId("40289e4d3a0c4409013a0c53b5910002");
++        taskDTOWithoutDupSources.setTaskName("ToTestTask2");
+         Set<SrcrecordsDTO> srcrecordses2 = new HashSet<SrcrecordsDTO>();
+         SrcrecordsDTO src21 = new SrcrecordsDTO("40289e4d3a0c4409013a0c53b66d0002");
+         src21.setSource("DRH file1");
+@@ -71,22 +75,85 @@ public class TRConfigFactoryTest extends TestCase {
+         srcrecordses2.add(src22);
+         srcrecordses2.add(src23);
+         srcrecordses2.add(src24);
+-        taskDTO2.setSrcrecordses(srcrecordses2);
++        taskDTOWithoutDupSources.setSrcrecordses(srcrecordses2);
++
++        trConfigOff = new TRConfig();
++
++        trConfigOn = new TRConfig();
++        trConfigOn.setUseAutoSuggest(true);
++        trConfigOn.setDisableUseCommonValueToggle(false);
++        trConfigOn.setUseCommonValue(true);
++        trConfigOn.setDisableUseTrustedScoreToggle(false);
++        trConfigOn.setUseTrustedScore(true);
++        trConfigOn.setDisableASResetButton(false);
++        trConfigOn.setDisableASReapplyButton(false);
+ 
+     }
+ 
+     public void testUpdateASConfigByTask() {
+-        
+-        TRConfig trConfig = TRConfigFactory.getTRConfig(taskDTO, null);
++
++        TRConfig trConfig = TRConfigFactory.getTRConfig(taskDTOWithDupSources, null);
++        assertFalse(trConfig.isUseAutoSuggest());
++        assertFalse(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isUseTrustedScore());
++
++        TRConfig trConfig2 = TRConfigFactory.getTRConfig(taskDTOWithoutDupSources, null);
++        assertFalse(trConfig2.isUseAutoSuggest());
++        assertFalse(trConfig2.isUseCommonValue());
++        assertFalse(trConfig2.isUseTrustedScore());
++
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithDupSources, trConfigOff);
++        assertFalse(trConfig.isUseAutoSuggest());
++        assertFalse(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isUseTrustedScore());
++
++        trConfig2 = TRConfigFactory.getTRConfig(taskDTOWithoutDupSources, trConfigOff);
++        assertFalse(trConfig2.isUseAutoSuggest());
++        assertFalse(trConfig2.isUseCommonValue());
++        assertFalse(trConfig2.isUseTrustedScore());
++
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithDupSources, trConfigOn);
++        assertTrue(trConfig.isUseAutoSuggest());
++        assertTrue(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isUseTrustedScore());
++        assertTrue(trConfig.isDisableUseTrustedScoreToggle());
++        assertTrue(trConfig.isDisableASResetButton());
++
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithoutDupSources, trConfigOn);
+         assertTrue(trConfig.isUseAutoSuggest());
+         assertTrue(trConfig.isUseCommonValue());
++        assertTrue(trConfig.isUseTrustedScore());
++        assertFalse(trConfig.isDisableUseTrustedScoreToggle());
++        assertFalse(trConfig.isDisableASResetButton());
++
++        trConfigOn.setUseCommonValue(false);
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithDupSources, trConfigOn);
++        assertTrue(trConfig.isUseAutoSuggest());
++        assertFalse(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isDisableUseCommonValueToggle());
+         assertFalse(trConfig.isUseTrustedScore());
++        assertTrue(trConfig.isDisableUseTrustedScoreToggle());
++        assertTrue(trConfig.isDisableASResetButton());
+ 
+-        TRConfig trConfig2 = TRConfigFactory.getTRConfig(taskDTO2, null);
+-        assertTrue(trConfig2.isUseAutoSuggest());
+-        assertTrue(trConfig2.isUseCommonValue());
+-        assertTrue(trConfig2.isUseTrustedScore());
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithoutDupSources, trConfigOn);
++        assertTrue(trConfig.isUseAutoSuggest());
++        assertFalse(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isDisableUseCommonValueToggle());
++        assertTrue(trConfig.isUseTrustedScore());
++        assertFalse(trConfig.isDisableUseTrustedScoreToggle());
++        assertFalse(trConfig.isDisableASResetButton());
+ 
++        trConfigOn.setUseCommonValue(true);
++        trConfigOn.setDisableUseTrustedScoreToggle(true);
++        trConfigOn.setUseTrustedScore(false);
++        trConfigOn.setDisableASResetButton(true);
++        trConfig = TRConfigFactory.getTRConfig(taskDTOWithoutDupSources, trConfigOn);
++        assertTrue(trConfig.isUseAutoSuggest());
++        assertTrue(trConfig.isUseCommonValue());
++        assertFalse(trConfig.isDisableUseCommonValueToggle());
++        assertTrue(trConfig.isUseTrustedScore());
++        assertFalse(trConfig.isDisableUseTrustedScoreToggle());
++        assertFalse(trConfig.isDisableASResetButton());
+     }
+ 
+ }

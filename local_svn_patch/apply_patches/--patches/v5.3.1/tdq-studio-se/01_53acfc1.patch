@@ -1,0 +1,128 @@
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java b/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
+index 63985b2..9bb69a1 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
+@@ -262,12 +262,14 @@ public final class ConnectionUtils {
+ 
+     public static ReturnCode isConnectionAvailable(Connection analysisDataProvider) {
+         ReturnCode returnCode = new ReturnCode();
+-
+         // check hive connection
+         IMetadataConnection metadataConnection = ConvertionHelper.convert(analysisDataProvider);
+         if (metadataConnection != null) {
+             if (EDatabaseTypeName.HIVE.getXmlName().equalsIgnoreCase(metadataConnection.getDbType())) {
+                 try {
++                    if (isHiveEmbedded(analysisDataProvider)) {
++                        JavaSqlFactory.doHivePreSetup(analysisDataProvider);
++                    }
+                     HiveConnectionManager.getInstance().checkConnection(metadataConnection);
+                     returnCode.setOk(true);
+                     return returnCode;
+@@ -341,10 +343,6 @@ public final class ConnectionUtils {
+             }
+         }
+ 
+-        if (isHiveEmbedded(analysisDataProvider)) {
+-            JavaSqlFactory.doHivePreSetup(analysisDataProvider);
+-        }
+-
+         returnCode = ConnectionUtils.checkConnection(url, JavaSqlFactory.getDriverClass(analysisDataProvider), props);
+         return returnCode;
+     }
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
+index 4a1a23a..9ecc51d 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
+@@ -12,7 +12,6 @@
+ // ============================================================================
+ package org.talend.dataprofiler.core.ui.action.actions;
+ 
+-import java.sql.SQLException;
+ import java.text.DecimalFormat;
+ 
+ import org.apache.log4j.Level;
+@@ -38,12 +37,13 @@ import org.eclipse.ui.cheatsheets.ICheatSheetManager;
+ import org.eclipse.ui.forms.editor.IFormPage;
+ import org.eclipse.ui.part.FileEditorInput;
+ import org.talend.commons.exception.BusinessException;
+-import org.talend.core.database.EDatabaseTypeName;
+ import org.talend.core.model.metadata.IMetadataConnection;
+ import org.talend.core.model.metadata.builder.ConvertionHelper;
+ import org.talend.core.model.metadata.builder.connection.Connection;
+ import org.talend.core.model.properties.Item;
++import org.talend.core.repository.model.IRepositoryFactory;
+ import org.talend.core.repository.model.ProxyRepositoryFactory;
++import org.talend.core.repository.model.RepositoryFactoryProvider;
+ import org.talend.cwm.compare.exception.ReloadCompareException;
+ import org.talend.cwm.compare.factory.ComparisonLevelFactory;
+ import org.talend.cwm.db.connection.ConnectionUtils;
+@@ -65,8 +65,8 @@ import org.talend.dq.helper.ProxyRepositoryManager;
+ import org.talend.dq.helper.RepositoryNodeHelper;
+ import org.talend.dq.helper.resourcehelper.AnaResourceFileHelper;
+ import org.talend.dq.nodes.AnalysisRepNode;
+-import org.talend.metadata.managment.connection.manager.HiveConnectionManager;
+ import org.talend.repository.model.ERepositoryStatus;
++import org.talend.repository.model.RepositoryConstants;
+ import org.talend.repository.model.RepositoryNode;
+ import org.talend.utils.sugars.ReturnCode;
+ import orgomg.cwm.foundation.softwaredeployment.DataManager;
+@@ -171,7 +171,7 @@ public class RunAnalysisAction extends Action implements ICheatSheetAction {
+                         return;
+                     }
+                     // ~
+-                    anaEditor.doSave(null);
++                    saveBeforeRun(anaEditor);
+                 }
+ 
+                 ReturnCode canRun = anaEditor.canRun();
+@@ -244,27 +244,7 @@ public class RunAnalysisAction extends Action implements ICheatSheetAction {
+ 
+             ReturnCode connectionAvailable = new ReturnCode(false);
+ 
+-            if (metadataConnection != null
+-                    && EDatabaseTypeName.HIVE.getXmlName().equalsIgnoreCase(metadataConnection.getDbType())) {
+-                try {
+-                    HiveConnectionManager.getInstance().checkConnection(metadataConnection);
+-                    connectionAvailable.setOk(true);
+-                } catch (ClassNotFoundException e) {
+-                    connectionAvailable.setOk(false);
+-                    log.error(e);
+-                } catch (InstantiationException e) {
+-                    connectionAvailable.setOk(false);
+-                    log.error(e);
+-                } catch (IllegalAccessException e) {
+-                    connectionAvailable.setOk(false);
+-                    log.error(e);
+-                } catch (SQLException e) {
+-                    connectionAvailable.setOk(false);
+-                    log.error(e);
+-                }
+-            } else {
+-                connectionAvailable = ConnectionUtils.isConnectionAvailable(analysisDataProvider);
+-            }
++            connectionAvailable = ConnectionUtils.isConnectionAvailable(analysisDataProvider);
+ 
+             if (!connectionAvailable.isOk()) {
+                 MessageDialogWithToggle.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+@@ -375,6 +355,21 @@ public class RunAnalysisAction extends Action implements ICheatSheetAction {
+         run();
+     }
+ 
++    /**
++     * Save the analysis before run the analysis.
++     * 
++     * @param anaEditor
++     */
++    private void saveBeforeRun(AnalysisEditor anaEditor) {
++        IRepositoryFactory localRepository = RepositoryFactoryProvider
++                .getRepositoriyById(RepositoryConstants.REPOSITORY_LOCAL_ID);
++        IRepositoryFactory oldRepository = ProxyRepositoryFactory.getInstance().getRepositoryFactoryFromProvider();
++        ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(localRepository);
++        // This save action won't invoke any remote repository action such as svn commit. TDQ-7508
++        anaEditor.doSave(null);
++        ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(oldRepository);
++    }
++
+     private void displayResultStatus(final ReturnCode executed) {
+         if (log.isInfoEnabled()) {
+             int executionDuration = analysis.getResults().getResultMetadata().getExecutionDuration();

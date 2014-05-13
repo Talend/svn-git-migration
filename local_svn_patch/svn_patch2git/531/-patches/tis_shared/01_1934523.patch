@@ -1,0 +1,369 @@
+diff --git a/org.talend.designer.cdc/resource/cdc_MSSQL.xml b/org.talend.designer.cdc/resource/cdc_MSSQL.xml
+index e0fca11..b757974 100644
+--- a/org.talend.designer.cdc/resource/cdc_MSSQL.xml
++++ b/org.talend.designer.cdc/resource/cdc_MSSQL.xml
+@@ -1,78 +1,78 @@
+ <?xml version="1.0"?>
+ <CDCTemplate>
+-	<!--
+-		The @varible@ is propery in xml, and define in InnerVariable.
+-		
+-		The %varible% define in ExVariable.
+-	-->
+-	<CDCVariable>
+-		<Variable name="SystemDate" value="getdate()" />
+-		<Variable name="DateType" value="DATETIME" />
+-		<Variable name="SQLEndChar" value="" />
+-		<Variable name="DBVarChar" value="VARCHAR" />
+-		
+-		<Variable name="TriggerOnCurrent" value="true" />
+-		<Variable name="TriggerRecreation" value="true" />
+-		
+-		<Variable name="AliasSrc" value="SRC" />
+-		<Variable name="AliasTarg" value="TARG" />
+-		
+-		<Variable name="TriggerSuffix_I" value="I" />
+-		<Variable name="TriggerSuffix_U" value="U" />
+-		<Variable name="TriggerSuffix_D" value="D" />
+-		
+-		<!-- temp external variable -->
+-		<ExVariable name="TRIGGER_INSERTED"/>
+-		<ExVariable name="TRIGGER_DELETED"/>
+-	</CDCVariable>
+-	<CDCFoundation>
+-		<CREATE>
+-			<SQL> CREATE TABLE %cdcSchema%%quote%TSUBSCRIBERS%quote%
++    <!--
++        The @varible@ is propery in xml, and define in InnerVariable.
++        
++        The %varible% define in ExVariable.
++    -->
++    <CDCVariable>
++        <Variable name="SystemDate" value="getdate()" />
++        <Variable name="DateType" value="DATETIME" />
++        <Variable name="SQLEndChar" value="" />
++        <Variable name="DBVarChar" value="VARCHAR" />
++        
++        <Variable name="TriggerOnCurrent" value="true" />
++        <Variable name="TriggerRecreation" value="true" />
++        
++        <Variable name="AliasSrc" value="SRC" />
++        <Variable name="AliasTarg" value="TARG" />
++        
++        <Variable name="TriggerSuffix_I" value="I" />
++        <Variable name="TriggerSuffix_U" value="U" />
++        <Variable name="TriggerSuffix_D" value="D" />
++        
++        <!-- temp external variable -->
++        <ExVariable name="TRIGGER_INSERTED"/>
++        <ExVariable name="TRIGGER_DELETED"/>
++    </CDCVariable>
++    <CDCFoundation>
++        <CREATE>
++            <SQL> CREATE TABLE %cdcSchema%%quote%TSUBSCRIBERS%quote%
+   (
+    %quote%TALEND_CDC_TABLE_TO_WATCH%quote% @DBVarChar@(35) NOT NULL, 
+    %quote%TALEND_CDC_SUBSCRIBER_NAME%quote% @DBVarChar@(50) NOT NULL, 
+    %quote%TALEND_CDC_CREATION_DATE%quote% @DateType@, 
+    CONSTRAINT PK_TSUBSCRIBERS PRIMARY KEY (%quote%TALEND_CDC_TABLE_TO_WATCH%quote%, %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%)
+   ) @SQLEndChar@</SQL>
+-		</CREATE>
+-		<DROP>
+-			<SQL> DROP TABLE %cdcSchema%%quote%TSUBSCRIBERS%quote% @SQLEndChar@</SQL>
+-		</DROP>
+-		<DELETE  property="AllData">
+-			<SQL> DELETE FROM  %cdcSchema%%quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%' @SQLEndChar@</SQL>
+-		</DELETE>
+-		<DELETE property="Data">
+-			<SQL> DELETE FROM  %cdcSchema%%quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%' AND %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%='%subscriberName%' @SQLEndChar@</SQL>
+-		</DELETE>
+-	</CDCFoundation>
+-	<CDCTable>
+-		<INSERT>
+-			<SQL> INSERT INTO  %cdcSchema%%quote%TSUBSCRIBERS%quote%
++        </CREATE>
++        <DROP>
++            <SQL> DROP TABLE %cdcSchema%%quote%TSUBSCRIBERS%quote% @SQLEndChar@</SQL>
++        </DROP>
++        <DELETE  property="AllData">
++            <SQL> DELETE FROM  %cdcSchema%%quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%' @SQLEndChar@</SQL>
++        </DELETE>
++        <DELETE property="Data">
++            <SQL> DELETE FROM  %cdcSchema%%quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%' AND %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%='%subscriberName%' @SQLEndChar@</SQL>
++        </DELETE>
++    </CDCFoundation>
++    <CDCTable>
++        <INSERT>
++            <SQL> INSERT INTO  %cdcSchema%%quote%TSUBSCRIBERS%quote%
+   (
+    %quote%TALEND_CDC_TABLE_TO_WATCH%quote%,
+    %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%,
+    %quote%TALEND_CDC_CREATION_DATE%quote%
+   )
+    values ('%schemaNoQuote%%sourceTableName%','%subscriberName%',@SystemDate@) @SQLEndChar@</SQL>
+-		</INSERT>
+-		<CREATE>
+-			<SQL> CREATE TABLE  %cdcSchema%%quote%TCDC_%sourceTableName%%quote% 
++        </INSERT>
++        <CREATE>
++            <SQL> CREATE TABLE  %cdcSchema%%quote%TCDC_%sourceTableName%%quote% 
+   ( 
+    %quote%TALEND_CDC_SUBSCRIBERS_NAME%quote% @DBVarChar@(50) NOT NULL, 
+    %quote%TALEND_CDC_STATE%quote% @DBVarChar@(1), 
+    %quote%TALEND_CDC_TYPE%quote% @DBVarChar@(1), 
+    %quote%TALEND_CDC_CREATION_DATE%quote% @DateType@,
+    %pkColumnDefines%
+-  ) @SQLEndChar@</SQL>  	
+-		</CREATE>
+-		<DROP>
+-			<SQL> DROP TABLE %cdcSchema%%quote%TCDC_%sourceTableName%%quote% @SQLEndChar@</SQL>
+-		</DROP>
+-	</CDCTable>
+-	<CDCView>
+-		<CREATE>
+-			<!-- <SQL> USE %CDCDatabase%</SQL> -->
+-			<SQL> CREATE VIEW %schemaForView%%quote%TCDC_VIEW_%sourceTableName%%quote% AS 
++  ) @SQLEndChar@</SQL>      
++        </CREATE>
++        <DROP>
++            <SQL> DROP TABLE %cdcSchema%%quote%TCDC_%sourceTableName%%quote% @SQLEndChar@</SQL>
++        </DROP>
++    </CDCTable>
++    <CDCView>
++        <CREATE>
++            <!-- <SQL> USE %CDCDatabase%</SQL> -->
++            <SQL> CREATE VIEW %schemaForView%%quote%TCDC_VIEW_%sourceTableName%%quote% AS 
+  SELECT
+   @AliasSrc@.%quote%TALEND_CDC_TYPE%quote%  TALEND_CDC_TYPE,
+   @AliasSrc@.%quote%TALEND_CDC_SUBSCRIBERS_NAME%quote%  TALEND_CDC_SUBSCRIBERS_NAME,
+@@ -84,15 +84,15 @@
+  WHERE @AliasSrc@.%quote%TALEND_CDC_STATE%quote%='1'
+  GROUP BY @AliasSrc@.%quote%TALEND_CDC_SUBSCRIBERS_NAME%quote%,%pkColumnGroupRefs%%noPkColumnGroupRefs%,
+     @AliasSrc@.%quote%TALEND_CDC_TYPE%quote% @SQLEndChar@</SQL>
+-    	</CREATE>
+-    	<DROP>
+-			<SQL> DROP VIEW %schemaForView%%quote%TCDC_VIEW_%sourceTableName%%quote% @SQLEndChar@</SQL>
+-		</DROP>
+-	</CDCView>
+-	<CDCTrigger>
+-		<CREATE property="Insert">
+-			<SQL> USE %CurDatabase%</SQL>
+-			<SQL> CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_I@%quote% ON %schema%%quote%%sourceTableName%%quote%
++        </CREATE>
++        <DROP>
++            <SQL> DROP VIEW %schemaForView%%quote%TCDC_VIEW_%sourceTableName%%quote% @SQLEndChar@</SQL>
++        </DROP>
++    </CDCView>
++    <CDCTrigger>
++        <CREATE property="Insert">
++            <SQL> USE %CurDatabase%</SQL>
++            <SQL> CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_I@%quote% ON %schema%%quote%%sourceTableName%%quote%
+  AFTER INSERT
+  AS 
+  INSERT INTO  %CDCDatabase%.%cdcSchema%%quote%TCDC_%sourceTableName%%quote% 
+@@ -108,11 +108,11 @@
+       'I',
+       @SystemDate@,
+       %TRIGGER_INSERTED%
+-    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% left join inserted as tmpInsertUpdateTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
+-		</CREATE>
+-		<CREATE property="Update">
+-			<SQL> USE %CurDatabase%</SQL>
+-			<SQL> CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_U@%quote% ON %schema%%quote%%sourceTableName%%quote%
++    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% inner join inserted as tmpInsertUpdateTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
++        </CREATE>
++        <CREATE property="Update">
++            <SQL> USE %CurDatabase%</SQL>
++            <SQL> CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_U@%quote% ON %schema%%quote%%sourceTableName%%quote%
+  AFTER UPDATE
+  AS 
+  INSERT INTO %CDCDatabase%.%cdcSchema%%quote%TCDC_%sourceTableName%%quote% 
+@@ -128,11 +128,11 @@
+       'U',
+       @SystemDate@,
+       %TRIGGER_INSERTED%   
+-    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% left join inserted as tmpInsertUpdateTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
+-		</CREATE>
+-		<CREATE property="Delete">
+-		    <SQL> USE %CurDatabase%</SQL>
+-			<SQL>CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_D@%quote% ON %schema%%quote%%sourceTableName%%quote%
++    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% inner join inserted as tmpInsertUpdateTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
++        </CREATE>
++        <CREATE property="Delete">
++            <SQL> USE %CurDatabase%</SQL>
++            <SQL>CREATE TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_@TriggerSuffix_D@%quote% ON %schema%%quote%%sourceTableName%%quote%
+  AFTER DELETE
+  AS 
+  INSERT INTO  %CDCDatabase%.%cdcSchema%%quote%TCDC_%sourceTableName%%quote% 
+@@ -148,19 +148,19 @@
+       'D',
+       @SystemDate@,
+       %TRIGGER_DELETED%
+-    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% left join deleted as tmpDeleteTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
+-		</CREATE>
+-		<DROP>
+-			<SQL> USE %CurDatabase%</SQL>
+-			<SQL> DROP TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_%triggerSuffix%%quote% @SQLEndChar@</SQL>
+-		</DROP>
+-		<ACTIVE>
+-			<!-- use the create triggers -->
+-			<SQL></SQL>
+-		</ACTIVE>
+-		<DEACTIVE>
+-			<!-- use the drop triggers -->
+-			<SQL></SQL>
+-		</DEACTIVE>
+-	</CDCTrigger>
+-</CDCTemplate>
++    FROM %CDCDatabase%.%cdcSchema%%quote%TSUBSCRIBERS%quote% inner join deleted as tmpDeleteTable on %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%schemaNoQuote%%sourceTableName%'@SQLEndChar@</SQL>
++        </CREATE>
++        <DROP>
++            <SQL> USE %CurDatabase%</SQL>
++            <SQL> DROP TRIGGER %schemaForTrigger%%quote%TCDC_TG_%sourceTableName%_%triggerSuffix%%quote% @SQLEndChar@</SQL>
++        </DROP>
++        <ACTIVE>
++            <!-- use the create triggers -->
++            <SQL></SQL>
++        </ACTIVE>
++        <DEACTIVE>
++            <!-- use the drop triggers -->
++            <SQL></SQL>
++        </DEACTIVE>
++    </CDCTrigger>
++</CDCTemplate>
+\ No newline at end of file
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
+index e2799e1..1ac7071 100644
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
+@@ -27,6 +27,7 @@ import org.apache.oro.text.regex.Perl5Compiler;
+ import org.eclipse.core.runtime.Assert;
+ import org.talend.core.database.EDatabaseTypeName;
+ import org.talend.core.model.metadata.IMetadataConnection;
++import org.talend.core.model.metadata.MetadataToolHelper;
+ import org.talend.core.model.metadata.builder.ConvertionHelper;
+ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
+ import org.talend.core.model.metadata.builder.connection.MetadataTable;
+@@ -233,6 +234,7 @@ public class CDCManagerForTemplate extends CDCManager {
+         return getTemplateManager().generateTSubTableSQL(getExVariablesForTSubTableSQL(), EActionCDC.DROP);
+     }
+ 
++    @Override
+     public String[] generateTCDCSQL(MetadataTable table, String subscriberName, String... options) throws CDCException {
+         if (table == null) {
+             table = getCDCTable();
+@@ -252,16 +254,18 @@ public class CDCManagerForTemplate extends CDCManager {
+         return sql;
+     }
+ 
++    @Override
+     public String generateInsertData(String subscriberName, MetadataTable table) {
+         Map<ExVariable, String> exVarMap = getExVariablesForTSubDataInsert(subscriberName, table);
+         return getTemplateManager().generateTSubDataInsert(exVarMap);
+     }
+ 
++    @Override
+     public String[] genDeleteCDCSQL(MetadataTable table, boolean delData) {
+         if (table == null) {
+             table = getCDCTable();
+         }
+-        final boolean logMode = CDCUtils.isConnectionInLogMode((DatabaseConnection) getAssistConnItem().getConnection());
++        final boolean logMode = CDCUtils.isConnectionInLogMode(getAssistConnItem().getConnection());
+         if (logMode) {
+             // for log mode, there is no tsubscribers table in the old version
+             delData = isTsubscriberExist();
+@@ -345,6 +349,7 @@ public class CDCManagerForTemplate extends CDCManager {
+ 
+     }
+ 
++    @Override
+     public String generateTCDCTriggerSQL(MetadataTable table, String... options) {
+         return generateTCDCTriggerSQL(table, (List<String>) null, options);
+ 
+@@ -362,6 +367,7 @@ public class CDCManagerForTemplate extends CDCManager {
+         return getTemplateManager().generateTCDCTriggerDrop(getExVariablesForTCDCTriggerDrop(table), getTriggerOptions(table));
+     }
+ 
++    @Override
+     public String generateActiveTriggerSQL(MetadataTable table) {
+         if (table == null) {
+             table = getCDCTable();
+@@ -437,8 +443,7 @@ public class CDCManagerForTemplate extends CDCManager {
+                 if (getAssistConnItem() == null && !assistAlways) {
+                     createConnection(); // use cdc(link) item
+                 } else { // use current item
+-                    IMetadataConnection linkMetadataConn = ConvertionHelper.convert((DatabaseConnection) getAssistConnItem()
+-                            .getConnection());
++                    IMetadataConnection linkMetadataConn = ConvertionHelper.convert(getAssistConnItem().getConnection());
+                     ExtractMetaDataUtils.getConnection(linkMetadataConn.getDbType(), linkMetadataConn.getUrl(),
+                             linkMetadataConn.getUsername(), linkMetadataConn.getPassword(), linkMetadataConn.getDatabase(),
+                             linkMetadataConn.getSchema(), linkMetadataConn.getDriverClass(), linkMetadataConn.getDriverJarPath(),
+@@ -600,7 +605,8 @@ public class CDCManagerForTemplate extends CDCManager {
+                 if (needQuetoForPkColumnSels()) { // hywang for 10121
+                     pkColumnSels.append(str);
+                 } else {
+-                    if (KeywordsValidator.isSqlKeyword(TalendTextUtils.removeQuotes(str, getDbQuote()))) {
++                    if (KeywordsValidator.isSqlKeyword(TalendTextUtils.removeQuotes(str, getDbQuote()))
++                            || !MetadataToolHelper.isValidColumnName(TalendTextUtils.removeQuotes(str, getDbQuote()))) {
+                         pkColumnSels.append(str);
+                     } else {
+                         pkColumnSels.append(TalendTextUtils.removeQuotes(str, getDbQuote()));
+@@ -661,7 +667,8 @@ public class CDCManagerForTemplate extends CDCManager {
+                 if (needQuetoForNoPkColumnSels()) { // hywang for 10121
+                     noPkColumnSels.append(str);
+                 } else {
+-                    if (KeywordsValidator.isSqlKeyword(TalendTextUtils.removeQuotes(str, getDbQuote()))) {
++                    if (KeywordsValidator.isSqlKeyword(TalendTextUtils.removeQuotes(str, getDbQuote()))
++                            || !MetadataToolHelper.isValidColumnName(TalendTextUtils.removeQuotes(str, getDbQuote()))) {
+                         noPkColumnSels.append(str);
+                     } else {
+                         noPkColumnSels.append(TalendTextUtils.removeQuotes(str, getDbQuote()));
+@@ -733,10 +740,12 @@ public class CDCManagerForTemplate extends CDCManager {
+      * @param tableName
+      * @return
+      */
++    @Override
+     public String getCdcModeIdFromTable(MetadataTable table) {
+         return table.getSourceName();
+     }
+ 
++    @Override
+     protected String getAllChangesSql(MetadataTable table) {
+         String cdcModeIdFromTable = getCdcModeIdFromTable(table);
+         if (cdcModeIdFromTable == null || "".equals(cdcModeIdFromTable)) {
+@@ -826,6 +835,7 @@ public class CDCManagerForTemplate extends CDCManager {
+         return false;
+     }
+ 
++    @Override
+     public String getSchemaForDB(DatabaseConnection conn) {
+         if (conn != null) {
+             return getTrueParamValue(conn, conn.getUiSchema());
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/MSSQLCDCManager.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/MSSQLCDCManager.java
+index 0f0a68a..550c179 100644
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/MSSQLCDCManager.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/MSSQLCDCManager.java
+@@ -61,12 +61,12 @@ public class MSSQLCDCManager extends CDCManagerForTemplate {
+ 
+         String var = "TRIGGER_INSERTED"; //$NON-NLS-1$
+         if (extVariables.contains(var)) {
+-            sql = sql.replaceAll(ExVariable.getVarCode(var), retrieveStr(pkList, EPropertyCDC.TMPInsertUpdateTable));//$NON-NLS-1$
++            sql = sql.replaceAll(ExVariable.getVarCode(var), retrieveStr(pkList, EPropertyCDC.TMPInsertUpdateTable));
+         }
+ 
+         var = "TRIGGER_DELETED"; //$NON-NLS-1$
+         if (extVariables.contains(var)) {
+-            sql = sql.replaceAll(ExVariable.getVarCode(var), retrieveStr(pkList, EPropertyCDC.TMPDeleteTable));//$NON-NLS-1$
++            sql = sql.replaceAll(ExVariable.getVarCode(var), retrieveStr(pkList, EPropertyCDC.TMPDeleteTable));
+         }
+         return sql;
+     }
+@@ -84,7 +84,7 @@ public class MSSQLCDCManager extends CDCManagerForTemplate {
+             if (k > 0) {
+                 exStr += ",  \n      ";//$NON-NLS-1$
+             }
+-            exStr = "\"" + property.getName() + "\"" + "." + pkList.get(k).toString();//$NON-NLS-1$//$NON-NLS-1$//$NON-NLS-1$
++            exStr += "\"" + property.getName() + "\"" + "." + pkList.get(k).toString();//$NON-NLS-1$
+ 
+         }
+         return exStr;

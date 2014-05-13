@@ -1,0 +1,119 @@
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SvnXmiResourceManager.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SvnXmiResourceManager.java
+index 3a5ee3c..3f3424b 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SvnXmiResourceManager.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SvnXmiResourceManager.java
+@@ -52,7 +52,8 @@ public class SvnXmiResourceManager extends XmiResourceManager {
+         this.svnHandler = svnHandler;
+     }
+ 
+-    private void mvResource(Resource resource, IPath path) throws PersistenceException {
++    @Override
++    public void moveResource(Resource resource, IPath path) throws PersistenceException {
+         IFile srcFile = URIHelper.getFile(resource.getURI());
+         IFile desFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+         svnHandler.move(srcFile, desFile);
+@@ -64,102 +65,10 @@ public class SvnXmiResourceManager extends XmiResourceManager {
+         }
+     }
+ 
+-    private Resource cpResource(Resource resource, IPath path) throws PersistenceException {
++    @Override
++    protected void copyResource(Resource resource, IPath path) throws PersistenceException {
+         IFile srcFile = URIHelper.getFile(resource.getURI());
+         IFile desFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+         svnHandler.copy(srcFile.getLocation().toOSString(), desFile, -1);
+-
+-        Resource newResource = null;
+-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+-        try {
+-            resource.save(out, null);
+-            newResource = new ResourceSetImpl().createResource(URIHelper.convert(path));
+-            ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+-            newResource.load(in, null);
+-        } catch (IOException e) {
+-            throw new PersistenceException(e);
+-        }
+-
+-        return newResource;
+-    }
+-
+-    @Override
+-    public void propagateFileName(Property lastVersionProperty, Property resourceProperty) throws PersistenceException {
+-        Item curItem = lastVersionProperty.getItem();
+-        if (!(curItem instanceof ProcessItem || curItem instanceof JobletProcessItem)) {
+-            super.propagateFileName(lastVersionProperty, resourceProperty);
+-            return;
+-        }
+-
+-        ResourceFilenameHelper.FileName fileNameTest = ResourceFilenameHelper.create(resourceProperty.eResource(),
+-                resourceProperty, lastVersionProperty);
+-        if (!ResourceFilenameHelper.mustChangeVersion(fileNameTest) && !ResourceFilenameHelper.mustChangeLabel(fileNameTest)) {
+-            return;
+-        }
+-
+-        List<Resource> affectedResources = getAffectedResources(resourceProperty);
+-        List<Resource> resourcesToSave = new ArrayList<Resource>();
+-        Property previousVersionProperty = null;
+-        IFile propertyFile = null;
+-
+-        for (Resource resource : affectedResources) {
+-            ResourceFilenameHelper.FileName fileName = ResourceFilenameHelper.create(resource, resourceProperty,
+-                    lastVersionProperty);
+-            if (ResourceFilenameHelper.mustChangeVersion(fileName)) {
+-                resourcesToSave.add(cpResource(resource, ResourceFilenameHelper.getExpectedFilePath(fileName, false)));
+-                IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(URIHelper.convert(resource.getURI()));
+-                if (isPropertyFile(file)) {
+-                    propertyFile = file;
+-                }
+-            } else if (ResourceFilenameHelper.mustChangeLabel(fileName)) {
+-                resourceProperty.setLabel(lastVersionProperty.getLabel());
+-                resourceProperty.setDisplayName(lastVersionProperty.getDisplayName());
+-                if (!ResourceFilenameHelper.hasSameNameButDifferentCase(fileName)) {
+-                    mvResource(resource, ResourceFilenameHelper.getExpectedFilePath(fileName, false));
+-                }
+-                resourcesToSave.add(resource);
+-            }
+-        }
+-
+-        if (propertyFile != null) {
+-            previousVersionProperty = loadProperty(propertyFile);
+-        }
+-
+-        if (previousVersionProperty != null) {
+-            List<Resource> previousVersionResources = getAffectedResources(previousVersionProperty);
+-            for (Resource resource : previousVersionResources) {
+-                FileName fileName = ResourceFilenameHelper.create(resource, previousVersionProperty, lastVersionProperty);
+-                if (ResourceFilenameHelper.mustChangeLabel(fileName)) {
+-                    IPath expectedFilePath = ResourceFilenameHelper.getExpectedFilePath(fileName, true);
+-                    previousVersionProperty.setLabel(lastVersionProperty.getLabel());
+-                    previousVersionProperty.setDisplayName(lastVersionProperty.getDisplayName());
+-                    if (!ResourceFilenameHelper.hasSameNameButDifferentCase(fileName)) {
+-                        mvResource(resource, expectedFilePath);
+-                    }
+-                }
+-                resourcesToSave.add(resource);
+-            }
+-            if (lastVersionProperty.getItem().getParent() instanceof FolderItem) {
+-                FolderItem folderItem = (FolderItem) lastVersionProperty.getItem().getParent();
+-                folderItem.getChildren().add(previousVersionProperty.getItem());
+-            }
+-        }
+-
+-        for (Resource resource : resourcesToSave) {
+-            if (ResourceFilenameHelper.mustChangeLabel(fileNameTest) && resource.getURI() != null
+-                    && resource.getURI().toString().endsWith(".screenshot")) {
+-                continue;
+-            }
+-            saveResource(resource);
+-        }
+-        if (!resourceProperty.equals(lastVersionProperty)) {
+-            // this version was only used to rename the file.
+-            // we can directly unload the resource to free the memory.
+-            Item item = resourceProperty.getItem();
+-            if (item.getParent() != null && item.getParent() instanceof FolderItem) {
+-                ((FolderItem) item.getParent()).getChildren().remove(item);
+-                item.setParent(null);
+-            }
+-        }
+     }
+ }

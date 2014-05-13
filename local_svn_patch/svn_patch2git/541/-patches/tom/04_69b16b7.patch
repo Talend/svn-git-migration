@@ -1,0 +1,1488 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/metadata/MetadataUtils.java b/org.talend.mdm.core/src/com/amalto/core/metadata/MetadataUtils.java
+index ff3ce3d..0a56d43 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/metadata/MetadataUtils.java
++++ b/org.talend.mdm.core/src/com/amalto/core/metadata/MetadataUtils.java
+@@ -1,16 +1,47 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.metadata;
+ 
++import java.math.BigDecimal;
++import java.sql.Timestamp;
++import java.text.DateFormat;
++import java.text.ParseException;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Date;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.LinkedList;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.Stack;
++import java.util.StringTokenizer;
++
++import javax.xml.XMLConstants;
++
++import org.apache.commons.lang.NotImplementedException;
++import org.apache.commons.lang.StringEscapeUtils;
++import org.apache.commons.lang.StringUtils;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.DefaultMetadataVisitor;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.MetadataRepository;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++import org.talend.mdm.commmon.metadata.TypeMetadata;
++import org.talend.mdm.commmon.metadata.Types;
++
+ import com.amalto.core.integrity.ForeignKeyIntegrity;
+ import com.amalto.core.query.user.DateConstant;
+ import com.amalto.core.query.user.DateTimeConstant;
+@@ -19,17 +50,6 @@ import com.amalto.core.storage.Storage;
+ import com.amalto.core.storage.hibernate.TypeMapping;
+ import com.amalto.core.storage.record.DataRecord;
+ import com.amalto.core.storage.record.metadata.UnsupportedDataRecordMetadata;
+-import org.apache.commons.lang.NotImplementedException;
+-import org.apache.commons.lang.StringEscapeUtils;
+-import org.apache.commons.lang.StringUtils;
+-import org.talend.mdm.commmon.metadata.*;
+-
+-import javax.xml.XMLConstants;
+-import java.math.BigDecimal;
+-import java.sql.Timestamp;
+-import java.text.DateFormat;
+-import java.text.ParseException;
+-import java.util.*;
+ 
+ public class MetadataUtils {
+ 
+@@ -44,9 +64,7 @@ public class MetadataUtils {
+      * the inverse operation of Page Rank).
+      * </p>
+      * <p>
+-     * Entity rank is computed with this algorithm:
+-     * ER(E) = N + d (ER(E1)/C(E1) + ... + ER(En)/C(En))
+-     * where:
++     * Entity rank is computed with this algorithm: ER(E) = N + d (ER(E1)/C(E1) + ... + ER(En)/C(En)) where:
+      * <ul>
+      * <li>ER(E) is the entity rank of E.</li>
+      * <li>N the number of entities in <code>repository</code></li>
+@@ -59,7 +77,7 @@ public class MetadataUtils {
+      * Code is expected to run in linear time (O(n+p) where n is the number of entities and p the number of references).
+      * Used memory is O(n^2) (due to a dependency ordering).
+      * </p>
+-     *
++     * 
+      * @param repository A {@link MetadataRepository} instance that contains entity types.
+      * @return A {@link Map} that maps a entity to its entity rank value.
+      */
+@@ -94,12 +112,14 @@ public class MetadataUtils {
+     }
+ 
+     /**
+-     * Similar to {@link #path(org.talend.mdm.commmon.metadata.ComplexTypeMetadata, org.talend.mdm.commmon.metadata.FieldMetadata, boolean)}
++     * Similar to
++     * {@link #path(org.talend.mdm.commmon.metadata.ComplexTypeMetadata, org.talend.mdm.commmon.metadata.FieldMetadata, boolean)}
+      * but will remain in entity boundaries (won't follow FK to other MDM entities).
+-     *
++     * 
+      * @param origin Point of entry in the metadata graph.
+      * @param target Field to look for as end of path.
+-     * @return A path <b>within</b> type <code>origin</code> to field <code>target</code>. Returns empty stack if no path could be found.
++     * @return A path <b>within</b> type <code>origin</code> to field <code>target</code>. Returns empty stack if no
++     * path could be found.
+      * @throws IllegalArgumentException If either <code>origin</code> or <code>path</code> is null.
+      */
+     public static List<FieldMetadata> path(ComplexTypeMetadata origin, FieldMetadata target) {
+@@ -108,7 +128,8 @@ public class MetadataUtils {
+ 
+     /**
+      * <p>
+-     * Find <b>a</b> path (<b>not necessarily the shortest</b>) from type <code>origin</code> to field <code>target</code>.
++     * Find <b>a</b> path (<b>not necessarily the shortest</b>) from type <code>origin</code> to field
++     * <code>target</code>.
+      * </p>
+      * <p>
+      * Method is expected to run in linear time, depending on:
+@@ -117,10 +138,11 @@ public class MetadataUtils {
+      * <li>Number of references fields accessible from <code>origin</code>.</li>
+      * </ul>
+      * </p>
+-     *
++     * 
+      * @param type Point of entry in the metadata graph.
+      * @param target Field to look for as end of path.
+-     * @return A path from type <code>origin</code> to field <code>target</code>. Returns empty list if no path could be found.
++     * @return A path from type <code>origin</code> to field <code>target</code>. Returns empty list if no path could be
++     * found.
+      * @throws IllegalArgumentException If either <code>origin</code> or <code>path</code> is null.
+      */
+     public static List<FieldMetadata> path(ComplexTypeMetadata type, FieldMetadata target, boolean includeReferences) {
+@@ -129,11 +151,8 @@ public class MetadataUtils {
+         return path;
+     }
+ 
+-    private static void _path(ComplexTypeMetadata type,
+-                              FieldMetadata target,
+-                              Stack<FieldMetadata> path,
+-                              Set<ComplexTypeMetadata> processedTypes,
+-                              boolean includeReferences) {
++    private static void _path(ComplexTypeMetadata type, FieldMetadata target, Stack<FieldMetadata> path,
++            Set<ComplexTypeMetadata> processedTypes, boolean includeReferences) {
+         // Various optimizations for very simple cases
+         if (type == null) {
+             throw new IllegalArgumentException("Origin can not be null");
+@@ -193,7 +212,7 @@ public class MetadataUtils {
+                     for (ComplexTypeMetadata subType : referencedType.getSubTypes()) {
+                         for (FieldMetadata field : subType.getFields()) {
+                             if (field.getDeclaringType() == subType) {
+-                                _path(subType, target, path,processedTypes,  true);
++                                _path(subType, target, path, processedTypes, true);
+                                 if (path.peek() == target) {
+                                     return;
+                                 }
+@@ -212,15 +231,19 @@ public class MetadataUtils {
+      * </p>
+      * <p>
+      * This is a rather expensive operation, so use this method only when needed. When you need only <b>a</b> path to
+-     * field <code>target</code>, prefer usage of {@link #path(org.talend.mdm.commmon.metadata.ComplexTypeMetadata, org.talend.mdm.commmon.metadata.FieldMetadata)}.
++     * field <code>target</code>, prefer usage of
++     * {@link #path(org.talend.mdm.commmon.metadata.ComplexTypeMetadata, org.talend.mdm.commmon.metadata.FieldMetadata)}
++     * .
+      * </p>
+      * <p>
+-     * This method follows references to other type <b>only</b> when type is not instantiable (see {@link org.talend.mdm.commmon.metadata.TypeMetadata#isInstantiable()}).
++     * This method follows references to other type <b>only</b> when type is not instantiable (see
++     * {@link org.talend.mdm.commmon.metadata.TypeMetadata#isInstantiable()}).
+      * </p>
+-     *
++     * 
+      * @param type Point of entry in the metadata graph.
+      * @param target Field to look for as end of path.
+-     * @return A path from type <code>origin</code> to field <code>target</code>. Returns empty list if no path could be found.
++     * @return A path from type <code>origin</code> to field <code>target</code>. Returns empty list if no path could be
++     * found.
+      * @throws IllegalArgumentException If either <code>origin</code> or <code>path</code> is null.
+      * @see #path(org.talend.mdm.commmon.metadata.ComplexTypeMetadata, org.talend.mdm.commmon.metadata.FieldMetadata)
+      */
+@@ -231,67 +254,65 @@ public class MetadataUtils {
+         return foundPaths;
+     }
+ 
+-    private static void _paths(ComplexTypeMetadata type,
+-                               FieldMetadata target,
+-                               Stack<FieldMetadata> currentPath,
+-                               Set<List<FieldMetadata>> foundPaths) {
+-            // Various optimizations for very simple cases
+-            if (type == null) {
+-                throw new IllegalArgumentException("Origin can not be null");
+-            }
+-            if (target == null) {
+-                throw new IllegalArgumentException("Target field can not be null");
+-            }
+-            if (Storage.PROJECTION_TYPE.equals(type.getName()) && type.hasField(target.getName())) {
+-                currentPath.push(type.getField(target.getName()));
+-            }
+-            //
+-            Collection<FieldMetadata> fields = type.getFields();
+-            for (FieldMetadata current : fields) {
+-                currentPath.push(current);
+-                if (current == target) {
+-                    foundPaths.add(new ArrayList<FieldMetadata>(currentPath));
++    private static void _paths(ComplexTypeMetadata type, FieldMetadata target, Stack<FieldMetadata> currentPath,
++            Set<List<FieldMetadata>> foundPaths) {
++        // Various optimizations for very simple cases
++        if (type == null) {
++            throw new IllegalArgumentException("Origin can not be null");
++        }
++        if (target == null) {
++            throw new IllegalArgumentException("Target field can not be null");
++        }
++        if (Storage.PROJECTION_TYPE.equals(type.getName()) && type.hasField(target.getName())) {
++            currentPath.push(type.getField(target.getName()));
++        }
++        //
++        Collection<FieldMetadata> fields = type.getFields();
++        for (FieldMetadata current : fields) {
++            currentPath.push(current);
++            if (current == target) {
++                foundPaths.add(new ArrayList<FieldMetadata>(currentPath));
++            }
++            if (current instanceof ContainedTypeFieldMetadata) {
++                ComplexTypeMetadata containedType = ((ContainedTypeFieldMetadata) current).getContainedType();
++                _paths(containedType, target, currentPath, foundPaths);
++                for (ComplexTypeMetadata subType : containedType.getSubTypes()) {
++                    for (FieldMetadata field : subType.getFields()) {
++                        if (field.getDeclaringType() == subType) {
++                            _paths(subType, target, currentPath, foundPaths);
++                        }
++                    }
+                 }
+-                if (current instanceof ContainedTypeFieldMetadata) {
+-                    ComplexTypeMetadata containedType = ((ContainedTypeFieldMetadata) current).getContainedType();
+-                    _paths(containedType, target, currentPath, foundPaths);
+-                    for (ComplexTypeMetadata subType : containedType.getSubTypes()) {
++            } else if (current instanceof ReferenceFieldMetadata) {
++                ComplexTypeMetadata referencedType = ((ReferenceFieldMetadata) current).getReferencedType();
++                if (!referencedType.isInstantiable()) {
++                    _paths(referencedType, target, currentPath, foundPaths);
++                    for (ComplexTypeMetadata subType : referencedType.getSubTypes()) {
+                         for (FieldMetadata field : subType.getFields()) {
+                             if (field.getDeclaringType() == subType) {
+                                 _paths(subType, target, currentPath, foundPaths);
+                             }
+                         }
+                     }
+-                } else if (current instanceof ReferenceFieldMetadata) {
+-                    ComplexTypeMetadata referencedType = ((ReferenceFieldMetadata) current).getReferencedType();
+-                    if (!referencedType.isInstantiable()) {
+-                        _paths(referencedType, target, currentPath, foundPaths);
+-                        for (ComplexTypeMetadata subType : referencedType.getSubTypes()) {
+-                            for (FieldMetadata field : subType.getFields()) {
+-                                if (field.getDeclaringType() == subType) {
+-                                    _paths(subType, target, currentPath, foundPaths);
+-                                }
+-                            }
+-                        }
+-                    }
+                 }
+-                currentPath.pop();
+             }
++            currentPath.pop();
+         }
++    }
+ 
+     /**
+-     * Creates a value from <code>dataAsString</code>. Type and/or format of the returned value depends on <code>field</code>.
+-     * For instance, calling this method with {@link String} with value "0" and a field typed as integer returns {@link Integer}
+-     * instance with value 0.
+-     *
++     * Creates a value from <code>dataAsString</code>. Type and/or format of the returned value depends on
++     * <code>field</code>. For instance, calling this method with {@link String} with value "0" and a field typed as
++     * integer returns {@link Integer} instance with value 0.
++     * 
+      * @param dataAsString A {@link String} containing content to initialize a value.
+-     * @param field        A {@link FieldMetadata} that describes type information about the field.
+-     * @return A {@link Object} value that has correct type according to <code>field</code>. Returns <code>null</code> if
+-     *         field is instance of {@link ContainedTypeFieldMetadata} (this type of field isn't expected to have values).
+-     *         Also returns <code>null</code> is parameter <code>dataAsString</code> is null <b>OR</b> if <code>dataAsString</code>
+-     *         is empty string.
+-     * @throws RuntimeException Throws sub classes of {@link RuntimeException} if <code>dataAsString</code>  format does
+-     *                          not match field's type.
++     * @param field A {@link FieldMetadata} that describes type information about the field.
++     * @return A {@link Object} value that has correct type according to <code>field</code>. Returns <code>null</code>
++     * if field is instance of {@link ContainedTypeFieldMetadata} (this type of field isn't expected to have values).
++     * Also returns <code>null</code> is parameter <code>dataAsString</code> is null <b>OR</b> if
++     * <code>dataAsString</code> is empty string.
++     * @throws RuntimeException Throws sub classes of {@link RuntimeException} if <code>dataAsString</code> format does
++     * not match field's type.
+      */
+     public static Object convert(String dataAsString, FieldMetadata field) {
+         return convert(dataAsString, field.getType());
+@@ -311,19 +332,19 @@ public class MetadataUtils {
+                 StringBuilder builder = null;
+                 for (char currentChar : chars) {
+                     switch (currentChar) {
+-                        case '[':
+-                            builder = new StringBuilder();
+-                            break;
+-                        case ']':
+-                            if (builder != null) {
+-                                ids.add(builder.toString());
+-                            }
+-                            break;
+-                        default:
+-                            if (builder != null) {
+-                                builder.append(currentChar);
+-                            }
+-                            break;
++                    case '[':
++                        builder = new StringBuilder();
++                        break;
++                    case ']':
++                        if (builder != null) {
++                            ids.add(builder.toString());
++                        }
++                        break;
++                    default:
++                        if (builder != null) {
++                            builder.append(currentChar);
++                        }
++                        break;
+                     }
+                 }
+             } else {
+@@ -339,7 +360,8 @@ public class MetadataUtils {
+             DataRecord referencedRecord = new DataRecord(actualComplexType, UnsupportedDataRecordMetadata.INSTANCE);
+             Collection<FieldMetadata> keyFields = actualComplexType.getKeyFields();
+             if (ids.size() != keyFields.size()) {
+-                throw new IllegalStateException("Type '" + actualType.getName() + "' expects " + keyFields.size() + " keys values, but got " + ids.size() + ".");
++                throw new IllegalStateException("Type '" + actualType.getName() + "' expects " + keyFields.size()
++                        + " keys values, but got " + ids.size() + ".");
+             }
+             Iterator<FieldMetadata> keyIterator = keyFields.iterator();
+             for (String id : ids) {
+@@ -358,7 +380,8 @@ public class MetadataUtils {
+             }
+ 
+             TypeMetadata type = field.getType();
+-            if (!(field instanceof ContainedTypeFieldMetadata)) {  // Contained (anonymous types) values can't have values
++            if (!(field instanceof ContainedTypeFieldMetadata)) { // Contained (anonymous types) values can't have
++                                                                  // values
+                 try {
+                     return convert(xmlData, type);
+                 } catch (Exception e) {
+@@ -371,15 +394,15 @@ public class MetadataUtils {
+     }
+ 
+     /**
+-     * Returns the top level type for <code>type</code> parameter: this method returns the type before <i>anyType</i>
+-     * in type hierarchy. This does not apply to types declared in {@link XMLConstants#W3C_XML_SCHEMA_NS_URI}.
++     * Returns the top level type for <code>type</code> parameter: this method returns the type before <i>anyType</i> in
++     * type hierarchy. This does not apply to types declared in {@link XMLConstants#W3C_XML_SCHEMA_NS_URI}.
+      * <ul>
+      * <li>In an MDM entity B inherits from A, getSuperConcreteType(B) returns A.</li>
+      * <li>If a simple type LimitedString extends xsd:string, getSuperConcreteType(LimitedString) returns xsd:string.</li>
+      * <li>getSuperConcreteType(xsd:long) returns xsd:long (even if xsd:long extends xsd:decimal).</li>
+      * <li>If the type does not have any super type, this method returns the <code>type</code> parameter.</li>
+      * </ul>
+-     *
++     * 
+      * @param type A non null type that may have super types.
+      * @return The higher type in inheritance tree before <i>anyType</i>.
+      */
+@@ -393,9 +416,8 @@ public class MetadataUtils {
+             while (!type.getSuperTypes().isEmpty()) {
+                 TypeMetadata superType = type.getSuperTypes().iterator().next();
+                 if (XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(superType.getNamespace())
+-                        && (Types.ANY_TYPE.equals(superType.getName())
+-                        || Types.ANY_SIMPLE_TYPE.equals(superType.getName())
+-                        || Types.DECIMAL.equals(superType.getName()))) {
++                        && (Types.ANY_TYPE.equals(superType.getName()) || Types.ANY_SIMPLE_TYPE.equals(superType.getName()) || Types.DECIMAL
++                                .equals(superType.getName()))) {
+                     break;
+                 }
+                 type = superType;
+@@ -406,8 +428,8 @@ public class MetadataUtils {
+ 
+     public static Object convert(String dataAsString, TypeMetadata type) {
+         String typeName = type.getName();
+-        if (dataAsString == null || 
+-                (dataAsString.isEmpty() && !Types.STRING.equals(typeName) && !typeName.contains("limitedString"))) { //$NON-NLS-1$
++        if (dataAsString == null
++                || (dataAsString.isEmpty() && !Types.STRING.equals(typeName) && !typeName.contains("limitedString"))) { //$NON-NLS-1$
+             return null;
+         } else {
+             return convert(dataAsString, getSuperConcreteType(type).getName());
+@@ -418,12 +440,8 @@ public class MetadataUtils {
+ 
+         if (Types.STRING.equals(type)) {
+             return dataAsString;
+-        } else if (Types.INTEGER.equals(type)
+-                || Types.POSITIVE_INTEGER.equals(type)
+-                || Types.NEGATIVE_INTEGER.equals(type)
+-                || Types.NON_NEGATIVE_INTEGER.equals(type)
+-                || Types.NON_POSITIVE_INTEGER.equals(type)
+-                || Types.INT.equals(type)
++        } else if (Types.INTEGER.equals(type) || Types.POSITIVE_INTEGER.equals(type) || Types.NEGATIVE_INTEGER.equals(type)
++                || Types.NON_NEGATIVE_INTEGER.equals(type) || Types.NON_POSITIVE_INTEGER.equals(type) || Types.INT.equals(type)
+                 || Types.UNSIGNED_INT.equals(type)) {
+             return Integer.parseInt(dataAsString);
+         } else if (Types.DATE.equals(type)) {
+@@ -502,10 +520,10 @@ public class MetadataUtils {
+ 
+     /**
+      * Returns the corresponding Java type for the {@link TypeMetadata} type.
+-     *
++     * 
+      * @param metadata A {@link TypeMetadata} instance.
+      * @return The name of Java class for the <code>metadata</code> argument. Returned string might directly be used for
+-     *         a {@link Class#forName(String)} call.
++     * a {@link Class#forName(String)} call.
+      */
+     public static String getJavaType(TypeMetadata metadata) {
+         String sqlType = metadata.getData(TypeMapping.SQL_TYPE);
+@@ -519,21 +537,15 @@ public class MetadataUtils {
+             return "java.lang.String"; //$NON-NLS-1$
+         } else if (Types.ANY_URI.equals(type)) {
+             return "java.lang.String"; //$NON-NLS-1$
+-        } else if (Types.INT.equals(type)
+-                || Types.INTEGER.equals(type)
+-                || Types.POSITIVE_INTEGER.equals(type)
+-                || Types.NON_POSITIVE_INTEGER.equals(type)
+-                || Types.NON_NEGATIVE_INTEGER.equals(type)
+-                || Types.NEGATIVE_INTEGER.equals(type)
+-                || Types.UNSIGNED_INT.equals(type)) {
++        } else if (Types.INT.equals(type) || Types.INTEGER.equals(type) || Types.POSITIVE_INTEGER.equals(type)
++                || Types.NON_POSITIVE_INTEGER.equals(type) || Types.NON_NEGATIVE_INTEGER.equals(type)
++                || Types.NEGATIVE_INTEGER.equals(type) || Types.UNSIGNED_INT.equals(type)) {
+             return "java.lang.Integer"; //$NON-NLS-1$
+         } else if (Types.BOOLEAN.equals(type)) {
+             return "java.lang.Boolean"; //$NON-NLS-1$
+         } else if (Types.DECIMAL.equals(type)) {
+             return "java.math.BigDecimal"; //$NON-NLS-1$
+-        } else if (Types.DATE.equals(type)
+-                || Types.DATETIME.equals(type)
+-                || Types.TIME.equals(type)
++        } else if (Types.DATE.equals(type) || Types.DATETIME.equals(type) || Types.TIME.equals(type)
+                 || Types.DURATION.equals(type)) {
+             return "java.sql.Timestamp"; //$NON-NLS-1$
+         } else if (Types.UNSIGNED_SHORT.equals(type) || Types.SHORT.equals(type)) {
+@@ -600,12 +612,12 @@ public class MetadataUtils {
+      * <p>
+      * This method is thread safe.
+      * </p>
+-     *
++     * 
+      * @param repository The repository that contains entity types to sort.
+-     * @return A sorted list of {@link ComplexTypeMetadata} types. First type of list is a type that has no dependency on
+-     *         any other type of the list.
+-     * @throws IllegalArgumentException If repository contains types that creates a cyclic dependency. Error message contains
+-     *                                  information on where the cycle is.
++     * @return A sorted list of {@link ComplexTypeMetadata} types. First type of list is a type that has no dependency
++     * on any other type of the list.
++     * @throws IllegalArgumentException If repository contains types that creates a cyclic dependency. Error message
++     * contains information on where the cycle is.
+      */
+     public static List<ComplexTypeMetadata> sortTypes(MetadataRepository repository) {
+         ArrayList<ComplexTypeMetadata> types = new ArrayList<ComplexTypeMetadata>(repository.getUserComplexTypes());
+@@ -626,22 +638,21 @@ public class MetadataUtils {
+      * <p>
+      * This method is thread safe.
+      * </p>
+-     *
++     * 
+      * @param repository This is used to display information in case of cycle.
+-     * @param types The list of types to be sorted. This list should provide a transitive closure of types (all references
+-     *              to other types must be satisfied in this list), if it isn't the unresolved FK will be ignored.
+-     * @return A sorted list of {@link ComplexTypeMetadata} types. First type of list is a type that has no dependency on
+-     *         any other type of the list.
+-     * @throws IllegalArgumentException If repository contains types that creates a cyclic dependency. Error message contains
+-     *                                  information on where the cycle is.
++     * @param types The list of types to be sorted. This list should provide a transitive closure of types (all
++     * references to other types must be satisfied in this list), if it isn't the unresolved FK will be ignored.
++     * @return A sorted list of {@link ComplexTypeMetadata} types. First type of list is a type that has no dependency
++     * on any other type of the list.
++     * @throws IllegalArgumentException If repository contains types that creates a cyclic dependency. Error message
++     * contains information on where the cycle is.
+      */
+     public static List<ComplexTypeMetadata> sortTypes(MetadataRepository repository, List<ComplexTypeMetadata> types) {
+         return _sortTypes(repository, true, types);
+     }
+ 
+-    private static List<ComplexTypeMetadata> _sortTypes(MetadataRepository repository,
+-                                                        final boolean sortAllTypes,
+-                                                        final List<ComplexTypeMetadata> types) {
++    private static List<ComplexTypeMetadata> _sortTypes(MetadataRepository repository, final boolean sortAllTypes,
++            final List<ComplexTypeMetadata> types) {
+         /*
+          * Compute additional data for topological sorting
+          */
+@@ -649,6 +660,7 @@ public class MetadataUtils {
+         byte[][] dependencyGraph = new byte[typeNumber][typeNumber];
+         for (final ComplexTypeMetadata type : types) {
+             dependencyGraph[getId(type, types)] = type.accept(new DefaultMetadataVisitor<byte[]>() {
++
+                 Set<TypeMetadata> processedTypes = new HashSet<TypeMetadata>();
+ 
+                 byte[] lineContent = new byte[typeNumber]; // Stores dependencies of current type
+@@ -698,7 +710,8 @@ public class MetadataUtils {
+                 @Override
+                 public byte[] visit(ReferenceFieldMetadata referenceField) {
+                     ComplexTypeMetadata referencedType = referenceField.getReferencedType();
+-                    if (!type.equals(referencedType) && referenceField.isFKIntegrity()) { // Don't count a dependency to itself as a dependency.
++                    if (!type.equals(referencedType) && referenceField.isFKIntegrity()) { // Don't count a dependency to
++                                                                                          // itself as a dependency.
+                         if (sortAllTypes || referencedType.isInstantiable()) {
+                             if (types.contains(referencedType)) {
+                                 lineContent[getId(referencedType, types)]++;
+@@ -714,9 +727,9 @@ public class MetadataUtils {
+             });
+         }
+         /*
+-        * TOPOLOGICAL SORTING
+-        * See "Kahn, A. B. (1962), "Topological sorting of large networks", Communications of the ACM"
+-        */
++         * TOPOLOGICAL SORTING See "Kahn, A. B. (1962), "Topological sorting of large
++         * networks", Communications of the ACM"
++         */
+         List<ComplexTypeMetadata> sortedTypes = new LinkedList<ComplexTypeMetadata>();
+         Set<ComplexTypeMetadata> noIncomingEdges = new HashSet<ComplexTypeMetadata>();
+         int lineNumber = 0;
+@@ -772,7 +785,8 @@ public class MetadataUtils {
+                         }
+                     } while (currentLineNumber != lineNumber);
+                     if (dependencyPath.size() > 1) {
+-                        dependencyPath.add(getType(types, lineNumber)); // Include cycle start to get a better exception message.
++                        dependencyPath.add(getType(types, lineNumber)); // Include cycle start to get a better exception
++                                                                        // message.
+                         cycles.add(dependencyPath);
+                     }
+                 }
+@@ -792,7 +806,8 @@ public class MetadataUtils {
+                         if (dependencyPathIterator.hasNext()) {
+                             cyclesAsString.append(" -> "); //$NON-NLS-1$
+                         } else if (previous != null) {
+-                            Set<ReferenceFieldMetadata> inboundReferences = repository.accept(new ForeignKeyIntegrity(currentType));
++                            Set<ReferenceFieldMetadata> inboundReferences = repository
++                                    .accept(new ForeignKeyIntegrity(currentType));
+                             cyclesAsString.append(" ( possible fields: ");
+                             for (ReferenceFieldMetadata inboundReference : inboundReferences) {
+                                 String xPath = inboundReference.getPath();
+@@ -850,7 +865,8 @@ public class MetadataUtils {
+         if (field instanceof ReferenceFieldMetadata) {
+             return toString(o);
+         }
+-        String typeName = field.getType().getName();
++        TypeMetadata type = MetadataUtils.getSuperConcreteType(field.getType());
++        String typeName = type.getName();
+         if (Types.DATE.equals(typeName)) {
+             synchronized (DateConstant.DATE_FORMAT) {
+                 try {
+@@ -903,4 +919,3 @@ public class MetadataUtils {
+         return StringEscapeUtils.escapeXml(String.valueOf(value));
+     }
+ }
+-
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/FullTextResultsWriter.java b/org.talend.mdm.core/src/com/amalto/core/storage/FullTextResultsWriter.java
+index ba915a6..ae7d7a1 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/FullTextResultsWriter.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/FullTextResultsWriter.java
+@@ -1,22 +1,15 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage;
+ 
+-import com.amalto.core.storage.record.DataRecord;
+-import com.amalto.core.storage.record.DataRecordWriter;
+-import org.apache.commons.lang.StringEscapeUtils;
+-import org.apache.commons.lang.StringUtils;
+-import org.talend.mdm.commmon.metadata.*;
+-
+ import java.io.IOException;
+ import java.io.OutputStream;
+ import java.io.OutputStreamWriter;
+@@ -26,18 +19,34 @@ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.List;
+ 
++import org.apache.commons.lang.StringEscapeUtils;
++import org.apache.commons.lang.StringUtils;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.DefaultMetadataVisitor;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeFieldMetadata;
++
++import com.amalto.core.metadata.MetadataUtils;
++import com.amalto.core.storage.record.DataRecord;
++import com.amalto.core.storage.record.DataRecordWriter;
++
+ public class FullTextResultsWriter implements DataRecordWriter {
++
+     private final String keyword;
+ 
+     public FullTextResultsWriter(String keyword) {
+         this.keyword = keyword;
+     }
+ 
++    @Override
+     public void write(DataRecord record, OutputStream output) throws IOException {
+         OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8"); //$NON-NLS-1$
+         write(record, writer);
+     }
+ 
++    @Override
+     public void write(DataRecord record, Writer writer) throws IOException {
+         Collection<FieldMetadata> keyFields = record.getType().getKeyFields();
+ 
+@@ -46,7 +55,7 @@ public class FullTextResultsWriter implements DataRecordWriter {
+             {
+                 writer.write("<ids>"); //$NON-NLS-1$
+                 for (FieldMetadata keyField : keyFields) {
+-                    writer.write("<id>" + StringEscapeUtils.escapeXml(String.valueOf(record.get(keyField))) + "</id>"); //$NON-NLS-1$ //$NON-NLS-2$
++                    writer.write("<id>" + StringEscapeUtils.escapeXml(MetadataUtils.toString(record.get(keyField), keyField)) + "</id>"); //$NON-NLS-1$ //$NON-NLS-2$
+                 }
+                 writer.write("</ids>"); //$NON-NLS-1$
+             }
+@@ -54,7 +63,7 @@ public class FullTextResultsWriter implements DataRecordWriter {
+                 writer.write("<title>"); //$NON-NLS-1$
+                 writer.write(record.getType().getName());
+                 for (FieldMetadata keyField : keyFields) {
+-                    writer.write(" " + StringEscapeUtils.escapeXml(String.valueOf(record.get(keyField)))); //$NON-NLS-1$
++                    writer.write(" " + StringEscapeUtils.escapeXml(MetadataUtils.toString(record.get(keyField), keyField))); //$NON-NLS-1$
+                 }
+                 writer.write("</title>"); //$NON-NLS-1$
+             }
+@@ -82,7 +91,11 @@ public class FullTextResultsWriter implements DataRecordWriter {
+ 
+         private final DataRecord record;
+ 
+-        private final String[] snippetWords = new String[]{StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY}; // Prevent "null" values in results
++        private final String[] snippetWords = new String[] { StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY }; // Prevent
++                                                                                                                        // "null"
++                                                                                                                        // values
++                                                                                                                        // in
++                                                                                                                        // results
+ 
+         boolean hasMetKeyword;
+ 
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ClassCreator.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ClassCreator.java
+index 672a345..8891558 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ClassCreator.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ClassCreator.java
+@@ -1,33 +1,61 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import com.amalto.core.metadata.MetadataUtils;
+-
+-import org.apache.log4j.Logger;
+-import org.apache.lucene.document.NumericField;
+-import org.talend.mdm.commmon.metadata.*;
+-import com.amalto.core.storage.Storage;
+-import javassist.*;
++import java.io.Serializable;
++import java.util.Collection;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Set;
++import java.util.Stack;
++
++import javassist.CannotCompileException;
++import javassist.ClassPool;
++import javassist.CtClass;
++import javassist.CtConstructor;
++import javassist.CtField;
++import javassist.CtMethod;
++import javassist.CtNewConstructor;
++import javassist.CtNewMethod;
++import javassist.LoaderClassPath;
++import javassist.Modifier;
++import javassist.NotFoundException;
+ import javassist.bytecode.AnnotationsAttribute;
+ import javassist.bytecode.ClassFile;
+ import javassist.bytecode.ConstPool;
+ import javassist.bytecode.annotation.Annotation;
+ import javassist.bytecode.annotation.AnnotationMemberValue;
+ import javassist.bytecode.annotation.ClassMemberValue;
+-import org.hibernate.search.annotations.*;
+ 
+-import java.io.Serializable;
+-import java.util.*;
++import org.apache.lucene.document.NumericField;
++import org.hibernate.search.annotations.DocumentId;
++import org.hibernate.search.annotations.Field;
++import org.hibernate.search.annotations.FieldBridge;
++import org.hibernate.search.annotations.Indexed;
++import org.hibernate.search.annotations.ProvidedId;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.DefaultMetadataVisitor;
++import org.talend.mdm.commmon.metadata.EnumerationFieldMetadata;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.MetadataRepository;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.TypeMetadata;
++import org.talend.mdm.commmon.metadata.Types;
++
++import com.amalto.core.metadata.MetadataUtils;
++import com.amalto.core.storage.Storage;
+ 
+ class ClassCreator extends DefaultMetadataVisitor<Void> {
+ 
+@@ -93,14 +121,15 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+             CtClass newClass = classPool.makeClass(getClassName(typeName));
+             CtClass hibernateClassWrapper = classPool.get(Wrapper.class.getName());
+             CtClass serializable = classPool.get(Serializable.class.getName());
+-            newClass.setInterfaces(new CtClass[]{hibernateClassWrapper, serializable});
++            newClass.setInterfaces(new CtClass[] { hibernateClassWrapper, serializable });
+             ClassFile classFile = newClass.getClassFile();
+             newClass.setModifiers(Modifier.PUBLIC);
+ 
+             // Adds super type
+             Collection<TypeMetadata> superTypes = complexType.getSuperTypes();
+             if (superTypes.size() > 1) {
+-                throw new IllegalArgumentException("Cannot handle multiple inheritance (type '" + complexType.getName() + "' has " + superTypes.size() + " super types).");
++                throw new IllegalArgumentException("Cannot handle multiple inheritance (type '" + complexType.getName()
++                        + "' has " + superTypes.size() + " super types).");
+             }
+             Iterator<TypeMetadata> superTypesIterator = superTypes.iterator();
+             if (superTypesIterator.hasNext()) {
+@@ -123,7 +152,7 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+             if (keyFields.size() > 1) {
+                 String idClassName = getClassName(typeName) + "_ID"; //$NON-NLS-1$
+                 CtClass newIdClass = classPool.makeClass(idClassName);
+-                newIdClass.setInterfaces(new CtClass[]{serializable});
++                newIdClass.setInterfaces(new CtClass[] { serializable });
+ 
+                 classCreationStack.push(newIdClass);
+                 {
+@@ -137,7 +166,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+                 Iterator<FieldMetadata> keyFieldIterator = keyFields.iterator();
+                 while (keyFieldIterator.hasNext()) {
+                     FieldMetadata currentKeyField = keyFieldIterator.next();
+-                    initConstructorBody.append(MetadataUtils.getJavaType(currentKeyField.getType())).append(' ').append(currentKeyField.getName());
++                    initConstructorBody.append(MetadataUtils.getJavaType(currentKeyField.getType())).append(' ')
++                            .append(currentKeyField.getName());
+                     if (keyFieldIterator.hasNext()) {
+                         initConstructorBody.append(", "); //$NON-NLS-1$
+                     }
+@@ -145,7 +175,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+                 initConstructorBody.append(')');
+                 initConstructorBody.append('{');
+                 for (FieldMetadata keyField : keyFields) {
+-                    initConstructorBody.append("this.").append(keyField.getName()).append('=').append(keyField.getName()).append(";\n"); //$NON-NLS-1$ //$NON-NLS-2$
++                    initConstructorBody
++                            .append("this.").append(keyField.getName()).append('=').append(keyField.getName()).append(";\n"); //$NON-NLS-1$ //$NON-NLS-2$
+                 }
+                 initConstructorBody.append('}');
+                 CtConstructor initConstructor = CtNewConstructor.make(initConstructorBody.toString(), newIdClass);
+@@ -208,7 +239,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+                 setFieldsMethodBody.append("if(\"").append(fieldName).append("\".equals(name)) {\n"); //$NON-NLS-1$ //$NON-NLS-2$
+                 String setterName = "set" + fieldName; //$NON-NLS-1$
+                 CtMethod setterMethod = newClass.getDeclaredMethod(setterName);
+-                setFieldsMethodBody.append("\t").append(setterName).append("((").append(setterMethod.getParameterTypes()[0].getName()).append(") value);\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
++                setFieldsMethodBody
++                        .append("\t").append(setterName).append("((").append(setterMethod.getParameterTypes()[0].getName()).append(") value);\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                 setFieldsMethodBody.append("}\n"); //$NON-NLS-1$
+ 
+                 if (fields.hasNext()) {
+@@ -275,7 +307,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+             equalsMethodBody.append("public boolean equals(Object o) {"); //$NON-NLS-1$
+             equalsMethodBody.append("if(o == null) return false;");
+             equalsMethodBody.append("if(!o.getClass().equals(this.getClass())) return false;");
+-            equalsMethodBody.append(Wrapper.class.getName()).append(" wrapper = (").append(Wrapper.class.getName()).append(") o;");
++            equalsMethodBody.append(Wrapper.class.getName()).append(" wrapper = (").append(Wrapper.class.getName())
++                    .append(") o;");
+             equalsMethodBody.append("Object value;");
+             for (FieldMetadata keyField : keyFields) {
+                 equalsMethodBody.append("value = wrapper.get(\"").append(keyField.getName()).append("\");");
+@@ -304,7 +337,7 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+ 
+     public static String getClassName(String typeName) {
+         if (typeName.charAt(0) >= 'a') {
+-            typeName = (char)( typeName.charAt(0) + ('A' - 'a')) + typeName.substring(1);
++            typeName = (char) (typeName.charAt(0) + ('A' - 'a')) + typeName.substring(1);
+         }
+         return PACKAGE_PREFIX + typeName;
+     }
+@@ -324,7 +357,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+         return CtNewMethod.make(setTimeStampMethodBody.toString(), newClass);
+     }
+ 
+-    private CtMethod createFixedFieldGetter(CtClass newClass, String fixedFieldName, String methodName) throws CannotCompileException {
++    private CtMethod createFixedFieldGetter(CtClass newClass, String fixedFieldName, String methodName)
++            throws CannotCompileException {
+         StringBuilder getTimeStampMethodBody = new StringBuilder();
+         getTimeStampMethodBody.append("public long ").append(methodName).append("() {"); //$NON-NLS-1$ //$NON-NLS-2$
+         getTimeStampMethodBody.append("Long longObject = get").append(fixedFieldName).append("();"); //$NON-NLS-1$ //$NON-NLS-2$
+@@ -350,7 +384,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+             addNewField(referenceField.getName(), referenceField.isMany(), fieldType, currentClass);
+             return super.visit(referenceField);
+         } catch (Exception e) {
+-            throw new RuntimeException("Error during processing of reference field '" + referenceField.getName() + "' of type '" + referenceField.getContainingType().getName() + "'", e);
++            throw new RuntimeException("Error during processing of reference field '" + referenceField.getName() + "' of type '"
++                    + referenceField.getContainingType().getName() + "'", e);
+         }
+     }
+ 
+@@ -395,13 +430,16 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+             CtField field = addNewField(metadata.getName(), metadata.isMany(), fieldType, currentClass);
+             if (!currentClass.getName().endsWith("_ID")) { //$NON-NLS-1$
+                 ConstPool cp = currentClassFile.getConstPool();
+-                AnnotationsAttribute annotations = (AnnotationsAttribute) field.getFieldInfo().getAttribute(AnnotationsAttribute.visibleTag);
++                AnnotationsAttribute annotations = (AnnotationsAttribute) field.getFieldInfo().getAttribute(
++                        AnnotationsAttribute.visibleTag);
+                 if (annotations == null) {
+                     annotations = new AnnotationsAttribute(cp, AnnotationsAttribute.visibleTag);
+                     field.getFieldInfo().addAttribute(annotations);
+                 }
+                 // Adds "DocumentId" annotation for Hibernate search
+-                if (metadata.getContainingType().getSuperTypes().isEmpty()) { // Do this if key field is declared in containing type (DocumentId annotation is inherited).
++                if (metadata.getContainingType().getSuperTypes().isEmpty()) { // Do this if key field is declared in
++                                                                              // containing type (DocumentId annotation
++                                                                              // is inherited).
+                     if (metadata.getContainingType().getKeyFields().size() == 1) {
+                         if (metadata.isKey()) {
+                             Annotation docIdAnnotation = new Annotation(DocumentId.class.getName(), cp);
+@@ -414,7 +452,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+                             Annotation fieldBridge = new Annotation(FieldBridge.class.getName(), cp);
+                             fieldBridge.addMemberValue("impl", new ClassMemberValue(CompositeIdBridge.class.getName(), cp)); //$NON-NLS-1$
+                             providedId.addMemberValue("bridge", new AnnotationMemberValue(fieldBridge, cp)); //$NON-NLS-1$
+-                            AnnotationsAttribute attribute = (AnnotationsAttribute) currentClassFile.getAttribute(AnnotationsAttribute.visibleTag);
++                            AnnotationsAttribute attribute = (AnnotationsAttribute) currentClassFile
++                                    .getAttribute(AnnotationsAttribute.visibleTag);
+                             attribute.addAnnotation(providedId);
+                             classIndexed.add(currentClass);
+                         }
+@@ -430,19 +469,17 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private SearchIndexHandler getHandler(FieldMetadata metadata) {
+-        if (metadata.getType().getData(TypeMapping.SQL_TYPE) != null) {
++        TypeMetadata type = metadata.getType();
++        if (type.getData(TypeMapping.SQL_TYPE) != null) {
+             // Don't index fields where SQL type was forced.
+             return new NotIndexedHandler();
+         }
+-        boolean validType = !(Types.DATE.equals(metadata.getType().getName())
+-                || Types.DATETIME.equals(metadata.getType().getName())
+-                || Types.TIME.equals(metadata.getType().getName())
+-                || Types.DURATION.equals(metadata.getType().getName())
+-                || Types.BYTE.equals(metadata.getType().getName())
+-                || Types.UNSIGNED_BYTE.equals(metadata.getType().getName()));
++        type = MetadataUtils.getSuperConcreteType(type);
++        boolean validType = !(Types.DATE.equals(type.getName()) || Types.DATETIME.equals(type.getName())
++                || Types.TIME.equals(type.getName()) || Types.DURATION.equals(type.getName())
++                || Types.BYTE.equals(type.getName()) || Types.UNSIGNED_BYTE.equals(type.getName()));
+         if (!metadata.isMany() && validType) {
+-            if (Types.INTEGER.equals(metadata.getType().getName())
+-                    || Types.DOUBLE.equals(metadata.getType().getName())) {
++            if (Types.INTEGER.equals(type.getName()) || Types.DOUBLE.equals(type.getName())) {
+                 return new NumericSearchIndexHandler();
+             } else {
+                 return new BasicSearchIndexHandler();
+@@ -455,10 +492,13 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private interface SearchIndexHandler {
++
+         void handle(AnnotationsAttribute annotations, ConstPool pool);
+     }
+ 
+     private static class NumericSearchIndexHandler implements SearchIndexHandler {
++
++        @Override
+         public void handle(AnnotationsAttribute annotations, ConstPool pool) {
+             Annotation fieldAnnotation = new Annotation(NumericField.class.getName(), pool);
+             annotations.addAnnotation(fieldAnnotation);
+@@ -466,6 +506,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private static class BasicSearchIndexHandler implements SearchIndexHandler {
++
++        @Override
+         public void handle(AnnotationsAttribute annotations, ConstPool pool) {
+             Annotation fieldAnnotation = new Annotation(Field.class.getName(), pool);
+             annotations.addAnnotation(fieldAnnotation);
+@@ -473,6 +515,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private static class ToStringIndexHandler implements SearchIndexHandler {
++
++        @Override
+         public void handle(AnnotationsAttribute annotations, ConstPool pool) {
+             Annotation fieldAnnotation = new Annotation(Field.class.getName(), pool);
+             Annotation fieldBridge = new Annotation(FieldBridge.class.getName(), pool);
+@@ -483,6 +527,8 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private static class ListFieldIndexHandler implements SearchIndexHandler {
++
++        @Override
+         public void handle(AnnotationsAttribute annotations, ConstPool pool) {
+             Annotation fieldAnnotation = new Annotation(Field.class.getName(), pool);
+             Annotation fieldBridge = new Annotation(FieldBridge.class.getName(), pool);
+@@ -493,6 +539,7 @@ class ClassCreator extends DefaultMetadataVisitor<Void> {
+     }
+ 
+     private static class NotIndexedHandler implements SearchIndexHandler {
++
+         @Override
+         public void handle(AnnotationsAttribute annotations, ConstPool pool) {
+             Annotation fieldAnnotation = new Annotation(Field.class.getName(), pool);
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
+index 7546ee0..96ea0c5 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
+@@ -1,30 +1,56 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.hibernate;
+ 
+-import com.amalto.core.query.user.*;
+-import com.amalto.core.query.user.metadata.*;
+-import com.amalto.core.storage.Storage;
+-import com.amalto.core.storage.record.DataRecord;
+-import com.amalto.core.storage.record.metadata.UnsupportedDataRecordMetadata;
+-import oracle.sql.TIMESTAMP;
++import java.io.IOException;
++import java.util.Collections;
++import java.util.LinkedList;
++import java.util.List;
++import java.util.Set;
++
++import javax.xml.XMLConstants;
++
+ import org.apache.commons.lang.StringUtils;
+ import org.apache.log4j.Logger;
+ import org.hibernate.ScrollableResults;
+-import org.talend.mdm.commmon.metadata.*;
+-
+-import javax.xml.XMLConstants;
+-import java.io.IOException;
+-import java.util.*;
++import org.talend.mdm.commmon.metadata.AliasedFieldMetadata;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadataImpl;
++import org.talend.mdm.commmon.metadata.CompoundFieldMetadata;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeMetadata;
++import org.talend.mdm.commmon.metadata.TypeMetadata;
++import org.talend.mdm.commmon.metadata.Types;
++
++import com.amalto.core.metadata.MetadataUtils;
++import com.amalto.core.query.user.Alias;
++import com.amalto.core.query.user.Count;
++import com.amalto.core.query.user.Field;
++import com.amalto.core.query.user.Max;
++import com.amalto.core.query.user.StringConstant;
++import com.amalto.core.query.user.Type;
++import com.amalto.core.query.user.TypedExpression;
++import com.amalto.core.query.user.VisitorAdapter;
++import com.amalto.core.query.user.metadata.GroupSize;
++import com.amalto.core.query.user.metadata.StagingBlockKey;
++import com.amalto.core.query.user.metadata.StagingError;
++import com.amalto.core.query.user.metadata.StagingSource;
++import com.amalto.core.query.user.metadata.StagingStatus;
++import com.amalto.core.query.user.metadata.TaskId;
++import com.amalto.core.query.user.metadata.Timestamp;
++import com.amalto.core.storage.Storage;
++import com.amalto.core.storage.record.DataRecord;
++import com.amalto.core.storage.record.metadata.UnsupportedDataRecordMetadata;
+ 
+ class ProjectionIterator implements CloseableIterator<DataRecord> {
+ 
+@@ -42,31 +68,31 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+ 
+     private boolean isClosed;
+ 
+-    public ProjectionIterator(MappingRepository mappingMetadataRepository,
+-                              CloseableIterator<Object> iterator,
+-                              List<TypedExpression> selectedFields,
+-                              Set<ResultsCallback> callbacks) {
++    public ProjectionIterator(MappingRepository mappingMetadataRepository, CloseableIterator<Object> iterator,
++            List<TypedExpression> selectedFields, Set<ResultsCallback> callbacks) {
+         this.iterator = iterator;
+         this.selectedFields = selectedFields;
+         this.callbacks = callbacks;
+         this.mappingMetadataRepository = mappingMetadataRepository;
+     }
+ 
+-    public ProjectionIterator(MappingRepository mappingMetadataRepository,
+-                              final ScrollableResults results,
+-                              List<TypedExpression> selectedFields,
+-                              final Set<ResultsCallback> callbacks) {
++    public ProjectionIterator(MappingRepository mappingMetadataRepository, final ScrollableResults results,
++            List<TypedExpression> selectedFields, final Set<ResultsCallback> callbacks) {
+         this(mappingMetadataRepository, new CloseableIterator<Object>() {
++
+             private boolean isClosed = false;
+ 
++            @Override
+             public boolean hasNext() {
+                 return results.next();
+             }
+ 
++            @Override
+             public Object next() {
+                 return results.get();
+             }
+ 
++            @Override
+             public void remove() {
+             }
+ 
+@@ -83,6 +109,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+         }, selectedFields, callbacks);
+     }
+ 
++    @Override
+     public boolean hasNext() {
+         boolean hasNext = iterator.hasNext();
+         if (!hasNext) {
+@@ -110,6 +137,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+         }
+     }
+ 
++    @Override
+     public DataRecord next() {
+         if (firstNextCall) {
+             for (ResultsCallback callback : callbacks) {
+@@ -119,14 +147,15 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+         }
+         DataRecord record;
+         try {
+-            final ComplexTypeMetadata explicitProjectionType = new ComplexTypeMetadataImpl(StringUtils.EMPTY, Storage.PROJECTION_TYPE, false);
++            final ComplexTypeMetadata explicitProjectionType = new ComplexTypeMetadataImpl(StringUtils.EMPTY,
++                    Storage.PROJECTION_TYPE, false);
+             record = new DataRecord(explicitProjectionType, UnsupportedDataRecordMetadata.INSTANCE);
+             Object[] values;
+             Object next = iterator.next();
+             if (next instanceof Object[]) {
+                 values = (Object[]) next;
+             } else {
+-                values = new Object[]{next};
++                values = new Object[] { next };
+             }
+             ProjectionElementCreator projectionElementCreator = new ProjectionElementCreator(explicitProjectionType, values);
+             List<ProjectionElement> elements = new LinkedList<ProjectionElement>();
+@@ -145,14 +174,17 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+         return record;
+     }
+ 
++    @Override
+     public void remove() {
+     }
+ 
++    @Override
+     public void close() throws IOException {
+         notifyCallbacks();
+     }
+ 
+     private static class ProjectionElement {
++
+         FieldMetadata field;
+ 
+         Object value;
+@@ -178,53 +210,31 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+ 
+         private void createElement(String typeName, String fieldName) {
+             SimpleTypeMetadata fieldType = new SimpleTypeMetadata(XMLConstants.W3C_XML_SCHEMA_NS_URI, typeName);
+-            FieldMetadata field = new SimpleTypeFieldMetadata(explicitProjectionType,
+-                    false,
+-                    false,
+-                    false,
+-                    fieldName,
+-                    fieldType,
+-                    Collections.<String>emptyList(),
+-                    Collections.<String>emptyList(),
+-                    Collections.<String>emptyList());
++            FieldMetadata field = new SimpleTypeFieldMetadata(explicitProjectionType, false, false, false, fieldName, fieldType,
++                    Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
+             currentElement = new ProjectionElement();
+             currentElement.field = field;
+         }
+ 
+         private void createElement(String typeName, String aliasName, FieldMetadata aliasedField) {
+             SimpleTypeMetadata fieldType = new SimpleTypeMetadata(XMLConstants.W3C_XML_SCHEMA_NS_URI, typeName);
+-            FieldMetadata field = new AliasedFieldMetadata(explicitProjectionType,
+-                    false,
+-                    false,
+-                    false,
+-                    aliasName,
+-                    fieldType,
+-                    Collections.<String>emptyList(),
+-                    Collections.<String>emptyList(),
+-                    aliasedField);
++            FieldMetadata field = new AliasedFieldMetadata(explicitProjectionType, false, false, false, aliasName, fieldType,
++                    Collections.<String> emptyList(), Collections.<String> emptyList(), aliasedField);
+             currentElement = new ProjectionElement();
+             currentElement.field = field;
+         }
+ 
+         private void createReferenceElement(ReferenceFieldMetadata fieldMetadata) {
+-            FieldMetadata field = new ReferenceFieldMetadata(explicitProjectionType,
+-                    false,
+-                    false,
+-                    false,
+-                    fieldMetadata.getName(),
+-                    fieldMetadata.getReferencedType(),
+-                    fieldMetadata.getReferencedField(),
+-                    fieldMetadata.getForeignKeyInfoFields(),
+-                    false,
+-                    false,
+-                    new SimpleTypeMetadata(XMLConstants.W3C_XML_SCHEMA_NS_URI, Types.STRING),
+-                    Collections.<String>emptyList(),
+-                    Collections.<String>emptyList(),
+-                    Collections.<String>emptyList());
++            FieldMetadata field = new ReferenceFieldMetadata(explicitProjectionType, false, false, false,
++                    fieldMetadata.getName(), fieldMetadata.getReferencedType(), fieldMetadata.getReferencedField(),
++                    fieldMetadata.getForeignKeyInfoFields(), false, false, new SimpleTypeMetadata(
++                            XMLConstants.W3C_XML_SCHEMA_NS_URI, Types.STRING), Collections.<String> emptyList(),
++                    Collections.<String> emptyList(), Collections.<String> emptyList());
+             currentElement = new ProjectionElement();
+             currentElement.field = field;
+         }
+ 
++        @Override
+         public ProjectionElement visit(Count count) {
+             // Do nothing on field creation, count is expected to be nested in a com.amalto.core.query.user.Alias.
+             currentElement.value = values[currentIndex++];
+@@ -238,6 +248,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return null;
+         }
+ 
++        @Override
+         public ProjectionElement visit(Alias alias) {
+             isAlias = true;
+             if (alias.getTypedExpression() instanceof Field) {
+@@ -251,13 +262,15 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(Type type) {
+             Object value = values[currentIndex++];
+             if (value != null) {
+                 String typeName = value.toString();
+                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+                 if (!(contextClassLoader instanceof StorageClassLoader)) {
+-                    throw new IllegalStateException("Expected a instance of " + StorageClassLoader.class.getName() + " as current class loader.");
++                    throw new IllegalStateException("Expected a instance of " + StorageClassLoader.class.getName()
++                            + " as current class loader.");
+                 }
+                 try {
+                     Class<?> aClass = contextClassLoader.loadClass(ClassCreator.getClassName(typeName));
+@@ -271,11 +284,13 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(StringConstant constant) {
+             currentElement.value = values[currentIndex++];
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(Timestamp timestamp) {
+             if (!isAlias) {
+                 createElement(timestamp.getTypeName(), "metadata:" + Timestamp.TIMESTAMP_ALIAS); //$NON-NLS-1$
+@@ -284,6 +299,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(TaskId taskId) {
+             if (!isAlias) {
+                 createElement(taskId.getTypeName(), "metadata:" + TaskId.TASK_ID_ALIAS); //$NON-NLS-1$
+@@ -301,16 +317,22 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(Field field) {
+             FieldMetadata fieldMetadata = field.getFieldMetadata();
+             if (!isAlias) {
+                 if (fieldMetadata instanceof ReferenceFieldMetadata) {
+                     createReferenceElement(((ReferenceFieldMetadata) fieldMetadata));
+                 } else {
+-                    createElement(fieldMetadata.getType().getName(), fieldMetadata.getName());
++                    TypeMetadata type = fieldMetadata.getType();
++                    if (fieldMetadata instanceof SimpleTypeFieldMetadata) {
++                        type = MetadataUtils.getSuperConcreteType(type);
++                    }
++                    createElement(type.getName(), fieldMetadata.getName());
+                 }
+             }
+-            if (fieldMetadata instanceof ReferenceFieldMetadata && ((ReferenceFieldMetadata) fieldMetadata).getReferencedField() instanceof CompoundFieldMetadata) {
++            if (fieldMetadata instanceof ReferenceFieldMetadata
++                    && ((ReferenceFieldMetadata) fieldMetadata).getReferencedField() instanceof CompoundFieldMetadata) {
+                 FieldMetadata referencedField = ((ReferenceFieldMetadata) fieldMetadata).getReferencedField();
+                 int length = ((CompoundFieldMetadata) referencedField).getFields().length;
+                 Object[] fieldValues = new Object[length];
+@@ -336,6 +358,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return true;
+         }
+ 
++        @Override
+         public ProjectionElement visit(StagingStatus stagingStatus) {
+             if (!isAlias) {
+                 createElement(stagingStatus.getTypeName(), "metadata:" + StagingStatus.STAGING_STATUS_ALIAS); //$NON-NLS-1$
+@@ -344,6 +367,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(StagingError stagingError) {
+             if (!isAlias) {
+                 createElement(stagingError.getTypeName(), "metadata:" + StagingError.STAGING_ERROR_ALIAS); //$NON-NLS-1$
+@@ -352,6 +376,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+             return currentElement;
+         }
+ 
++        @Override
+         public ProjectionElement visit(StagingSource stagingSource) {
+             if (!isAlias) {
+                 createElement(stagingSource.getTypeName(), "metadata:" + StagingSource.STAGING_SOURCE_ALIAS); //$NON-NLS-1$
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordDefaultWriter.java b/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordDefaultWriter.java
+index 59f32b7..a465f1a 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordDefaultWriter.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordDefaultWriter.java
+@@ -19,18 +19,20 @@ import java.io.OutputStreamWriter;
+ import java.io.Writer;
+ 
+ import org.apache.commons.lang.StringEscapeUtils;
+-
+ import org.talend.mdm.commmon.metadata.FieldMetadata;
+ import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
+ 
++import com.amalto.core.metadata.MetadataUtils;
+ 
+ public class DataRecordDefaultWriter implements DataRecordWriter {
+ 
++    @Override
+     public void write(DataRecord record, OutputStream output) throws IOException {
+         Writer out = new BufferedWriter(new OutputStreamWriter(output, "UTF-8")); //$NON-NLS-1$
+         write(record, out);
+     }
+ 
++    @Override
+     public void write(DataRecord record, Writer writer) throws IOException {
+         boolean isReferenceField;
+         writer.write("<result>\n"); //$NON-NLS-1$
+@@ -44,16 +46,16 @@ public class DataRecordDefaultWriter implements DataRecordWriter {
+                     Object[] values = (Object[]) value;
+                     for (Object currentValue : values) {
+                         if (isReferenceField) {
+-                            writer.append("[").append(StringEscapeUtils.escapeXml(String.valueOf(currentValue))).append("]");  //$NON-NLS-1$ //$NON-NLS-2$
++                            writer.append("[").append(StringEscapeUtils.escapeXml(String.valueOf(currentValue))).append("]"); //$NON-NLS-1$ //$NON-NLS-2$
+                         } else {
+                             writer.append(StringEscapeUtils.escapeXml(String.valueOf(currentValue)));
+                         }
+                     }
+                 } else {
+                     if (isReferenceField) {
+-                        writer.append("[").append(StringEscapeUtils.escapeXml(String.valueOf(value))).append("]");  //$NON-NLS-1$ //$NON-NLS-2$
++                        writer.append("[").append(StringEscapeUtils.escapeXml(String.valueOf(value))).append("]"); //$NON-NLS-1$ //$NON-NLS-2$
+                     } else {
+-                        writer.append(StringEscapeUtils.escapeXml(String.valueOf(value)));
++                        writer.append(StringEscapeUtils.escapeXml(MetadataUtils.toString(value, fieldMetadata)));
+                     }
+                 }
+                 writer.append("</").append(name).append(">\n"); //$NON-NLS-1$ //$NON-NLS-2$
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordXmlWriter.java b/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordXmlWriter.java
+index f22b96f..3390de4 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordXmlWriter.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/record/DataRecordXmlWriter.java
+@@ -1,28 +1,41 @@
+ /*
+  * Copyright (C) 2006-2012 Talend Inc. - www.talend.com
+- *
++ * 
+  * This source code is available under agreement available at
+  * %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+- *
+- * You should have received a copy of the agreement
+- * along with this program; if not, write to Talend SA
+- * 9 rue Pages 92150 Suresnes, France
++ * 
++ * You should have received a copy of the agreement along with this program; if not, write to Talend SA 9 rue Pages
++ * 92150 Suresnes, France
+  */
+ 
+ package com.amalto.core.storage.record;
+ 
++import java.io.BufferedWriter;
++import java.io.IOException;
++import java.io.OutputStream;
++import java.io.OutputStreamWriter;
++import java.io.Writer;
++import java.util.Collection;
++import java.util.List;
++
++import javax.xml.XMLConstants;
++
++import org.apache.commons.lang.StringEscapeUtils;
++import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
++import org.talend.mdm.commmon.metadata.ContainedTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.DefaultMetadataVisitor;
++import org.talend.mdm.commmon.metadata.EnumerationFieldMetadata;
++import org.talend.mdm.commmon.metadata.FieldMetadata;
++import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++import org.talend.mdm.commmon.metadata.SimpleTypeFieldMetadata;
++import org.talend.mdm.commmon.metadata.TypeMetadata;
++import org.talend.mdm.commmon.metadata.Types;
++
+ import com.amalto.core.metadata.MetadataUtils;
+ import com.amalto.core.query.user.DateConstant;
+ import com.amalto.core.query.user.DateTimeConstant;
+ import com.amalto.core.query.user.TimeConstant;
+ import com.amalto.core.schema.validation.SkipAttributeDocumentBuilder;
+-import org.apache.commons.lang.StringEscapeUtils;
+-import org.talend.mdm.commmon.metadata.*;
+-
+-import javax.xml.XMLConstants;
+-import java.io.*;
+-import java.util.Collection;
+-import java.util.List;
+ 
+ public class DataRecordXmlWriter implements DataRecordWriter {
+ 
+@@ -50,11 +63,13 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+         this.override = override;
+     }
+ 
++    @Override
+     public void write(DataRecord record, OutputStream output) throws IOException {
+         Writer out = new BufferedWriter(new OutputStreamWriter(output, "UTF-8")); //$NON-NLS-1$
+         write(record, out);
+     }
+ 
++    @Override
+     public void write(DataRecord record, Writer writer) throws IOException {
+         DefaultMetadataVisitor<Void> fieldPrinter = new FieldPrinter(record, writer, override);
+         Collection<FieldMetadata> fields = type == null ? record.getType().getFields() : type.getFields();
+@@ -116,7 +131,8 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+                 }
+                 return null;
+             } catch (IOException e) {
+-                throw new RuntimeException("Could not serialize XML for reference field '" + referenceField.getName() + "' of type '" + referenceField.getContainingType().getName() + "'.", e);
++                throw new RuntimeException("Could not serialize XML for reference field '" + referenceField.getName()
++                        + "' of type '" + referenceField.getContainingType().getName() + "'.", e);
+             }
+         }
+ 
+@@ -163,7 +179,8 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+                 }
+                 return null;
+             } catch (IOException e) {
+-                throw new RuntimeException("Could not serialize XML for contained field '" + containedField.getName() + "' of type '" + containedField.getContainingType().getName() + "'.", e);
++                throw new RuntimeException("Could not serialize XML for contained field '" + containedField.getName()
++                        + "' of type '" + containedField.getContainingType().getName() + "'.", e);
+             }
+         }
+ 
+@@ -200,7 +217,8 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+                 }
+                 return null;
+             } catch (IOException e) {
+-                throw new RuntimeException("Could not serialize XML for simple field '" + simpleField.getName() + "' of type '" + simpleField.getContainingType().getName() + "'.", e);
++                throw new RuntimeException("Could not serialize XML for simple field '" + simpleField.getName() + "' of type '"
++                        + simpleField.getContainingType().getName() + "'.", e);
+             }
+         }
+ 
+@@ -226,7 +244,8 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+                 }
+                 return null;
+             } catch (IOException e) {
+-                throw new RuntimeException("Could not serialize XML for enumeration field '" + enumField.getName() + "' of type '" + enumField.getContainingType().getName() + "'.", e);
++                throw new RuntimeException("Could not serialize XML for enumeration field '" + enumField.getName()
++                        + "' of type '" + enumField.getContainingType().getName() + "'.", e);
+             }
+         }
+ 
+@@ -234,15 +253,16 @@ public class DataRecordXmlWriter implements DataRecordWriter {
+             if (value == null) {
+                 throw new IllegalArgumentException("Not supposed to write null values to XML.");
+             }
+-            if (Types.DATE.equals(simpleField.getType().getName())) {
++            TypeMetadata type = MetadataUtils.getSuperConcreteType(simpleField.getType());
++            if (Types.DATE.equals(type.getName())) {
+                 synchronized (DateConstant.DATE_FORMAT) {
+                     out.write((DateConstant.DATE_FORMAT).format(value));
+                 }
+-            } else if (Types.DATETIME.equals(simpleField.getType().getName())) {
++            } else if (Types.DATETIME.equals(type.getName())) {
+                 synchronized (DateTimeConstant.DATE_FORMAT) {
+                     out.write((DateTimeConstant.DATE_FORMAT).format(value));
+                 }
+-            } else if (Types.TIME.equals(simpleField.getType().getName())) {
++            } else if (Types.TIME.equals(type.getName())) {
+                 synchronized (TimeConstant.TIME_FORMAT) {
+                     out.write((TimeConstant.TIME_FORMAT).format(value));
+                 }
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/record/ViewSearchResultsWriter.java b/org.talend.mdm.core/src/com/amalto/core/storage/record/ViewSearchResultsWriter.java
+index e4e216c..7f22840 100755
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/record/ViewSearchResultsWriter.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/record/ViewSearchResultsWriter.java
+@@ -19,9 +19,11 @@ import java.io.Writer;
+ import javax.xml.XMLConstants;
+ 
+ import org.apache.commons.lang.StringEscapeUtils;
+-
++import org.talend.mdm.commmon.metadata.CompoundFieldMetadata;
+ import org.talend.mdm.commmon.metadata.FieldMetadata;
+ import org.talend.mdm.commmon.metadata.ReferenceFieldMetadata;
++
++import com.amalto.core.metadata.MetadataUtils;
+ import com.amalto.core.query.user.DateConstant;
+ import com.amalto.core.query.user.DateTimeConstant;
+ import com.amalto.core.query.user.TimeConstant;
+@@ -72,8 +74,11 @@ public class ViewSearchResultsWriter implements DataRecordWriter {
+             }
+         } else if (value instanceof Object[]) {
+             StringBuilder valueAsString = new StringBuilder();
++            CompoundFieldMetadata compoundFields = (CompoundFieldMetadata) ((ReferenceFieldMetadata) fieldMetadata)
++                    .getReferencedField();
++            int i = 0;
+             for (Object current : ((Object[]) value)) {
+-                valueAsString.append('[').append(String.valueOf(current)).append(']');
++                valueAsString.append('[').append(MetadataUtils.toString(current, compoundFields.getFields()[i++])).append(']');
+             }
+             stringValue = valueAsString.toString();
+         } else {
+@@ -90,7 +95,7 @@ public class ViewSearchResultsWriter implements DataRecordWriter {
+                 stringValue = fkValueAsString.toString();
+             } else {
+                 if (!stringValue.startsWith("[")) { //$NON-NLS-1$
+-                    stringValue = "[" + stringValue + ']'; //$NON-NLS-1$
++                    stringValue = "[" + MetadataUtils.toString(value, ((ReferenceFieldMetadata) fieldMetadata).getReferencedField()) + ']'; //$NON-NLS-1$ 
+                 }
+             }
+         }
