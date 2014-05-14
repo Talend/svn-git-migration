@@ -26,14 +26,15 @@ fi
 cmd="$@"
 
 workRootPath=$(cd $(dirname $0); pwd)
-cd $workRootPath/../ # git root path
+gitRootPath="$workRootPath/../"
+cd $gitRootPath
 
 echo -e ">>> Starting to git ${cmd} ...\n"
 
 
 for rep in $(ls)
 do
-    fullPath=$workRootPath/$rep
+    fullPath=$gitRootPath/$rep
 
     #directory, ignore files in current path.
     if [ -d $fullPath ]; then
