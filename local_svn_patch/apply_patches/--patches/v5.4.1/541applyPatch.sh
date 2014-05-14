@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 2 ]; then
-	echo -e "For example: \n ./541applyPatch.sh /media/Work/Talend_git_test /media/Work/Talend_git_test/--patches/v5.4.1"
+	echo -e "For example: \n ./541applyPatch.sh /media/Work/Talend_git_test /media/Work/Talend_git_test/_patches_/v5.4.1"
 	exit 1
 fi
 
@@ -62,7 +62,7 @@ __applyMultiPatches(){
 
 __applyRep(){
 	gitRoot=$1 # like /media/TOOLS/Talend_git_test
-	patchRoot=$2 #like  /media/TOOLS/Talend_git_test/----patches/v5.4.1
+	patchRoot=$2 #like  /media/TOOLS/Talend_git_test/_patches_/v5.4.1
 	rep=$3
 	startIndex=$4 # like 01 02 ... 10
 	endIndex=$5

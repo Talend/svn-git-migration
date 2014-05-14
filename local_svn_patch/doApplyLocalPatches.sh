@@ -10,8 +10,8 @@ fi
 cd "$(dirname $0)"
 
 #copy all patches file to final repository folder
-cp -rf apply_patches/--patches  $finalReposPath
+cp -arf apply_patches/--patches/.  $finalReposPath/_patches_
 
 cd "$finalReposPath"
-sh $finalReposPath/--patches/applyBranchesPatch.sh
+#sh $finalReposPath/--patches/applyBranchesPatch.sh
 
