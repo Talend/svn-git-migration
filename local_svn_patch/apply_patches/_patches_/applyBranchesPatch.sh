@@ -26,7 +26,7 @@ do
 	__logLine
 	echo -e ">>>>>>>@@ Create patch branch $patchBranchName based on $gitTagBaseName"  | tee -a $logFile
 	echo -e "\$sh $curPath/createPatchBranch.sh  $gitRootPath $gitTagBaseName $patchBranchName\n" | tee -a $logFile
-	sh $curPath/createPatchBranch.sh  $gitRootPath $gitTagBaseName $patchBranchName  2>&1  | tee -a $logFile
+	/bin/bash $curPath/createPatchBranch.sh  $gitRootPath $gitTagBaseName $patchBranchName  2>&1  | tee -a $logFile
 	
 	#Apply the patches
 	applyPatchShFile="$patchRootPath/${branch//./}applyPatch.sh" #531applyPatch.sh
@@ -34,13 +34,13 @@ do
 		__logLine
 		echo -e ">>>>>>>## apply patches on $patchBranchName"  | tee -a $logFile
 		echo -e "\$sh $applyPatchShFile $gitRootPath $patchRootPath\n"  | tee -a $logFile
-		sh $applyPatchShFile $gitRootPath $patchRootPath   2>&1  | tee -a $logFile
+		/bin/bash $applyPatchShFile $gitRootPath $patchRootPath   2>&1  | tee -a $logFile
 	fi
 	
 	#pull patch branches
 	__logLine
 	echo -e ">>>>>>>## pull patch branches for $patchBranchName"  | tee -a $logFile
 	echo -e "\$sh $curPath/git_cmd.sh push origin $patchBranchName\n"  | tee -a $logFile
-	sh $curPath/git_cmd.sh push origin $patchBranchName 2>&1 | tee -a $logFile
+	/bin/bash $curPath/git_cmd.sh push origin $patchBranchName 2>&1 | tee -a $logFile
 done
 

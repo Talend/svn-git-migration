@@ -13,5 +13,5 @@ cd "$(dirname $0)"
 cp -rf apply_patches/_patches_  $finalReposPath
 
 cd "$finalReposPath"
-sh $finalReposPath/_patches_/applyBranchesPatch.sh
+/bin/bash $finalReposPath/_patches_/applyBranchesPatch.sh
 

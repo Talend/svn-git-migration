@@ -1,7 +1,7 @@
 #!/bin/bash
 
 __doCMD(){
-	sh git_cmd.sh "$@" 2>&1 | tee -a $logFile
+	/bin/bash git_cmd.sh "$@" 2>&1 | tee -a $logFile
 	echo -e "\n\n ---------------------------------------------------------------------\n"  | tee -a $logFile
 }
 
