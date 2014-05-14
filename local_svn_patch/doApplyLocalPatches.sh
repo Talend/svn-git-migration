@@ -13,5 +13,5 @@ cd "$(dirname $0)"
 cp -arf apply_patches/--patches/.  $finalReposPath/_patches_
 
 cd "$finalReposPath"
-#sh $finalReposPath/--patches/applyBranchesPatch.sh
+sh $finalReposPath/_patches_/applyBranchesPatch.sh
 
