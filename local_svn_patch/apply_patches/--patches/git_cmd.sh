@@ -26,14 +26,9 @@ fi
 cmd="$@"
 
 workRootPath=$(cd $(dirname $0); pwd)
-cd $workRootPath
+cd $workRootPath/../ # git root path
 
-logFile=${workRootPath}/$0.log
-if [ -f ${logFile} ]; then
-	rm -rf ${logFile}
-fi
-
-echo -e ">>> Starting to git ${cmd} ...\n" | tee -a $logFile
+echo -e ">>> Starting to git ${cmd} ...\n"
 
 
 for rep in $(ls)
@@ -48,21 +43,21 @@ do
 	testResult=$(git log -1 2>/dev/null)
 
 	if [ "X${testResult}" != "X" ]; then #not empty, means in git 
-	    echo "--'>$ git ${cmd}' for $rep" | tee -a $logFile
+	    echo "--'>$ git ${cmd}' for $rep"
 	    
             #TODO....start
             
-	    git ${cmd} 2>&1 | tee -a $logFile
+	    git ${cmd} 2>&1
 
 	    #TODO....end
 	    
 	    echo  #empty line
 	    
-	    echo  -e "\n"  | tee -a $logFile
+	    echo  -e "\n" 
 	fi
     fi
      
 done
 
-echo -e "\nFinished to git ${cmd}. <<<<\n" | tee -a $logFile
+echo -e "\nFinished to git ${cmd}. <<<<\n"
 

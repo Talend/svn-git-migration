@@ -14,7 +14,7 @@ __doApplyPatchFile(){
 		git apply ${patchFile}
 	fi
 	echo "git add ."
-	git add .   | tee -a $logFile
+	git add . 
 
 	commentFile="${patchFile/.patch/.comment}"
 	if [ -f ${commentFile} ]; then

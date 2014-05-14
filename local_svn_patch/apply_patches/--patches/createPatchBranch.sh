@@ -6,31 +6,26 @@ patchBranchName=$3
 
 #gitTagBaseName="release-5_4_1"
 #patchBranchName="patch/v5.4.1"
-if [[ $# < 1 ]]; then
-	exit 1
-fi
-
-
 
 cd "${gitRootPath}/tamc-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tbd-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tbd-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tos
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tos
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tcommon-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tis_private
 git rm pom.xml
 git add .
@@ -42,8 +37,8 @@ git commit -m "Merged ${gitTagBaseName}_tos and ${gitTagBaseName}_tis_shared and
 
 cd "${gitRootPath}/tcommon-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tos
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tos
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tis_shared
 git rm pom.xml
 git add .
@@ -51,18 +46,18 @@ git commit -m "Merged ${gitTagBaseName}_tis_shared and ${gitTagBaseName}_tos"
 
 cd "${gitRootPath}/tdi-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tdi-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tos
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tos
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tdq-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tdq
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tdq
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tis_shared
 git rm pom.xml
 git add .
@@ -74,36 +69,36 @@ git commit -m "Merged ${gitTagBaseName}_tos and ${gitTagBaseName}_tis_shared and
 
 cd "${gitRootPath}/tdq-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_top
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_top
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tos
 git add .
 git commit -m "Merged ${gitTagBaseName}_tos and ${gitTagBaseName}_top"
 
 cd "${gitRootPath}/tesb-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tesb-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tos
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tos
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tmdm-server-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tmdm-server-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/tmdm-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tem
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tem
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tis_shared
 git add .
 git commit -m "Merged ${gitTagBaseName}_tis_shared and ${gitTagBaseName}_tem"
@@ -111,8 +106,8 @@ git commit -m "Merged ${gitTagBaseName}_tis_shared and ${gitTagBaseName}_tem"
 
 cd "${gitRootPath}/tmdm-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tom
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tom
+git checkout ${patchBranchName}
 git merge ${gitTagBaseName}_tem
 git add .
 git commit -m "Merged ${gitTagBaseName}_tem and ${gitTagBaseName}_tom"
@@ -120,11 +115,11 @@ git commit -m "Merged ${gitTagBaseName}_tem and ${gitTagBaseName}_tom"
 
 cd "${gitRootPath}/toem-studio-ee"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tis_shared
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tis_shared
+git checkout ${patchBranchName}
 
 cd "${gitRootPath}/toem-studio-se"
 echo -e "\n ----> $(pwd)"
-git br ${patchBranchName} ${gitTagBaseName}_tos
-git co ${patchBranchName}
+git branch ${patchBranchName} ${gitTagBaseName}_tos
+git checkout ${patchBranchName}
 
