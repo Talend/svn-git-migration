@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # will do the diff for between preSHA and curSHA 
 __gitDiff4SHA(){

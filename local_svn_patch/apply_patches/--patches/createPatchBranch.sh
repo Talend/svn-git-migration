@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 gitRootPath=$1
 gitTagBaseName=$2

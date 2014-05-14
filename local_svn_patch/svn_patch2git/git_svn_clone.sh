@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 workPath="$1"
 branchName="$2"
 

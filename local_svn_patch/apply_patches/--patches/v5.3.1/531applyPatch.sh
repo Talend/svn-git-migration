@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ $# -lt 2 ]; then
 	echo -e "For example: \n ./531applyPatch.sh /media/Work/Talend_git_test /media/Work/Talend_git_test/----patches/v5.3.1"

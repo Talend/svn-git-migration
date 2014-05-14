@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 gitRootPath=$1
 
 if [ $# -lt 1 ]; then

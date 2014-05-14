@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 curPath=$(cd $(dirname $0); pwd)

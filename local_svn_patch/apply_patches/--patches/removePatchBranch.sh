@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 __doCMD(){
 	sh git_cmd.sh "$@" 2>&1 | tee -a $logFile
