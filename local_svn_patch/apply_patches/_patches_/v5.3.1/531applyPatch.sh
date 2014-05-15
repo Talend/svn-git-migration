@@ -22,6 +22,7 @@ __doApplyPatchFile(){
 		git commit -m "${commentContent}"
 		echo -e ">>> Apply ${patchFile} for \n   ${commentContent}\n"
 	fi
+	return 0
 }
 
 __applyOnePatch(){
@@ -63,13 +64,19 @@ __applyMultiPatches(){
 
 __applyRep(){
 	gitRoot=$1 # like /media/TOOLS/Talend_git_test
-	patchRoot=$2 #like  /media/TOOLS/Talend_git_test/_patches_/v5.3.1
+	patchRoot=$2 #like  /media/TOOLS/Talend_git_test/_patches_/v5.4.1
 	rep=$3
 	startIndex=$4 # like 01 02 ... 10
 	endIndex=$5
 	
+	repFolder="${gitRoot}/${rep}"
+	if [ ! -d $repFolder ]; then
+		return 1
+	fi
+	
 	echo -e "-------------------------------------------------\n Working for  ${rep}... "
-	cd "${gitRoot}/${rep}"
+	
+	cd $repFolder
 	
 	__applyMultiPatches "${patchRoot}/${rep}" ${startIndex} ${endIndex}
 }

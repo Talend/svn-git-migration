@@ -18,6 +18,7 @@ __doCMD reset --hard HEAD
 for branch in 5.3.1 5.3.2 5.4.1
 do
 	__doCMD branch -D patch/v$branch
+	#__doCMD push origin :patch/v$branch #delete remote patch branches
 done
 __doCMD st
 

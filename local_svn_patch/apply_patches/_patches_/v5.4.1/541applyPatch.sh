@@ -21,6 +21,7 @@ __doApplyPatchFile(){
 		git commit -m "${commentContent}"
 		echo -e ">>> Apply ${patchFile} for \n   ${commentContent}\n"
 	fi
+	return 0
 }
 
 __applyOnePatch(){
@@ -67,8 +68,14 @@ __applyRep(){
 	startIndex=$4 # like 01 02 ... 10
 	endIndex=$5
 	
+	repFolder="${gitRoot}/${rep}"
+	if [ ! -d $repFolder ]; then
+		return 1
+	fi
+	
 	echo -e "-------------------------------------------------\n Working for  ${rep}... "
-	cd "${gitRoot}/${rep}"
+	
+	cd $repFolder
 	
 	__applyMultiPatches "${patchRoot}/${rep}" ${startIndex} ${endIndex}
 }
