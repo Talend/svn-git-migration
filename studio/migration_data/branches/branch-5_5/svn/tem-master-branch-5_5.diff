@@ -1,4 +1,5 @@
 	org.talend.mdm.jobrepository/
+org.talend.mdm.repository.model.relation/
 	org.talend.mdm.webapp.workflow/
 org.talend.mdm.workbench.serverexplorer.enterprise/
 org.talend.mdm.workbench.serverexplorer.enterprise.nl/

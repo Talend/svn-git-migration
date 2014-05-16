@@ -1,0 +1,6 @@
+org.talend.jobserver.karaf.feature
+org.talend.monitoring
+org.talend.monitoring.client
+org.talend.monitoring.server
+org.talend.remote.jobserver.sigar
+org.talend.remote.server

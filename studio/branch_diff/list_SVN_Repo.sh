@@ -15,7 +15,7 @@ EOF
 fi
 
 baseFolder="../migration_data/branches"
-for branches in 5_0 5_1 5_2 5_3 5_4
+for branches in 5_0 5_1 5_2 5_3 5_4 5_5
 do
 	branchFolder="$baseFolder/branch-$branches/svn"
 	mkdir -p $branchFolder
