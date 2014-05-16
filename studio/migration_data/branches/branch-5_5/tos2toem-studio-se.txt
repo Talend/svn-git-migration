@@ -1,0 +1,4 @@
+org.talend.rcp.branding.jetlxcmmty
+org.talend.rcp.branding.jetlxcmmty-feature
+org.talend.rcp.branding.sdi
+org.talend.rcp.branding.sdi-feature

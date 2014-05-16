@@ -1,7 +1,9 @@
 org.talend.demo.bigdata.ee/
+org.talend.designer.tdqmatching.nl/
 org.talend.esb.platform-feature/
 org.talend.libraries.camel.alldeps/
 org.talend.libraries.esb.ext/
+org.talend.libraries.jdbc.saphana/
 org.talend.libraries.jdom/
 org.talend.libraries.jdtcompiler/
 org.talend.libraries.sequence/

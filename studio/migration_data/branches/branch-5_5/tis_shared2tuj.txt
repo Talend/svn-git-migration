@@ -1,0 +1,2 @@
+org.talend.rcp.branding.tuj
+org.talend.rcp.branding.tuj-feature
