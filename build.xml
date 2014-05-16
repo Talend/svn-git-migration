@@ -115,8 +115,10 @@
          - - - - - - - - - - - - - - - - - -->
     <target name="clean.final.repos">
         <!-- remove all final repos -->
-        <echo message="clean final repo : ${final.repos.path}"/>
-        <delete dir="${final.repos.path}" />
+        <echo message="clean final repo : ${list.of.final.git.repos}"/>
+        <delete includeemptydirs="true" failonerror="false" verbose="true">
+            <fileset dir="${final.repos.path}" includes="${list.of.final.git.repos}"/>
+        </delete>
         <mkdir dir="${final.repos.path}" />
     </target>
 
@@ -226,6 +228,7 @@
 
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
+    		    <rename-final-repo.branches repo="@{git.final.repo.name}"/>
                 <!-- push the final repos-->
                 <git-push-repo localrepo="${final.repo.path}" remoteRepo="@{git.final.repo.name}"/>
     		</sequential>
@@ -268,8 +271,33 @@
         </sequential>
     </macrodef>
 	
-	
-	<!-- = = = = = = = = = = = = = = = = =
+    
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: rename-final-repo.branches          
+          rename branches  of the git rpository  
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="rename-final-repo.branches">
+        <attribute name="repo" default="name of the final repo where to rename branches and tags" />
+        <sequential>
+            <if>
+                <isset property="rename.branches"/>
+            <then>
+                <for param="branch" list="${list.of.branches.no.master}">
+                    <sequential>
+                        <local name="new.branch.name"/>
+                        <propertyregex property="new.branch.name" input="@{branch}" regexp="${branch.rename.matching.pattern}" replace="${branch.rename.replace.pattern}"/>
+                        <git argline="branch -m @{branch} ${new.branch.name}" dir="@{repo}"/>
+                    </sequential>
+                </for>
+            </then>
+            </if>
+        </sequential>
+    </macrodef>
+
+    
+    
+    
+    <!-- = = = = = = = = = = = = = = = = =
           macrodef: check-final-repo          
           this will check that in the final repository for each branches it contains all the desired folders. 
          = = = = = = = = = = = = = = = = = -->
@@ -635,7 +663,17 @@
             <propertyregex property="all.tags.list" input="${all.tags}," regexp="\n" replace=","/>
             <for param="tag.name" list="${all.tags.list}" >
                 <sequential>
-                    <git argline="tag @{tag.name}_@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
+                    <local name="new.tag.name"/>
+                    <if>
+                        <isset property="rename.tags"/>
+                        <then>
+                            <propertyregex property="new.tag.name" input="@{tag.name}" regexp="${tag.rename.matching.pattern}" replace="${tag.rename.replace.pattern}"/>
+                        </then>
+                        <else>
+                            <property name="new.tag.name" value="@{tag.name}"/>
+                        </else>
+                    </if>
+                    <git argline="tag ${new.tag.name}@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
                     <git argline="tag -d @{tag.name}" dir="@{repopath}"/>
                 </sequential>
             </for>
@@ -691,7 +729,11 @@
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
                     <!-- remove files from history -->
                     <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'" showoutput="true"/>
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${list.of.tags}" showoutput="true"/>
+                        <!--get the list of all tags, cause they may have been renamed -->
+                        <local name="this.repo.tags"/>
+                        <git argline="tag" dir="${migration.workspace.path}/@{svnrepo}" output="this.repo.tags"/>
+                        <propertyregex property="all.tags.to.be.protected" input="${all.tags}," regexp="\n" replace=","/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${all.tags.to.be.protected}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
@@ -960,6 +1002,40 @@
         <dump-error-log/>
     </target>
 
+    
+    <!-- ================================= 
+          target: test.clean.final.repos              
+         ================================= -->
+    <target name="test.clean.final.repos" >
+        <mkdir dir="${final.repos.path}/foo"/>
+        <mkdir dir="${final.repos.path}/bar"/>
+        <mkdir dir="${final.repos.path}/foobar"/>
+        <fail>
+            <condition>
+                <not>
+                    <and>
+                        <available file="${final.repos.path}/foo"/>
+                        <available file="${final.repos.path}/bar"/>
+                    </and>
+                </not>
+            </condition>
+        </fail>
+        <antcall target="clean.final.repos">
+            <param name="list.of.final.git.repos" value="foo,bar"/>
+        </antcall>
+        <fail>
+            <condition>
+                <or>
+                    <available file="${final.repos.path}/foo"/>
+                    <available file="${final.repos.path}/bar"/>
+                    <not>
+                        <available file="${final.repos.path}/foobar"/>
+                    </not>
+                </or>
+            </condition>
+        </fail>
+    </target>
+    
 	<!-- ================================= 
 	      target: test.prepare.svn.git.repo              
 	     ================================= -->
@@ -1112,11 +1188,23 @@
         <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         
     </target>
+
+    <!-- ================================= 
+              target: test-git-remove-history              
+             ================================= -->
+        <target name="test-rename-final-repo.branches" >
+            <property file="studio/migration_data/migration_ant.properties"/> 
+            <rename-final-repo.branches repo="/Applications/java/talend/git/final_repos/tmdm-common"/>
+        </target>
+
+    
+    
     
 <!-- - - - - - - - - - - - - - - - - - 
           target: test-git-rename-tags                      
          - - - - - - - - - - - - - - - - - -->
     <target name="test-git-rename-tags">
+        <property file="studio/migration_data/migration_ant.properties"/> 
         <git-rename-tags repopath="${test.repo.path}" tagsuffix="${test.tag.suffix}"/>    
     </target>
     
