@@ -118,8 +118,8 @@
         <echo message="clean final repo : ${list.of.final.git.repos}"/>
         <local name="folder.to.be.removed.pattern"/>
         <propertyregex property="folder.to.be.removed.pattern" input="${list.of.final.git.repos}," regexp="(.+?)(,|$)" replace="**/\1/\2"/>
-        <delete includeemptydirs="true" failonerror="false" verbose="true" >
-            <fileset dir="${final.repos.path}" includes="${folder.to.be.removed.pattern}"/>
+        <delete includeemptydirs="true" failonerror="false" >
+            <fileset dir="${final.repos.path}" includes="${folder.to.be.removed.pattern}" defaultexcludes="false"/>
         </delete>
         <mkdir dir="${final.repos.path}" />
     </target>
