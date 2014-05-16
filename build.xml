@@ -731,8 +731,9 @@
                     <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'" showoutput="true"/>
                         <!--get the list of all tags, cause they may have been renamed -->
                         <local name="this.repo.tags"/>
+                        <local name="all.tags.to.be.protected"/>
                         <git argline="tag" dir="${migration.workspace.path}/@{svnrepo}" output="this.repo.tags"/>
-                        <propertyregex property="all.tags.to.be.protected" input="${all.tags}," regexp="\n" replace=","/>
+                        <propertyregex property="all.tags.to.be.protected" input="${this.repo.tags}," regexp="\n" replace=","/>
                     <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${all.tags.to.be.protected}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
