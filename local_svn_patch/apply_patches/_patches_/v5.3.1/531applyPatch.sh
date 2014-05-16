@@ -11,7 +11,7 @@ __doApplyPatchFile(){
 	patchFile=$1
 	if [ -f ${patchFile} ]; then
 		echo "git apply ${patchFile}"
-		git apply ${patchFile}
+		git apply --whitespace=fix ${patchFile}
 	fi
 	echo "git add ."
 	git add . 
@@ -141,6 +141,8 @@ __copyFolderFiles "${patchRootPath}/${repo}/06_39a66d5_indicators.files/" "${git
 __applyOnePatch "${patchRootPath}/${repo}" "06_39a66d5"
 #So far, there is no 7
 #__applyRep ${gitRootPath} ${patchRootPath} ${repo} 7
+
+__applyRep $gitRootPath $patchRootPath tdsc
 
 __applyRep $gitRootPath $patchRootPath tesb-studio-ee
 

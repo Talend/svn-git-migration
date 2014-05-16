@@ -10,7 +10,7 @@ __doApplyPatchFile(){
 	patchFile=$1
 	if [ -f ${patchFile} ]; then
 		echo "git apply ${patchFile}"
-		git apply ${patchFile}
+		git apply --whitespace=fix ${patchFile}
 	fi
 	echo "git add ."
 	git add . 
@@ -135,6 +135,8 @@ __applyRep $gitRootPath $patchRootPath $repo 3 # so far, there is no. but add it
 
 
 __applyRep $gitRootPath $patchRootPath tdi-studio-se
+
+__applyRep $gitRootPath $patchRootPath tdsc
 
 __applyRep $gitRootPath $patchRootPath tesb-studio-se
 
