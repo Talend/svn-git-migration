@@ -76,6 +76,7 @@ __applyRep(){
 	echo -e "-------------------------------------------------\n Working for  ${rep}... "
 	
 	cd $repFolder
+	pwd
 	
 	__applyMultiPatches "${patchRoot}/${rep}" ${startIndex} ${endIndex}
 }
@@ -139,6 +140,8 @@ __applyRep $gitRootPath $patchRootPath tdi-studio-se
 __applyRep $gitRootPath $patchRootPath tdsc
 
 __applyRep $gitRootPath $patchRootPath tesb-studio-se
+
+__applyRep $gitRootPath $patchRootPath tmdm-common
 
 __applyRep $gitRootPath $patchRootPath tmdm-server-ee
 

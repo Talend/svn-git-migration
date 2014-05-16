@@ -9,6 +9,10 @@ fi
 
 cd "$(dirname $0)"
 
+#if exited, delete the old one
+finalPathesPath="$finalReposPath/_patches_"
+[ -d $finalPathesPath ] && rm -rf $finalPathesPath
+
 #copy all patches file to final repository folder
 cp -rf apply_patches/_patches_  $finalReposPath
 

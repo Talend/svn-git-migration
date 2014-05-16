@@ -77,6 +77,7 @@ __applyRep(){
 	echo -e "-------------------------------------------------\n Working for  ${rep}... "
 	
 	cd $repFolder
+	pwd
 	
 	__applyMultiPatches "${patchRoot}/${rep}" ${startIndex} ${endIndex}
 }

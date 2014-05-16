@@ -69,13 +69,17 @@ if [ $? -eq 0 ]; then #existed
 	git commit -m "Merged ${gitTagBaseName}_tos and ${gitTagBaseName}_top"
 fi
 
+__createBranch tdsc _datastewardship
+
 __createBranch tesb-studio-ee _tis_shared
 
 __createBranch tesb-studio-se _tos
 
-__createBranch tmdm-server-ee
+__createBranch tmdm-common _tom
 
-__createBranch tmdm-server-se
+__createBranch tmdm-server-ee _tem
+
+__createBranch tmdm-server-se _tom
 
 __createBranch tmdm-studio-ee _tem
 if [ $? -eq 0 ]; then #existed 

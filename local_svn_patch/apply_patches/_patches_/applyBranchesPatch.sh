@@ -4,7 +4,7 @@
 curPath=$(cd $(dirname $0); pwd)
 cd $curPath
 
-logFile="$curPath/${0##*/}.log"
+logFile="$curPath/../LocalPatchMigration.log"
 if [ -e $logFile ]; then
 	rm -f $logFile
 fi
@@ -42,6 +42,7 @@ do
 	fi
 	
 	#push patch branches
+	#TODO temp disable it
 	__runCmd "$curPath/git_cmd.sh push origin $patchBranchName" "$$ push patch branches for $patchBranchName" 
 
 done
