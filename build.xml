@@ -116,8 +116,10 @@
     <target name="clean.final.repos">
         <!-- remove all final repos -->
         <echo message="clean final repo : ${list.of.final.git.repos}"/>
-        <delete includeemptydirs="true" failonerror="false" verbose="true">
-            <fileset dir="${final.repos.path}" includes="${list.of.final.git.repos}"/>
+        <local name="folder.to.be.removed.pattern"/>
+        <propertyregex property="folder.to.be.removed.pattern" input="${list.of.final.git.repos}," regexp="(.+?)(,|$)" replace="**/\1/\2"/>
+        <delete includeemptydirs="true" failonerror="false" verbose="true" >
+            <fileset dir="${final.repos.path}" includes="${folder.to.be.removed.pattern}"/>
         </delete>
         <mkdir dir="${final.repos.path}" />
     </target>
@@ -1010,6 +1012,7 @@
     <target name="test.clean.final.repos" >
         <mkdir dir="${final.repos.path}/foo"/>
         <mkdir dir="${final.repos.path}/bar"/>
+        <echo file="${final.repos.path}/foo/foo.txt">foo</echo>
         <mkdir dir="${final.repos.path}/foobar"/>
         <fail>
             <condition>
