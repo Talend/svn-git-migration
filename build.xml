@@ -279,7 +279,7 @@
           rename branches  of the git rpository  
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="rename-final-repo.branches">
-        <attribute name="repo" default="name of the final repo where to rename branches and tags" />
+        <attribute name="repo" default="name of the final repo where to rename branches" />
         <sequential>
             <if>
                 <isset property="rename.branches"/>
@@ -288,7 +288,7 @@
                     <sequential>
                         <local name="new.branch.name"/>
                         <propertyregex property="new.branch.name" input="@{branch}" regexp="${branch.rename.matching.pattern}" replace="${branch.rename.replace.pattern}"/>
-                        <git argline="branch -m @{branch} ${new.branch.name}" dir="@{repo}"/>
+                        <git argline="branch -m @{branch} ${new.branch.name}" dir="${final.repos.path}/@{repo}"/>
                     </sequential>
                 </for>
             </then>
@@ -927,7 +927,7 @@
         <attribute name="argline" description="argument line passed to the git command"/>
         <attribute name="dir" default="${user.dir}" description="directory where to run the git command"/>
         <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
-        <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
+        <attribute name="output" default="exec.output" description="name of the property to be filled with the git output"/>
         <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
         <sequential>
             <echo message="in folder [@{dir}]"/>
@@ -1197,8 +1197,9 @@
               target: test-git-remove-history              
              ================================= -->
         <target name="test-rename-final-repo.branches" >
-            <property file="studio/migration_data/migration_ant.properties"/> 
-            <rename-final-repo.branches repo="/Applications/java/talend/git/final_repos/tmdm-common"/>
+            <property name="migration.data.file.path" value="studio/migration_data/migration_ant.properties"/> 
+            <property file="${migration.data.file.path}"/> 
+            <rename-final-repo.branches repo="${test.repo.path}"/>
         </target>
 
     
