@@ -675,7 +675,7 @@
                             <property name="new.tag.name" value="@{tag.name}"/>
                         </else>
                     </if>
-                    <git argline="tag ${new.tag.name}@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
+                    <git argline="tag ${new.tag.name}/@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
                     <git argline="tag -d @{tag.name}" dir="@{repopath}"/>
                 </sequential>
             </for>
