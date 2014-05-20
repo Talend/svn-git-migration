@@ -1,8 +1,10 @@
 #!/bin/bash
+if [ $# -lt 1 ]; then 
+	echo "Must provide the path of git root repository."
+	exit 1
+fi
+gitRootPath=$1
 
-
-workRootPath=$(cd $(dirname $0); pwd)
-gitRootPath="$workRootPath/../"
 cd $gitRootPath
 
 echo -e ">>> Starting to check tags ...\n"
@@ -22,16 +24,16 @@ do
 	if [ "X${testResult}" != "X" ]; then #not empty, means in git 
 	   echo ">>> @@ Check the tags for $rep"
 	   
-	   tags=$(git tag) # process release-5_x_y_tis_shared
-	   preTags=$(for tmp in $tags; do echo ${tmp:0:13}; done| sort | uniq )
+	   tags=$(git tag) # release/5.4.1/tis_shared
+	   preTags=$(for tmp in $tags; do echo ${tmp%/*}; done | sort | uniq ) #release/5.4.1
 	   for shortTag in $preTags;
 	   do
 	   	
 	   	echo "    >>>@@@  $shortTag"
-	   	#try to find the full matched short tag 
+	   	#try to find the full matched short tag release/5.4.1
 	   	found=$(for tmp in $tags; do echo $tmp; done | grep "^${shortTag}$") 
 	   	if [ "X$found" = "X" ];then #not existed, create it
-	   		# all tages contained the same prefix(shortTag)
+	   		# all tages contained the same prefix(release/5.4.1), release/5.4.1/tos, release/5.4.1/tis_shared, etc
 		   	samePreTags=$(for tmp in $tags; do echo $tmp; done | grep $shortTag)
 			#
 			preTag=
@@ -41,20 +43,22 @@ do
 					echo "    >>>### git checkout -b tmp_$shortTag $gitTag"
 					git checkout -b tmp_$shortTag $gitTag
 					preTag=$gitTag
-				else
+				else # merge other tags release/5.4.1/***
 					echo "    >>>### git merge --no-commit $gitTag"
 					git merge --no-commit $gitTag					
 					git add .
 					git commit -m "Merge $preTag and $gitTag for $shortTag."
 				fi
-				
+				#delete old tags release/5.4.1/***
 				echo "    >>>### git tag -d $gitTag"
-				#git tag -d $gitTag
+				git tag -d $gitTag
 			   	
 			done
 			
+			#create new tag release/5.4.1
 			git tag $shortTag
-			git checkout $shortTag
+			#switch to master, then delete the tmp branch for tag.
+			git checkout master
 			git branch -D tmp_$shortTag 
 			
 		   	
@@ -64,6 +68,8 @@ do
 	   	fi
 	   	
 	   done
+	   # push tags
+	   git push --tags
 	   
 	fi
     fi

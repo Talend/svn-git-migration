@@ -28,11 +28,11 @@ for branch in 5.3.1 5.3.2 5.4.1
 do
 	patchRootPath="$curPath/v$branch/"
 	
-	gitTagBaseName="release-${branch//./_}" #release-5_3_1
-	patchBranchName="patch/v$branch"
+	gitTagBaseName="release/$branch" #release/5.4.1
+	patchBranchName="patch/$branch" #patch/5.4.1
 	
 	#Create patch branches
-	__runCmd "$curPath/createPatchBranch.sh  $gitRootPath $gitTagBaseName $patchBranchName" "@@ Create patch branch $patchBranchName based on $gitTagBaseName"
+	__runCmd "$curPath/git_cmd.sh checkout -b $patchBranchName $gitTagBaseName"
 
 	
 	#Apply the patches
@@ -42,7 +42,6 @@ do
 	fi
 	
 	#push patch branches
-	#TODO temp disable it
 	__runCmd "$curPath/git_cmd.sh push origin $patchBranchName" "$$ push patch branches for $patchBranchName" 
 
 done

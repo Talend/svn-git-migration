@@ -17,5 +17,6 @@ finalPathesPath="$finalReposPath/_patches_"
 cp -rf apply_patches/_patches_  $finalReposPath
 
 cd "$finalReposPath"
+/bin/bash $finalReposPath/_patches_/checkTags.sh $finalReposPath
 /bin/bash $finalReposPath/_patches_/applyBranchesPatch.sh
 
