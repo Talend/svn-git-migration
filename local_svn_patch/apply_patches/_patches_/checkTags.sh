@@ -36,22 +36,25 @@ do
 	   		# all tages contained the same prefix(release/5.4.1), release/5.4.1/tos, release/5.4.1/tis_shared, etc
 		   	samePreTags=$(for tmp in $tags; do echo $tmp; done | grep $shortTag)
 			#
-			preTag=
+			firstTag=
 			for gitTag in ${samePreTags};
 			do 
-				if [ "X$preTag" = "X" ]; then # fist one
+				if [ "X$firstTag" = "X" ]; then # fist one
 					echo "    >>>### git checkout -b tmp_$shortTag $gitTag"
 					git checkout -b tmp_$shortTag $gitTag
-					preTag=$gitTag
+					firstTag=$gitTag
 				else # merge other tags release/5.4.1/***
 					echo "    >>>### git merge --no-commit $gitTag"
 					git merge --no-commit $gitTag					
 					git add .
-					git commit -m "Merge $preTag and $gitTag for $shortTag."
+					git commit -m "Merge $firstTag and $gitTag for $shortTag."
 				fi
 				#delete old tags release/5.4.1/***
 				echo "    >>>### git tag -d $gitTag"
 				git tag -d $gitTag
+				#delete the remote one too.
+				echo "    >>>### git push origin :/refs/tags/$gitTag"
+				git push origin :/refs/tags/$gitTag
 			   	
 			done
 			
