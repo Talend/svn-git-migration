@@ -34,6 +34,15 @@ echo -e ">>> Starting to git ${cmd} ...\n"
 
 for rep in $(ls)
 do
+    excludeRepFile=$workRootPath/git_cmd.exclude
+    if [ -f $excludeRepFile ]; then
+    	foundRep=$(cat $excludeRepFile | grep "^${rep}$")
+    	if [ ! "X$foundRep" = "X" ]; then
+	    	echo -e "\n----->> Skip to check the $rep \n"
+		continue   
+	fi 
+    fi
+    
     fullPath=$gitRootPath/$rep
 
     #directory, ignore files in current path.
