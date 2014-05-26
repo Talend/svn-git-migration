@@ -24,7 +24,7 @@ __runCmd(){
 
 gitRootPath="$curPath/../"
 
-for branch in 5.3.1 5.3.2 5.4.1
+for branch in 5.3.1 5.4.1
 do
 	patchRootPath="$curPath/v$branch/"
 	

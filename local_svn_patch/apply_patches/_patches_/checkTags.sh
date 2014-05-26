@@ -24,11 +24,14 @@ do
 	if [ "X${testResult}" != "X" ]; then #not empty, means in git 
 	   echo ">>> @@ Check the tags for $rep"
 	   
-	   tags=$(git tag) # release/5.4.1/tis_shared
+	   tags=$(git tag | grep "^release/") # release/5.4.1/tis_shared
 	   preTags=$(for tmp in $tags; do echo ${tmp%/*}; done | sort | uniq ) #release/5.4.1
 	   for shortTag in $preTags;
 	   do
-	   	
+	   	# if have been release/5.4.1, so ignore.
+	   	if [ "$shortTag" = "release" ]; then
+	   		continue
+	   	fi
 	   	echo "    >>>@@@  $shortTag"
 	   	#try to find the full matched short tag release/5.4.1
 	   	found=$(for tmp in $tags; do echo $tmp; done | grep "^${shortTag}$") 
@@ -54,7 +57,7 @@ do
 				git tag -d $gitTag
 				#delete the remote one too.
 				echo "    >>>### git push origin :/refs/tags/$gitTag"
-				git push origin :/refs/tags/$gitTag
+				git push origin :refs/tags/$gitTag
 			   	
 			done
 			
