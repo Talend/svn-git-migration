@@ -61,8 +61,13 @@ here is an example
 
 
 ###Launching the migration
+for BitBucket
     cd talend-svn-git-migration
-    ant -Dmigration.data.folder.path=you_migration_data_folder -Dremote.git.username=you_user_name -Dremote.git.password=your_password -lib ant-contrib-1.0b3.jar  -listener net.sf.antcontrib.perf.AntPerformanceListener
+    ant -Dmigration.data.folder.path=you_migration_data_folder -Dremote.git.username=you_user_name -Dremote.git.password=your_password -lib ant-contrib-1.0b3.jar  | tee you_migration_data_folder/migration.log
+for Github
+    cd talend-svn-git-migration
+    ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=<your_authorisation_token> -Dmigration.data.folder.path=studio/migration_data -lib ant-contrib-1.0b3.jar  | tee studio/migration_data/migration.log
+
 
 * you\_migration\_data\_folder : the folder that contain all the migration data files (see the above chapter for content)
 * you\_user\_name : is the user name used in bitbucket to create remote repositories (you can simply adapt the script to use Github if you wish)
