@@ -142,6 +142,7 @@
 	        <try>
 	           <runtarget  target="update.all.git.svn.repos"/>
 	           <runtarget  target="perform.each.repo.migration"/>
+	           <execute-all-extra-script/>
 	       </try>
 	       <finally>
 	           <dump-error-log/>
@@ -237,7 +238,26 @@
     	</for>
     </target>
 	
-                    	
+
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: execute-all-extra-script 
+          look for all files in the ${migration.data.folder.path}/extrascripts
+          and execute them using this main script folder as a working dir.         
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="execute-all-extra-script">
+        <sequential>
+            <for param="scriptfile">
+              <path>
+                <fileset dir="${migration.data.folder.path}/post_migration_scripts" includes="*.*"/>
+              </path>
+              <sequential>
+                  <my-exec dir="${svn2gitMigration.dir.path}" executable="@{scriptfile}" showoutput="true" argline=""/>
+              </sequential>
+            </for>
+        </sequential>
+    </macrodef>
+    
+    
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-mv-set
           1) create subfolder
@@ -1202,6 +1222,13 @@
             <rename-final-repo.branches repo="${test.repo.path}"/>
         </target>
 
+<!-- - - - - - - - - - - - - - - - - - 
+          target: test-execute-all-extra-script                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-execute-all-extra-script">
+        <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/studio/migration_data"/>
+        <execute-all-extra-script/>
+    </target>
     
     
     
