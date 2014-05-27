@@ -56,15 +56,18 @@ do
 				echo "    >>>### git tag -d $gitTag"
 				git tag -d $gitTag
 				#delete the remote one too.
-				echo "    >>>### git push origin :/refs/tags/$gitTag"
+				echo "    >>>### git push origin :refs/tags/$gitTag"
 				git push origin :refs/tags/$gitTag
 			   	
 			done
 			
 			#create new tag release/5.4.1
+			echo "    >>>### git tag $shortTag"
 			git tag $shortTag
 			#switch to master, then delete the tmp branch for tag.
+			echo "    >>>### git checkout master"
 			git checkout master
+			echo "    >>>### git branch -D tmp_$shortTag"
 			git branch -D tmp_$shortTag 
 			
 		   	
@@ -75,6 +78,7 @@ do
 	   	
 	   done
 	   # push tags
+	   echo "    >>>### git push --tags"
 	   git push --tags
 	   
 	fi
