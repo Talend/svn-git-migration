@@ -6,7 +6,7 @@ if [ -z $1 ]; then
   exit 1;
 fi
 
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=studio/migration_data -lib ant-contrib-1.0b3.jar  | tee studio/migration_data/migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=studiodqportal_migration_data -lib ant-contrib-1.0b3.jar  | tee dqportal_migration_data/migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=licence_security_migration_data -lib ant-contrib-1.0b3.jar  | tee licence_security_migration_data/migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=mdm_migration_data -lib ant-contrib-1.0b3.jar  | tee mdm_migration_data/migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=studio/migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/studio_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=dqportal_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/dqportal_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=licence_security_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/licence_security_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=mdm_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/mdm_migration.log

@@ -246,14 +246,19 @@
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="execute-all-extra-script">
         <sequential>
-            <for param="scriptfile">
-              <path>
-                <fileset dir="${migration.data.folder.path}/post_migration_scripts" includes="*.*"/>
-              </path>
-              <sequential>
-                  <my-exec dir="${svn2gitMigration.dir.path}" executable="@{scriptfile}" showoutput="true" argline=""/>
-              </sequential>
-            </for>
+            <if>
+                <available file="${final.repos.path}/post_migration_scripts"/>
+            <then>
+                <for param="scriptfile">
+                  <path>
+                    <fileset dir="${migration.data.folder.path}/post_migration_scripts" includes="*.*"/>
+                  </path>
+                  <sequential>
+                      <my-exec dir="${svn2gitMigration.dir.path}" executable="@{scriptfile}" showoutput="true" argline=""/>
+                  </sequential>
+                </for>
+            </then>
+            </if>
         </sequential>
     </macrodef>
     
@@ -1226,7 +1231,7 @@
           target: test-execute-all-extra-script                      
          - - - - - - - - - - - - - - - - - -->
     <target name="test-execute-all-extra-script">
-        <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/studio/migration_data"/>
+        <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/licence_security_migration_data"/>
         <execute-all-extra-script/>
     </target>
     
