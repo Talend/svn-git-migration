@@ -1,18 +1,14 @@
 #!/bin/bash
 
-finalReposPath=$1
+finalReposPath=$(cd "../final_repos"; pwd)
 
-if [ $# -lt 1 ]; then
-	#same as migrate testutils.sh to set the default
-	finalReposPath=$(cd "../final_repos"; pwd) 
-fi
 
 #if exited, delete the old one
 finalPathesPath="$finalReposPath/_patches_"
 [ -d $finalPathesPath ] && rm -rf $finalPathesPath
 
 #copy all patches file to final repository folder
-cp -rf local_svn_patch/apply_patches/_patches_  $finalReposPath
+cp -rf studio/migration_data/post_migration_scripts/local_svn_patch/apply_patches/_patches_  $finalReposPath
 
 cd "$finalReposPath"
 
