@@ -31,16 +31,21 @@ please be sure to follow the full Atlassian tuto including the clean phase
 ###Preparing the migration data
 The main script takes a folder path as an input to know what to migrate and where to migrate it. this folder should look like this.
 
+```
+#!
+
     .
-    ├── branches
-    │   ├── branch-5_4                 (name of any branch we want to keep)
-    │   │   ├── tdq2tdq-studio-ee.txt  (data file)
-    │   ├── master                     (this branch must exists)
-    │   │   ├── tdq2tdq-studio-ee.txt
-    │   │   ├── tem2tmdm-studio-ee.txt
-    │   │   ├── tem2tmdm-studio-se.txt
-    ├── migration_ant.properties        (properties for the main migration script)
-    ├── refactor_ant.xml                (optional ant script for refactor)
+    |-- branches
+    |   |-- branch-5_4                 (name of any branch we want to keep)
+    |   |   |-- tdq2tdq-studio-ee.txt  (data file)
+    |   |-- master                     (this branch must exists)
+    |   |   |-- tdq2tdq-studio-ee.txt
+    |   |   |-- tem2tmdm-studio-ee.txt
+    |   |   |-- tem2tmdm-studio-se.txt
+    |-- migration_ant.properties        (properties for the main migration script)
+    |-- refactor_ant.xml                (optional ant script for refactor)
+
+```
  
 1. The folder *branches* must contain at least the *master* folder representing the master branch and any other folder will represent other branches that we wishes to keep in git.
 
