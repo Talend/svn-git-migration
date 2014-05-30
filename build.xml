@@ -755,7 +755,11 @@
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
                     <!-- remove files from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'" showoutput="true"/>
+                    <local name="strip-all-blobs"/>
+                    <condition property="strip-all-blobs" value="--strip-blobs-bigger-than ${@{gitrepo}.remove.all.files.bigger.than}" else="">
+                        <isset property="@{gitrepo}.remove.all.files.bigger.than"/>
+                    </condition>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection ${strip-all-blobs} --delete-folders '{${files.to.remove}}'" showoutput="true"/>
                         <!--get the list of all tags, cause they may have been renamed -->
                         <local name="this.repo.tags"/>
                         <local name="all.tags.to.be.protected"/>
