@@ -1,9 +1,10 @@
 #!/bin/bash
 
 if [ $# -lt 2 ]; then
-	echo -e "For example: \n ./541applyPatch.sh /media/Work/Talend_git_test /media/Work/Talend_git_test/_patches_/v5.4.1"
+	echo -e "For example: \n ./531applyPatch.sh /media/Work/Talend_git_test /media/Work/Talend_git_test/_patches_/v5.3.1"
 	exit 1
 fi
+
 
 
 __doApplyPatchFile(){
@@ -112,31 +113,10 @@ gitRootPath=$1
 patchRootPath=$2
 
 # apply patches
-__applyRep $gitRootPath $patchRootPath tamc-ee
 
-__applyRep $gitRootPath $patchRootPath tcommon-studio-ee
-
-#
-repo="tcommon-studio-se"
-__applyRep $gitRootPath $patchRootPath $repo 1 4
-#binary 05_d7900eb
-__copyFolderFiles ${patchRootPath}/${repo}/05_d7900eb.files ${gitRootPath}/${repo}/org.talend.libraries.apache.cxf/lib
-__applyOnePatch "${patchRootPath}/${repo}" "05_d7900eb"
-__applyRep $gitRootPath $patchRootPath $repo 6
+__applyRep $gitRootPath $patchRootPath tdsc
 
 
-repo="tdi-studio-ee"
-#cd "${gitRootPath}/${rep}"
-#__applyOnePatch "${patchRootPath}/${rep}" "01_203714f"
-__applyRep $gitRootPath $patchRootPath $repo 0 1
-#baniary 02_570b074
-cp -f ${patchRootPath}/${repo}/02_570b074.files/fitcdc.savf ${gitRootPath}/${repo}/org.talend.designer.cdc/resource/fitcdc.savf
-__applyOnePatch "${patchRootPath}/${repo}" "02_570b074"
-__applyRep $gitRootPath $patchRootPath $repo 3 # so far, there is no. but add it still for future.:)
+__applyRep $gitRootPath $patchRootPath tmdm-server-ee
 
-
-__applyRep $gitRootPath $patchRootPath tdi-studio-se
-
-__applyRep $gitRootPath $patchRootPath tesb-studio-se
-
-__applyRep $gitRootPath $patchRootPath tmdm-studio-se
+__applyRep $gitRootPath $patchRootPath tmdm-server-se

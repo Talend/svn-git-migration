@@ -143,12 +143,7 @@ __applyOnePatch "${patchRootPath}/${repo}" "06_39a66d5"
 #So far, there is no 7
 #__applyRep ${gitRootPath} ${patchRootPath} ${repo} 7
 
-__applyRep $gitRootPath $patchRootPath tdsc
-
 __applyRep $gitRootPath $patchRootPath tesb-studio-ee
 
 __applyRep $gitRootPath $patchRootPath tesb-studio-se
 
-__applyRep $gitRootPath $patchRootPath tmdm-server-ee
-
-__applyRep $gitRootPath $patchRootPath tmdm-server-se
