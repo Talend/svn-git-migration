@@ -1,1 +1,2 @@
 org.talend.mdm.commmon
+org.talend.mdm.base
