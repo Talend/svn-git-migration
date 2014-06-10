@@ -33,7 +33,6 @@ org.talend.mdm.webapp.openmdm
 org.talend.mdm.webapp.recyclebin
 org.talend.mdm.webapp.reporting
 org.talend.mdm.webapp.stagingarea
-org.talend.mdm.webapp.updatereport
 org.talend.mdm.webapp.viewbrowser
 org.talend.mdm.webapp.welcomeportal
 org.talend.mdm.xmldb
