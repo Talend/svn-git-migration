@@ -1,0 +1,418 @@
+diff --git a/org.talend.commons.runtime/src/org/talend/commons/i18n/internal/messages.properties b/org.talend.commons.runtime/src/org/talend/commons/i18n/internal/messages.properties
+index a75c5f6..ca01e66 100755
+--- a/org.talend.commons.runtime/src/org/talend/commons/i18n/internal/messages.properties
++++ b/org.talend.commons.runtime/src/org/talend/commons/i18n/internal/messages.properties
+@@ -54,4 +54,8 @@ XmlNodeRetriever.prposal1Node=proposal1Nodes \:
+ XmlNodeRetriever.singleQuotes='
+ XmlNodeRetriever.xPathExpression=xPathExpression = '
+ VersionUtils.readPropertyFileError=Error to read property in talend.properties file.
++AS400ResultSet.unknowCloumn=Invalid argument\: unknown column name  
++AS400ResultSet.parameterIndex=Invalid argument\: parameter index  
++AS400ResultSet.outofRange=\ is out of range. 
++
+ 
+diff --git a/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400DatabaseMetaData.java b/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400DatabaseMetaData.java
+index 9d9b43f..8065bc1 100755
+--- a/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400DatabaseMetaData.java
++++ b/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400DatabaseMetaData.java
+@@ -13,8 +13,14 @@
+ package org.talend.commons.utils.database;
+ 
+ import java.sql.Connection;
++import java.sql.PreparedStatement;
+ import java.sql.ResultSet;
+ import java.sql.SQLException;
++import java.sql.Statement;
++import java.util.ArrayList;
++import java.util.List;
++
++import org.apache.commons.lang.StringUtils;
+ 
+ /**
+  * created by zshen on Apr 12, 2013 Detailled comment
+@@ -22,6 +28,25 @@ import java.sql.SQLException;
+  */
+ public class AS400DatabaseMetaData extends PackageFakeDatabaseMetadata {
+ 
++	 private static final String[] TABLE_META = {
++         "TABLE_TYPE", "TABLE_NAME", "SYSTEM_TABLE_NAME", "TABLE_SCHEMA", "SYSTEM_TABLE_SCHEMA" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
++
++	 private String T = "T";//$NON-NLS-1$
++	
++	 private String V = "V";//$NON-NLS-1$
++	
++	 private String S = "S";//$NON-NLS-1$
++	
++	 private String A = "A";//$NON-NLS-1$
++	
++	 private String TABLE = "TABLE"; //$NON-NLS-1$
++	
++	 private String VIEW = "VIEW"; //$NON-NLS-1$
++	
++	 private String SYNONYM = "SYNONYM"; //$NON-NLS-1$
++	
++	 private String ALIAS = "ALIAS"; //$NON-NLS-1$
++		
+     public AS400DatabaseMetaData(Connection conn) throws SQLException {
+         super(conn);
+     }
+@@ -69,8 +94,101 @@ public class AS400DatabaseMetaData extends PackageFakeDatabaseMetadata {
+      */
+     @Override
+     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
++        String sql;
++        String and;
++        if (schemaPattern != null) {
++            sql = "SELECT  TYPE,TABLE_NAME, SYSTEM_TABLE_NAME, TABLE_SCHEMA , SYSTEM_TABLE_SCHEMA  FROM QSYS2.SYSTABLES  WHERE TABLE_SCHEMA = '"
++                    + schemaPattern + "'";
++            and = " and ";
++        } else {
++            sql = "SELECT  TYPE,TABLE_NAME, SYSTEM_TABLE_NAME, TABLE_SCHEMA , SYSTEM_TABLE_SCHEMA  FROM QSYS2.SYSTABLES";
++            and = " where ";
++        }
++        sql = addTypesToSql(sql, types, and);
++        if (!StringUtils.isEmpty(tableNamePattern)) {
++            sql = sql + " and NAME like ?";//$NON-NLS-1$
++        }
++
++        ResultSet rs = null;
++        PreparedStatement stmt = null;
++        List<String[]> list = new ArrayList<String[]>();
++        try {
++            stmt = connection.prepareStatement(sql);
++            if (!StringUtils.isEmpty(tableNamePattern)) {
++                stmt.setString(1, tableNamePattern);
++            }// ~
++            rs = stmt.executeQuery();
++            while (rs.next()) {
++                String type = rs.getString("TYPE"); //$NON-NLS-1$
++                String table_name = rs.getString("TABLE_NAME"); //$NON-NLS-1$
++                String system_table_name = rs.getString("SYSTEM_TABLE_NAME"); //$NON-NLS-1$
++                String table_schema = rs.getString("TABLE_SCHEMA"); //$NON-NLS-1$
++                String system_table_schema = rs.getString("SYSTEM_TABLE_SCHEMA");
++
++                String[] r = new String[] { type, table_name, system_table_name, table_schema, system_table_schema }; //$NON-NLS-1$ //$NON-NLS-2$
++                list.add(r);
++            }
++
++        } catch (SQLException e) {
++            throw new RuntimeException(e);
++        } finally {
++            try {
++                rs.close();
++                stmt.close();
++            } catch (Exception e) {
++            }
++        }
++        AS400ResultSet tableResultSet = new AS400ResultSet();
++        tableResultSet.setMetadata(TABLE_META);
++        tableResultSet.setData(list);
++        return tableResultSet;
++        // return super.getTables(catalog, schemaPattern, tableNamePattern, types);
++    }
++
++    private String getTypeNameType(String typeName) {
++        String result = typeName;
++        if (T.equals(typeName)) {
++            result = TABLE;
++        } else if (V.equals(typeName)) {
++            result = VIEW;
++        } else if (S.equals(typeName)) {
++            result = SYNONYM;
++        } else if (A.equals(typeName)) {
++            result = ALIAS;
++        }
++        return result;
++    }
+ 
+-        return super.getTables(catalog, schemaPattern, tableNamePattern, types);
++    private String addTypesToSql(String sql, String[] types, String and) {
++        String result = sql;
++        if (types != null && types.length > 0) {
++            String typeClause = " type in("; //$NON-NLS-1$
++            int len = types.length;
++            for (int i = 0; i < len; ++i) {
++                String comma = ""; //$NON-NLS-1$
++                if (i > 0) {
++                    comma = " , "; //$NON-NLS-1$
++                }
++                typeClause = typeClause + comma + "'" + getTypeName(types[i]) + "'";//$NON-NLS-1$ //$NON-NLS-2$
++            }
++            typeClause = typeClause + ")"; //$NON-NLS-1$
++            result = sql + and + typeClause;
++        }
++        return result;
++    }
++
++    private String getTypeName(String typeName) {
++        String result = typeName;
++        if (TABLE.equals(typeName)) {
++            result = T;
++        } else if (VIEW.equals(typeName)) {
++            result = V;
++        } else if (SYNONYM.equals(typeName)) {
++            result = S;
++        } else if (ALIAS.equals(typeName)) {
++            result = A;
++        }
++        return result;
+     }
+ 
+     /*
+diff --git a/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400ResultSet.java b/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400ResultSet.java
+new file mode 100644
+index 0000000..33a249e
+--- /dev/null
++++ b/org.talend.commons.runtime/src/org/talend/commons/utils/database/AS400ResultSet.java
+@@ -0,0 +1,128 @@
++package org.talend.commons.utils.database;
++
++import java.sql.SQLException;
++import java.util.List;
++
++import org.talend.commons.i18n.internal.Messages;
++import org.talend.commons.utils.TalendDBUtils;
++import org.talend.fakejdbc.FakeResultSet;
++
++/**
++ * DOC zwzhao class global comment. Detailled comment
++ */
++public class AS400ResultSet extends FakeResultSet {
++
++    private String[] tableMeta = null;
++
++    private List<String[]> data;
++
++    int index = -1;
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeResultSet#next()
++     */
++    @Override
++    public boolean next() throws SQLException {
++        if (data == null || data.size() == 0 || index >= data.size() - 1) {
++            return false;
++        }
++        index++;
++        return true;
++    }
++
++    public static int indexOf(String string, String[] search) {
++        for (int i = 0; i < search.length; i++) {
++            if (search[i].equals(string)) {
++                return i;
++            }
++        }
++        return -1;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeResultSet#getString(java.lang.String)
++     */
++    @Override
++    public String getString(String columnLabel) throws SQLException {
++        int columnIndex = indexOf(columnLabel, tableMeta);
++
++        if (columnIndex == -1) {
++            throw new SQLException(Messages.getString("AS400ResultSet.unknowCloumn") + columnLabel); //$NON-NLS-1$
++        }
++
++        return getString(columnIndex + 1);
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeResultSet#getInt(java.lang.String)
++     */
++    @Override
++    public int getInt(String columnLabel) throws SQLException {
++        String str = getString(columnLabel);
++        if (columnLabel.equals("TYPE_NAME")) {
++            int index = TalendDBUtils.convertToJDBCType(str);
++            return index;
++        } else if (columnLabel.equals("IS_NULLABLE")) {
++            if (str.equals("N")) {
++                return 1;
++            } else {
++                return 0;
++            }
++        } else {
++            return Integer.parseInt(str);
++        }
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeResultSet#getBoolean(java.lang.String)
++     */
++    @Override
++    public boolean getBoolean(String columnLabel) throws SQLException {
++        String str = getString(columnLabel);
++        return Boolean.parseBoolean(str);
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commons.utils.database.FakeResultSet#getString(int)
++     */
++    @Override
++    public String getString(int columnIndex) throws SQLException {
++        String[] row = data.get(index);
++        columnIndex--;
++
++        if (columnIndex < 0 || columnIndex > row.length) {
++            throw new SQLException(
++                    Messages.getString("AS400ResultSet.parameterIndex") + columnIndex + Messages.getString("AS400ResultSet.outofRange")); //$NON-NLS-1$ //$NON-NLS-2$
++        }
++        return row[columnIndex];
++    }
++
++    /**
++     * DOC bqian Comment method "setMetadata".
++     * 
++     * @param table_meta
++     */
++    public void setMetadata(String[] tableMeta) {
++        this.tableMeta = tableMeta;
++
++    }
++
++    /**
++     * DOC bqian Comment method "setData".
++     * 
++     * @param tables
++     */
++    public void setData(List<String[]> data) {
++        this.data = data;
++    }
++}
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/database/conn/template/EDatabaseConnTemplate.java b/org.talend.core.runtime/src/main/java/org/talend/core/database/conn/template/EDatabaseConnTemplate.java
+index 531810e..dd9c486 100755
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/database/conn/template/EDatabaseConnTemplate.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/database/conn/template/EDatabaseConnTemplate.java
+@@ -112,7 +112,7 @@ public enum EDatabaseConnTemplate {
+             "jdbc:exa:<host>:<port>;schema=<sid>", "8563")), //$NON-NLS-1$ //$NON-NLS-2$
+ 
+     AS400(new DbConnStr(EDatabaseTypeName.AS400, //
+-            "jdbc:as400://<host>/<sid>;libraries=<sid>;<property>", //$NON-NLS-1$
++            "jdbc:as400://<host>/<sid>;<property>", //$NON-NLS-1$
+             null, //
+             "prompt=false")), //$NON-NLS-1$
+ 
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/MetadataToolHelper.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/MetadataToolHelper.java
+index 19c1fe3..f55625f 100755
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/MetadataToolHelper.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/MetadataToolHelper.java
+@@ -1286,6 +1286,10 @@ public final class MetadataToolHelper {
+         for (Entry<String, String> entry : oldProperties) {
+             newProperties.put(entry.getKey(), entry.getValue());
+         }
++        for (TaggedValue tv : old.getTaggedValue()) {
++            String additionalTag = tv.getTag();
++            result.getAdditionalProperties().put(additionalTag, tv.getValue());
++        }
+         return result;
+     }
+ 
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/builder/ConvertionHelper.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/builder/ConvertionHelper.java
+index c1aabed..5e3dde8 100755
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/builder/ConvertionHelper.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/metadata/builder/ConvertionHelper.java
+@@ -403,6 +403,10 @@ public final class ConvertionHelper {
+         for (Entry<String, String> entry : oldProperties) {
+             newProperties.put(entry.getKey(), entry.getValue());
+         }
++        for (TaggedValue tv : old.getTaggedValue()) {
++            String additionalTag = tv.getTag();
++            result.getAdditionalProperties().put(additionalTag, tv.getValue());
++        }
+ 
+         return result;
+     }
+diff --git a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
+index d9470a1..64227aa 100755
+--- a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
++++ b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
+@@ -36,6 +36,7 @@ import org.talend.core.model.repository.IRepositoryViewObject;
+ import org.talend.core.model.utils.ContextParameterUtils;
+ import org.talend.core.model.utils.IDragAndDropServiceHandler;
+ import org.talend.core.utils.TalendQuoteUtils;
++import org.talend.cwm.helper.TaggedValueHelper;
+ import org.talend.designer.core.model.components.EParameterName;
+ import org.talend.designer.core.model.components.EmfComponent;
+ import org.talend.designer.core.ui.editor.nodes.Node;
+@@ -122,7 +123,12 @@ public class RepositoryChangeMetadataCommand extends ChangeMetadataCommand {
+ 
+         node.getElementParameter(EParameterName.UPDATE_COMPONENTS.getName()).setValue(true);
+         if (newOutputMetadata != null) {
+-            setDBTableFieldValue(node, newOutputMetadata.getTableName(), oldOutputMetadata.getTableName());
++            Map<String, String> addMap = newOutputMetadata.getAdditionalProperties();
++            if (addMap.get(TaggedValueHelper.SYSTEMTABLENAME) != null && node.getComponent().getName().equals("tAS400CDC")) {
++                setDBTableFieldValue(node, addMap.get(TaggedValueHelper.SYSTEMTABLENAME), oldOutputMetadata.getTableName());
++            } else {
++                setDBTableFieldValue(node, newOutputMetadata.getTableName(), oldOutputMetadata.getTableName());
++            }
+             IElementParameter parameter = node.getElementParameter("SAP_FUNCTION");
+             if (parameter != null)
+                 setSAPFunctionName(node, parameter.getValue() == null ? null : (String) parameter.getValue());
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+index 5719534..f57d731 100755
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+@@ -930,6 +930,20 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+                     metadatatable.setComment(tableComment);
+                     ColumnSetHelper.setComment(tableComment, metadatatable);
+                 }
++                try {
++                    if (tables.getString("SYSTEM_TABLE_NAME") != null && tables.getString("SYSTEM_TABLE_SCHEMA") != null
++                            && tables.getString("TABLE_SCHEMA") != null) {
++                        TaggedValueHelper.setTaggedValue(metadatatable, TaggedValueHelper.SYSTEMTABLENAME,
++                                tables.getString("SYSTEM_TABLE_NAME").trim());
++                        TaggedValueHelper.setTaggedValue(metadatatable, TaggedValueHelper.SYSTEMTABLESCHEMA,
++                                tables.getString("SYSTEM_TABLE_SCHEMA").trim());
++                        TaggedValueHelper.setTaggedValue(metadatatable, TaggedValueHelper.TABLESCHEMA,
++                                tables.getString("TABLE_SCHEMA").trim());
++                    }
++                } catch (SQLException e) {
++                    // don't catch anything if the system table name or schema doesn't exist
++                    // this part is needed only for as400
++                }
+                 list.add(metadatatable);
+             }
+             if (dbJDBCMetadata.getDatabaseProductName() != null
+diff --git a/org.talend.model/src/main/java/org/talend/cwm/helper/TaggedValueHelper.java b/org.talend.model/src/main/java/org/talend/cwm/helper/TaggedValueHelper.java
+index 67f40ec..328276b 100755
+--- a/org.talend.model/src/main/java/org/talend/cwm/helper/TaggedValueHelper.java
++++ b/org.talend.model/src/main/java/org/talend/cwm/helper/TaggedValueHelper.java
+@@ -69,6 +69,12 @@ public final class TaggedValueHelper {
+     public static final String COMMENT = "Comment"; //$NON-NLS-1$
+ 
+     public static final String TABLE_OWNER = "Table Owner"; //$NON-NLS-1$
++    
++    public static final String SYSTEMTABLENAME = "SYSTEM_TABLE_NAME"; //$NON-NLS-1$
++
++    public static final String SYSTEMTABLESCHEMA = "SYSTEM_TABLE_SCHEMA"; //$NON-NLS-1$
++
++    public static final String TABLESCHEMA = "TABLE_SCHEMA"; //$NON-NLS-1$
+ 
+     // ~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+diff --git a/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/table/database/SelectorTableForm.java b/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/table/database/SelectorTableForm.java
+index 9f72463..e954e2b 100755
+--- a/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/table/database/SelectorTableForm.java
++++ b/org.talend.repository.metadata/src/main/java/org/talend/repository/ui/wizards/metadata/table/database/SelectorTableForm.java
+@@ -1428,6 +1428,7 @@ public class SelectorTableForm extends AbstractForm {
+                         // ~20828
+                         dbtable.setComment(comment);
+                         TableHelper.setComment(comment, dbtable);
++                        dbtable.getTaggedValue().addAll(table.getTaggedValue());
+                         dbtable.setTableType(type);
+                         String lableName = MetadataToolHelper.validateTableName(table.getName());
+                         dbtable.setLabel(lableName);

@@ -1,0 +1,1280 @@
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/util/StateProvider.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/util/StateProvider.java
+new file mode 100644
+index 0000000..c5005ff
+--- /dev/null
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/util/StateProvider.java
+@@ -0,0 +1,51 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.datastewardship.client.util;
++
++import com.extjs.gxt.ui.client.state.CookieProvider;
++import com.extjs.gxt.ui.client.state.Provider;
++import com.google.gwt.storage.client.Storage;
++
++public class StateProvider extends Provider {
++
++    private Storage storage;
++
++    public static Provider newInstanceIfSupported() {
++        Storage storage = Storage.getLocalStorageIfSupported();
++        if (storage != null) {
++            return new StateProvider(storage);
++        } else {
++            return new CookieProvider(null, null, null, false);
++        }
++    }
++
++    private StateProvider(Storage storage) {
++        this.storage = storage;
++    }
++
++    @Override
++    protected void clearKey(String name) {
++        storage.removeItem(name);
++    }
++
++    @Override
++    protected String getValue(String name) {
++        return storage.getItem(name);
++    }
++
++    @Override
++    protected void setValue(String name, String value) {
++        storage.setItem(name, value);
++    }
++
++}
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/RecordMergePanel.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/RecordMergePanel.java
+index 7ce7afc..d9ed139 100644
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/RecordMergePanel.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/RecordMergePanel.java
+@@ -34,6 +34,7 @@ import org.talend.datastewardship.client.task.resolution.TRUpdater;
+ import org.talend.datastewardship.client.task.resolution.TaskResolutionSchema;
+ import org.talend.datastewardship.client.task.resolution.TaskResolutionTableSchema;
+ import org.talend.datastewardship.client.util.CommonUtil;
++import org.talend.datastewardship.client.util.StateProvider;
+ import org.talend.datastewardship.shared.dto.SrccolumnsDTO;
+ import org.talend.datastewardship.shared.dto.SrcextrainfoDTO;
+ import org.talend.datastewardship.shared.dto.SrcrecordsDTO;
+@@ -54,7 +55,7 @@ import com.extjs.gxt.ui.client.event.Listener;
+ import com.extjs.gxt.ui.client.event.MessageBoxEvent;
+ import com.extjs.gxt.ui.client.event.SelectionListener;
+ import com.extjs.gxt.ui.client.mvc.Dispatcher;
+-import com.extjs.gxt.ui.client.widget.Component;
++import com.extjs.gxt.ui.client.state.Provider;
+ import com.extjs.gxt.ui.client.widget.ContentPanel;
+ import com.extjs.gxt.ui.client.widget.Dialog;
+ import com.extjs.gxt.ui.client.widget.LayoutContainer;
+@@ -67,7 +68,6 @@ import com.extjs.gxt.ui.client.widget.layout.AbsoluteData;
+ import com.extjs.gxt.ui.client.widget.layout.AbsoluteLayout;
+ import com.extjs.gxt.ui.client.widget.layout.HBoxLayout;
+ import com.extjs.gxt.ui.client.widget.layout.MarginData;
+-import com.extjs.gxt.ui.client.widget.layout.RowData;
+ import com.extjs.gxt.ui.client.widget.layout.RowLayout;
+ import com.extjs.gxt.ui.client.widget.tips.ToolTipConfig;
+ import com.extjs.gxt.ui.client.widget.toolbar.FillToolItem;
+@@ -78,7 +78,9 @@ import com.google.gwt.user.client.Event;
+ import com.google.gwt.user.client.rpc.AsyncCallback;
+ import com.google.gwt.user.client.ui.CheckBox;
+ import com.google.gwt.user.client.ui.ClickListener;
++import com.google.gwt.user.client.ui.FlexTable;
+ import com.google.gwt.user.client.ui.HorizontalPanel;
++import com.google.gwt.user.client.ui.SimplePanel;
+ import com.google.gwt.user.client.ui.VerticalPanel;
+ import com.google.gwt.user.client.ui.Widget;
+ 
+@@ -89,7 +91,7 @@ import com.google.gwt.user.client.ui.Widget;
+ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+     private static final int LABEL_WIDTH = 200;
+-    
++
+     private static final int UPDOWN_TOOLBAR_WIDTH = 70;
+ 
+     private static final int COLLAPSE_LABEL_WIDTH = 20;
+@@ -154,19 +156,56 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+     private int xPoint, yPoint;
+ 
+-    private final ContentPanel cp = new ContentPanel(new RowLayout(Orientation.HORIZONTAL));
++    private final HorizontalPanel cp = new HorizontalPanel();
++
++    private final HorizontalPanel header = new HorizontalPanel();
++
++    private TargetRecord headerBtn;
++
++    private TargetRecord headerC;
+ 
+-    private final ContentPanel header = new ContentPanel(new RowLayout(Orientation.HORIZONTAL));
++    private TargetRecord inputC;
+ 
+-    private final ContentPanel source = new ContentPanel(new RowLayout(Orientation.HORIZONTAL));
++    private final HorizontalPanel source = new HorizontalPanel();
+ 
+     private final ContentPanel cpA = new ContentPanel(new RowLayout(Orientation.VERTICAL));
+ 
+     private final HorizontalPanel cpT = new HorizontalPanel();
+ 
+-    private final ContentPanel cpTarget = new ContentPanel();
++    private final SimplePanel cpTarget = new SimplePanel();
++
++    private final SimplePanel cpTSource = new SimplePanel();
++
++    private static Provider columnWidthState = StateProvider.newInstanceIfSupported();
++
++    private static Provider columnColospeState = StateProvider.newInstanceIfSupported();
++
++    static int getColumntWidth(String columnName) {
++        Object value = columnWidthState.get(columnName + "_width"); //$NON-NLS-1$
++        if (value != null && value instanceof Integer) {
++            return (Integer) value;
++        }
++        return LABEL_WIDTH;
++    }
++
++    static void setColumnWidth(String columnName, Integer width) {
++        columnWidthState.set(columnName + "_width", width); //$NON-NLS-1$
++    }
++
++    static Object[] getCollapseState(String columnName) {
++        String value = (String) columnColospeState.get(columnName + "_Collapse"); //$NON-NLS-1$
++        if (value != null) {
++            String[] values = value.split("\\|"); //$NON-NLS-1$
++            if (values.length == 2) {
++                return new Object[] { Boolean.valueOf(values[0]), Integer.valueOf(values[1]) };
++            }
++        }
++        return new Object[] { false, LABEL_WIDTH };
++    }
+ 
+-    private final ContentPanel cpTSource = new ContentPanel();
++    static void setCollapseState(String columnName, Boolean isCollapse, Integer originalWidth) {
++        columnColospeState.set(columnName + "_Collapse", isCollapse + "|" + originalWidth); //$NON-NLS-1$ //$NON-NLS-2$
++    }
+ 
+     class MoveRecordBtn extends ToolBar {
+ 
+@@ -226,37 +265,33 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             case MOVE_LEFT:
+                 if (index > 0) {
+                     source.remove(record);
+-                    source.insert(record, index - 1, new RowData());
++                    source.insert(record, index);
+                     srcRecords.remove(record);
+                     srcRecords.add(index - 1, record);
+-                    source.layout();
+                 }
+                 break;
+             case MOVE_FULLLEFT:
+                 if (index > 0) {
+                     source.remove(record);
+-                    source.insert(record, 0, new RowData());
++                    source.insert(record, 0);
+                     srcRecords.remove(record);
+                     srcRecords.add(0, record);
+-                    cp.layout();
+                 }
+                 break;
+             case MOVE_RIGTH:
+                 if (index < srcRecords.size() - 1) {
+                     source.remove(record);
+-                    source.insert(record, index + 1, new RowData());
++                    source.insert(record, index + 1);
+                     srcRecords.remove(record);
+                     srcRecords.add(index + 1, record);
+-                    cp.layout();
+                 }
+                 break;
+             case MOVE_FULLRIGHT:
+                 if (index < srcRecords.size() - 1) {
+                     source.remove(record);
+-                    source.insert(record, srcRecords.size() - 1, new RowData());
++                    source.insert(record, srcRecords.size() - 1);
+                     srcRecords.remove(record);
+                     srcRecords.add(srcRecords.size(), record);
+-                    cp.layout();
+                 }
+                 break;
+             default:
+@@ -402,12 +437,16 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+         VerticalPanel vp = new VerticalPanel();
+ 
++        private String name;
++
+         protected TaskResolutionTableSchema schema;
+ 
+         private boolean isHeader = false;
+ 
+         private boolean isInput = false;
+ 
++        private boolean resize = false;
++
+         boolean isMoveBtn;
+ 
+         private List<MoveRowBtn> moveRowBtns;
+@@ -420,27 +459,42 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             this.isHeader = isHeader;
+         }
+ 
++        @Override
++        public void setWidth(String width) {
++            super.setWidth(width);
++            setColumnWidth(name, Integer.valueOf(width.replace("px", ""))); //$NON-NLS-1$ //$NON-NLS-2$
++            for (int i = 0; i < vp.getWidgetCount(); i++) {
++                Widget widget = vp.getWidget(i);
++                widget.setWidth(width);
++            }
++            cpTarget.setWidth(headerC.getOffsetWidth() + inputC.getOffsetWidth() - 4 + "px"); //$NON-NLS-1$
++        }
++
++        @Override
++        protected void onLoad() {
++            super.onLoad();
++            cpTarget.setWidth(headerC.getOffsetWidth() + inputC.getOffsetWidth() - 4 + "px"); //$NON-NLS-1$
++        }
++
+         public TargetRecord() {
+ 
+         }
+ 
+-        public TargetRecord(TaskResolutionTableSchema schema, TgtrecordsDTO tgRecord, boolean isMoveBtn, boolean isHeader,
+-                boolean isInput) {
++        public TargetRecord(String name, TaskResolutionTableSchema schema, TgtrecordsDTO tgRecord, boolean isMoveBtn,
++                boolean isHeader, boolean isInput) {
++            this.name = name;
+             this.schema = schema;
+             this.isMoveBtn = isMoveBtn;
+             this.isHeader = isHeader;
+             this.isInput = isInput;
+             // initWidget(vp);
+             vp.setSpacing(LABEL_SPACING);
+-            this.sinkEvents(Event.ONMOUSEOVER | Event.ONMOUSEOUT);
+-            ContentPanel header = new ContentPanel(new AbsoluteLayout());
+-            header.setWidth(LABEL_WIDTH);
+-            header.setHeight(ICONPANEL_HEIGHT);
+-            header.setBodyBorder(false);
+-            header.setHeaderVisible(false);
+-            header.setBodyStyleName("panel_title"); //$NON-NLS-1$
+-            MoveRowBtn btn;
+-            TextField<String> input;
++            FlexTable columnHeader = new FlexTable();
++            columnHeader.setCellPadding(0);
++            columnHeader.setCellSpacing(0);
++            columnHeader.setWidth("100%"); //$NON-NLS-1$
++            columnHeader.setHeight(ICONPANEL_HEIGHT + "px"); //$NON-NLS-1$
++            columnHeader.setStyleName("panel_title"); //$NON-NLS-1$
+ 
+             if (isMoveBtn) {
+                 ContentPanel fill = new ContentPanel();
+@@ -451,7 +505,7 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 vp.add(fill);
+                 List<TaskResolutionSchema> tableSchemas = schema.getTableSchema();
+                 moveRowBtns = new ArrayList<MoveRowBtn>(tableSchemas.size());
+-
++                MoveRowBtn btn;
+                 for (TaskResolutionSchema cf : tableSchemas) {
+                     btn = new MoveRowBtn(cf.getColumnName());
+                     btn.setWidth(UPDOWN_TOOLBAR_WIDTH);
+@@ -465,15 +519,19 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 LabelField keyLabel = new LabelField();
+                 keyLabel.setStyleAttribute("font-size", "130%"); //$NON-NLS-1$ //$NON-NLS-2$
+                 keyLabel.setText(MessagesFactory.getMessages().resolution_key());
+-                header.add(keyLabel);
+-                vp.add(header);
++                columnHeader.setWidget(0, 0, keyLabel);
++                Element lableEl = columnHeader.getFlexCellFormatter().getElement(0, 0);
++                lableEl.setAttribute("cellspan", "2"); //$NON-NLS-1$//$NON-NLS-2$
++                lableEl.setAttribute("align", "left"); //$NON-NLS-1$//$NON-NLS-2$
++                vp.add(columnHeader);
+                 List<TaskResolutionSchema> tableSchemas = schema.getTableSchema();
+ 
++                int columnWidth = getColumntWidth(name);
+                 for (TaskResolutionSchema cf : tableSchemas) {
+                     LabelField column = new LabelField();
+-                    column.setStyleAttribute("overflow", "hidden");  //$NON-NLS-1$//$NON-NLS-2$
++                    column.setStyleAttribute("overflow", "hidden"); //$NON-NLS-1$//$NON-NLS-2$
+                     column.setBorders(false);
+-                    column.setWidth(LABEL_WIDTH);
++                    column.setWidth(columnWidth);
+                     column.setHeight(LABEL_HEIGHT);
+                     column.setBorders(true);
+                     column.setItemId(cf.getColumnName());
+@@ -488,7 +546,10 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 LabelField valueLabel = new LabelField();
+                 valueLabel.setStyleAttribute("font-size", "130%"); //$NON-NLS-1$ //$NON-NLS-2$
+                 valueLabel.setText(MessagesFactory.getMessages().resolution_value());
+-                header.add(valueLabel);
++                columnHeader.setWidget(0, 0, valueLabel);
++                Element lableEl = columnHeader.getFlexCellFormatter().getElement(0, 0);
++                lableEl.setAttribute("cellspan", "2"); //$NON-NLS-1$//$NON-NLS-2$
++                lableEl.setAttribute("align", "left"); //$NON-NLS-1$//$NON-NLS-2$
+                 IconButton back = new IconButton("icon-back-icon"); //$NON-NLS-1$
+                 back.setToolTip(MessagesFactory.getMessages().merge_undo());
+                 IconButton next = new IconButton("icon-next-icon"); //$NON-NLS-1$
+@@ -519,15 +580,21 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 };
+                 next.addSelectionListener(nextlistener);
+ 
+-                header.add(back, new AbsoluteData(5, 25));
+-                header.add(next, new AbsoluteData(LABEL_WIDTH - 20, 25));
+-                vp.add(header);
++                columnHeader.setWidget(1, 0, back);
++                Element backEl = columnHeader.getFlexCellFormatter().getElement(1, 0);
++                backEl.setAttribute("align", "left"); //$NON-NLS-1$//$NON-NLS-2$
++                columnHeader.setWidget(1, 1, next);
++                Element nextEl = columnHeader.getFlexCellFormatter().getElement(1, 1);
++                nextEl.setAttribute("align", "right"); //$NON-NLS-1$//$NON-NLS-2$
++                vp.add(columnHeader);
+                 Set<TgtcolumnsDTO> tgColumns = tgRecord.getTgtcolumnses();
+                 inputs = new ArrayList<TextField<String>>(headerLabels.size());
+ 
++                TextField<String> input;
++                int columnWidth = getColumntWidth(name);
+                 for (LabelField lf : headerLabels) {
+                     input = new TextField<String>();
+-                    input.setWidth(LABEL_WIDTH);
++                    input.setWidth(columnWidth);
+                     input.setHeight(LABEL_HEIGHT);
+                     input.setStyleAttribute("background-color", "#704968"); //$NON-NLS-1$ //$NON-NLS-2$
+ 
+@@ -542,10 +609,10 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                             input.setEnabled(!readOnly);
+                         }
+                     }
+-                    
++
+                     input.setFireChangeEventOnSetValue(true);
+                     input.addListener(Events.Change, new Listener<FieldEvent>() {
+-                        
++
+                         public void handleEvent(FieldEvent be) {
+                             String value = (String) be.getField().getValue();
+                             String columnValue = value != null ? value : ""; //$NON-NLS-1$
+@@ -583,6 +650,15 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             add(vp);
+         }
+ 
++        public TargetRecord(String name, TaskResolutionTableSchema schema, TgtrecordsDTO tgRecord, boolean isMoveBtn,
++                boolean isHeader, boolean isInput, boolean enableResize) {
++            this(name, schema, tgRecord, isMoveBtn, isHeader, isInput);
++            this.sinkEvents(Event.ONMOUSEOVER | Event.ONMOUSEOUT | Event.ONCLICK);
++            if (enableResize) {
++                this.sinkEvents(Event.ONMOUSEDOWN | Event.ONMOUSEUP | Event.ONMOUSEMOVE);
++            }
++        }
++
+         /*
+          * (non-Javadoc)
+          * 
+@@ -594,7 +670,48 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             int type = DOM.eventGetType(event);
+             switch (type) {
+             case Event.ONMOUSEOVER: {
+-                handleMouseOver(event);
++                if (isCursorResize(event)) {
++                    DOM.setStyleAttribute(this.getElement(), "cursor", "e-resize");//$NON-NLS-1$ //$NON-NLS-2$
++                } else {
++                    handleMouseOver(event);
++                }
++                break;
++            }
++            case Event.ONMOUSEDOWN: {
++                if (isCursorResize(event)) {
++                    if (resize == false) {
++                        resize = true;
++                        DOM.setStyleAttribute(this.getElement(), "cursor", "e-resize");//$NON-NLS-1$ //$NON-NLS-2$
++                        DOM.setCapture(this.getElement());
++                    }
++                }
++
++                break;
++            }
++            case Event.ONMOUSEMOVE: {
++                if (resize) {
++                    int absX = DOM.eventGetClientX(event);
++                    int originalX = DOM.getAbsoluteLeft(this.getElement());
++
++                    if (absX > originalX) {
++                        Integer width = absX - originalX;
++                        if (width > COLLAPSE_LABEL_WIDTH) {
++                            this.setWidth(width + "px");//$NON-NLS-1$
++                        }
++                    }
++                } else if (!isCursorResize(event)) {
++                    DOM.setStyleAttribute(this.getElement(), "cursor", "default");//$NON-NLS-1$ //$NON-NLS-2$
++                }
++
++                break;
++            }
++            case Event.ONMOUSEUP: {
++                if (resize == true) {
++                    resize = false;
++                    DOM.setStyleAttribute(this.getElement(), "cursor", "default");//$NON-NLS-1$ //$NON-NLS-2$
++                    DOM.releaseCapture(this.getElement());
++                }
++
+                 break;
+             }
+             case Event.ONMOUSEOUT: {
+@@ -605,6 +722,23 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         }
+ 
+         /**
++         * if is resize.
++         * 
++         * @param event
++         * @return
++         */
++        protected boolean isCursorResize(Event event) {
++            int cursor = DOM.eventGetClientX(event);
++            int initial = this.getAbsoluteLeft();
++            int width = this.getOffsetWidth();
++            if (initial + width >= cursor && initial + width - 10 < cursor) {
++                return true;
++            } else {
++                return false;
++            }
++        }
++
++        /**
+          * handle mouse over for entire source record.
+          * 
+          * @param event
+@@ -706,6 +840,8 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+     public class SourceRecord<M extends ModelData> extends VerticalPanel {
+ 
++        private String name;
++
+         protected SrcrecordsDTO sourceRecord;
+ 
+         public SrcrecordsDTO getSourceRecord() {
+@@ -717,18 +853,18 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         final VerticalPanel vp = new VerticalPanel();
+ 
+         MoveRecordBtn horMoveBtn;
+-        
++
+         LabelField scores = new LabelField();
+-        
++
+         ContentPanel fullColpseScores = new ContentPanel(new HBoxLayout());
+-        
++
+         final CheckBox registeredSrc = new CheckBox();
+ 
+         IconButton fullFill = new IconButton("icon-select_all"); //$NON-NLS-1$
+ 
+         AbsoluteLayout headerLayout = new AbsoluteLayout();
+ 
+-        final ContentPanel header = new ContentPanel(headerLayout);
++        final ContentPanel columnHeader = new ContentPanel(headerLayout);
+ 
+         IconButton colospe = new IconButton("icon-control_rewind_blue"); //$NON-NLS-1$
+ 
+@@ -739,9 +875,9 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         private boolean resize = false;
+ 
+         private final static int IMAGE_INFO_SIZE = 6;
+-        
++
+         private final static int CONTAINER_LEFT = 65;
+-        
++
+         private final static String MASTER_RECORED_NOTE = "(Ref)"; //$NON-NLS-1$
+ 
+         /**
+@@ -762,68 +898,81 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             this.srcLabels = srcLabels;
+         }
+ 
+-        /**
+-         * collapse source record.
+-         */
+-        private void collapse() {
+-            this.setWidth(COLLAPSE_LABEL_WIDTH + "px");//$NON-NLS-1$
+-            registeredSrc.setVisible(false);
+-            expand.setVisible(true);
+-        }
+-
+         @Override
+         public void setWidth(String width) {
+             super.setWidth(width);
+-            header.setWidth(width);
++            columnHeader.setWidth(width);
+             vp.setWidth(width);
+ 
+-            if (Integer.parseInt(width.replace("px", "")) < LABEL_WIDTH - 20) { //$NON-NLS-1$  //$NON-NLS-2$ 
+-                this.horMoveBtn.setVisible(false);
+-            } else {
+-                horMoveBtn.setWidth(width);
+-                this.horMoveBtn.setVisible(true);
+-            }
++            setColumnWidth(name, Integer.valueOf(width.replace("px", ""))); //$NON-NLS-1$ //$NON-NLS-2$
+ 
+             for (LabelField label : srcLabels) {
+                 label.setWidth(width);
+                 label.setStyleAttribute("background-position", //$NON-NLS-1$
+                         Integer.parseInt(width.replace("px", "")) - IMAGE_INFO_SIZE + " 1"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+             }
++            cpTSource.setWidth(source.getOffsetWidth() - 4 + "px"); //$NON-NLS-1$
++        }
+ 
+-            cpTSource.setWidth(caculateCollapseWidth() - 2);
+-            cpT.setWidth(cpTSource.getWidth() + cpTarget.getWidth() + "px"); //$NON-NLS-1$
+-            cp.setWidth(cpT.getOffsetWidth());
+-            source.setWidth(caculateCollapseWidth());
++        @Override
++        protected void onLoad() {
++            super.onLoad();
++            cpTSource.setWidth(source.getOffsetWidth() - 4 + "px"); //$NON-NLS-1$
++            Object[] states = getCollapseState(name);
++            Boolean isCollapse = (Boolean) states[0];
++            if (isCollapse) {
++                colospe.fireEvent(Events.Select);
++            }
++        }
++
++        /**
++         * collapse source record.
++         */
++        private void collapse() {
++            setCollapseState(name, true, this.getOffsetWidth());
++            this.setWidth(COLLAPSE_LABEL_WIDTH + "px");//$NON-NLS-1$
++            headerLayout.setPosition(fullColpseScores, -fullColpseScores.getOffsetWidth(), 25);
++            registeredSrc.setVisible(false);
++            colospe.setVisible(false);
++            fullFill.setVisible(false);
++            expand.setVisible(true);
+         }
+ 
+         /**
+          * expand source record.
+          */
+         private void expand() {
+-            headerLayout.setPosition(fullColpseScores, LABEL_WIDTH - CONTAINER_LEFT, 25);
+-            this.setWidth(LABEL_WIDTH + "px"); //$NON-NLS-1$ 
++            Object[] states = getCollapseState(name);
++            Integer originalSize = (Integer) states[1];
++            int w = originalSize > LABEL_WIDTH ? originalSize : LABEL_WIDTH;
++            headerLayout.setPosition(fullColpseScores, w - CONTAINER_LEFT, 25);
++            this.setWidth(w + "px"); //$NON-NLS-1$
++            setCollapseState(name, false, w);
++            fullFill.setVisible(true);
++            colospe.setVisible(true);
+             expand.setVisible(false);
+             registeredSrc.setVisible(true);
+         }
+ 
+-        public SourceRecord(final SrcrecordsDTO sourceRecord) {
++        public SourceRecord(String name, final SrcrecordsDTO sourceRecord) {
++            this.name = name;
+             this.sourceRecord = sourceRecord;
+             // initWidget(vp);
+             this.sinkEvents(Event.ONMOUSEOVER | Event.ONMOUSEOUT | Event.ONCLICK | Event.ONMOUSEDOWN | Event.ONMOUSEUP
+                     | Event.ONMOUSEMOVE);
+             vp.setSpacing(LABEL_SPACING);
+-            header.setHeaderVisible(false);
+-            header.setHeight(ICONPANEL_HEIGHT);
+-            header.setBodyBorder(true);
+-            header.setBodyStyleName("panel_title"); //$NON-NLS-1$
+-            header.setWidth(LABEL_WIDTH);
++            columnHeader.setHeaderVisible(false);
++            columnHeader.setHeight(ICONPANEL_HEIGHT);
++            columnHeader.setBodyBorder(true);
++            columnHeader.setBodyStyleName("panel_title"); //$NON-NLS-1$
++            columnHeader.setWidth(getColumntWidth(name));
+             horMoveBtn = new MoveRecordBtn(this);
+             horMoveBtn.setVisible(false);
+             horMoveBtn.setHeight(LABEL_HEIGHT - 5);
+-            horMoveBtn.setWidth(LABEL_WIDTH);
++            horMoveBtn.setWidth(getColumntWidth(name));
+             LabelField sourceLF = new LabelField(sourceRecord.getSource());
+             sourceLF.setToolTip(CommonUtil.wrapText(sourceRecord.getSource(), 30));
+-            header.add(horMoveBtn, new AbsoluteData(1, LABEL_SPACING));
++            columnHeader.add(horMoveBtn, new AbsoluteData(1, LABEL_SPACING));
+             Set<SrccolumnsDTO> srcColumns = sourceRecord.getSrccolumnses();
+             registeredSrc.setHeight(LABEL_HEIGHT + "px"); //$NON-NLS-1$
+             registeredSrc.setEnabled(!readOnly);
+@@ -894,16 +1043,15 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+             expand.setVisible(false);
+             String weight = this.sourceRecord.getWeights();
+-            
+-            if(this.sourceRecord.getScore() != null) {
++
++            if (this.sourceRecord.getScore() != null) {
+                 scores.setText(digitsToPercent(this.sourceRecord.getScore()));
+                 scores.setVisible(isShowScores);
+-            }
+-            else if(this.sourceRecord.getScore() == null && weight == null) {
++            } else if (this.sourceRecord.getScore() == null && weight == null) {
+                 scores.setText(MASTER_RECORED_NOTE);
+                 scores.setVisible(isShowScores);
+             }
+-            
++
+             fullColpseScores.setWidth(CONTAINER_LEFT - LABEL_SPACING);
+             fullColpseScores.setHeaderVisible(false);
+             fullColpseScores.setHeight(LABEL_HEIGHT);
+@@ -914,21 +1062,22 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             scores.setHeight(LABEL_HEIGHT);
+             scores.setStyleAttribute("right", "2px");//$NON-NLS-1$  //$NON-NLS-2$
+             scores.setStyleAttribute("top", "1px");//$NON-NLS-1$  //$NON-NLS-2$
+-            
++
+             fullColpseScores.add(scores);
+-            
+-            header.add(registeredSrc, new AbsoluteData(1, 25));
+-            header.add(sourceLF, new AbsoluteData(22, 22));
+-            header.add(expand, new AbsoluteData(1, 25));
+-            header.add(fullColpseScores, new AbsoluteData(LABEL_WIDTH - CONTAINER_LEFT, 25));
+-            vp.add(header);
++
++            int columnWidth = getColumntWidth(name);
++            columnHeader.add(registeredSrc, new AbsoluteData(1, 25));
++            columnHeader.add(sourceLF, new AbsoluteData(22, 22));
++            columnHeader.add(expand, new AbsoluteData(1, 25));
++            columnHeader.add(fullColpseScores, new AbsoluteData(columnWidth - CONTAINER_LEFT, 25));
++            vp.add(columnHeader);
+             srcLabels = new ArrayList<LabelField>(srcColumns.size());
+             String[] weights = weight != null ? weight.split("\\|") : null;//$NON-NLS-1$
+             sourceLF.setStyleAttribute("z-index", "0");//$NON-NLS-1$  //$NON-NLS-2$
+-            
++
+             for (LabelField lf : headerLabels) {
+                 LabelField columnv = new LabelField();
+-                columnv.setWidth(LABEL_WIDTH + 1);
++                columnv.setWidth(columnWidth + 1);
+                 columnv.setHeight(LABEL_HEIGHT);
+                 columnv.setBorders(false);
+                 columnv.setStyleName("panel_label_nogreen"); //$NON-NLS-1$
+@@ -950,26 +1099,25 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                             columnv.setToolTip(config);
+                             columnv.setStyleAttribute("background-image", "url(resources/user/images/einfo.png)"); //$NON-NLS-1$ //$NON-NLS-2$ 
+                             columnv.setStyleAttribute("background-repeat", "no-repeat"); //$NON-NLS-1$ //$NON-NLS-2$ 
+-                            columnv.setStyleAttribute("background-position", LABEL_WIDTH - IMAGE_INFO_SIZE + " 1");//$NON-NLS-1$ //$NON-NLS-2$ 
++                            columnv.setStyleAttribute("background-position", columnWidth - IMAGE_INFO_SIZE + " 1");//$NON-NLS-1$ //$NON-NLS-2$ 
+                         }
+-                        
+-                        
++
+                         Element divText = DOM.createDiv();
+                         Element divScore = DOM.createDiv();
+                         Element container = DOM.createDiv();
+                         divText.setInnerText(cf.getColValue());
+-                        container.getStyle().setProperty("position", "relative");
+-                        divText.getStyle().setProperty("position", "absolute");
+-                        divScore.getStyle().setProperty("position", "absolute");
+-                        divScore.getStyle().setProperty("top", "10px");
+-                        divScore.getStyle().setProperty("right", "2px");
+-                        divScore.getStyle().setProperty("fontSize", "90%");
++                        container.getStyle().setProperty("position", "relative"); //$NON-NLS-1$//$NON-NLS-2$
++                        divText.getStyle().setProperty("position", "absolute"); //$NON-NLS-1$//$NON-NLS-2$
++                        divScore.getStyle().setProperty("position", "absolute"); //$NON-NLS-1$//$NON-NLS-2$
++                        divScore.getStyle().setProperty("top", "10px"); //$NON-NLS-1$//$NON-NLS-2$
++                        divScore.getStyle().setProperty("right", "2px"); //$NON-NLS-1$//$NON-NLS-2$
++                        divScore.getStyle().setProperty("fontSize", "90%"); //$NON-NLS-1$//$NON-NLS-2$
+                         container.insertFirst(divText);
+                         container.insertAfter(divScore, divText);
+                         columnv.setElement(container);
+-                            
+-                        if(!isShowScores) {
+-                            divScore.getStyle().setProperty("visibility", "hidden");
++
++                        if (!isShowScores) {
++                            divScore.getStyle().setProperty("visibility", "hidden"); //$NON-NLS-1$//$NON-NLS-2$
+                         }
+ 
+                         break;
+@@ -980,13 +1128,13 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 vp.add(columnv);
+                 vp.setCellHeight(columnv, (LABEL_HEIGHT + BOTTOM_BORDER_HEIGHT) + "px"); //$NON-NLS-1$
+             }
+-            
+-            for(int i = 0; weights != null && i <  weights.length; i++) {
++
++            for (int i = 0; weights != null && i < weights.length; i++) {
+                 Element container = srcLabels.get(i).getElement();
+                 Element scoresDiv = (Element) container.getLastChild();
+                 scoresDiv.setInnerText(digitsToPercent(Double.parseDouble(weights[i])));
+             }
+-            
++
+             add(vp);
+         }
+ 
+@@ -1068,6 +1216,14 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+                         if (width > COLLAPSE_LABEL_WIDTH) {
+                             headerLayout.setPosition(fullColpseScores, width - CONTAINER_LEFT, 25);
++
++                            if (width < getColumntWidth(name) - 20) {
++                                this.horMoveBtn.setVisible(false);
++                            } else {
++                                horMoveBtn.setWidth(width);
++                                this.horMoveBtn.setVisible(true);
++                            }
++
+                             this.setWidth(width + "px");//$NON-NLS-1$
+                         }
+                     }
+@@ -1109,10 +1265,13 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             int initial = this.getAbsoluteLeft();
+             int width = this.getOffsetWidth();
+ 
+-            if (initial + width >= cursor && initial + width - 10 < cursor)
+-                return true;
+-            else
++            if (initial + width >= cursor && initial + width - 10 < cursor) {
++                Object[] states = getCollapseState(name);
++                Boolean isCollapse = (Boolean) states[0];
++                return !isCollapse;
++            } else {
+                 return false;
++            }
+         }
+ 
+         private void handleMouseClick(Event event) {
+@@ -1128,7 +1287,6 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 }
+             }
+ 
+-
+             if (target != null) {
+                 for (TextField<String> input : inputs) {
+                     if (input.getItemId().equals(target.getItemId())) {
+@@ -1152,8 +1310,9 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+                         public void onSuccess(Boolean result) {
+                             if (result.equals(new Boolean(true))) {
+-                                if (Log.isDebugEnabled())
++                                if (Log.isDebugEnabled()) {
+                                     Log.debug("Update trusted score for record: " + srcRecordId);//$NON-NLS-1$
++                                }
+                             }
+                         }
+                     });
+@@ -1211,9 +1370,10 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         this.trParameters = trParameters;
+         this.trUpdater = trUpdater;
+         if (trParameters != null && trParameters.getTaskDTO() != null) {
+-            if(!trParameters.getTaskDTO().getStatus().equals(TaskState.NEW.getName())&&!trParameters.getTaskDTO().getStatus().equals(TaskState.PENDING.getName())){
++            if (!trParameters.getTaskDTO().getStatus().equals(TaskState.NEW.getName())
++                    && !trParameters.getTaskDTO().getStatus().equals(TaskState.PENDING.getName())) {
+                 this.readOnly = true;
+-            }else{
++            } else {
+                 this.readOnly = false;
+             }
+             this.taskId = trParameters.getTaskDTO().getTaskId();
+@@ -1254,6 +1414,7 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         add(cpA, new MarginData(2));
+     }
+ 
++    @Override
+     protected void onResize(int width, int height) {
+         super.onResize(width, height);
+         if (isRendered()) {
+@@ -1280,9 +1441,10 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+      */
+     public void doAutoSuggestTargetValuesWithDataOverrideCheck(final boolean isInit, String tastStatus,
+             final AutoSuggestContext aContext) {
+-        
+-        if (!useAutoSuggest)
++
++        if (!useAutoSuggest) {
+             return;
++        }
+ 
+         // when is init&pending or resolved do not auto suggest
+         if (!tastStatus.equals(TaskState.RESOLVED.getName()) && !(isInit && tastStatus.equals(TaskState.PENDING.getName()))) {
+@@ -1339,7 +1501,6 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         asContext.run();
+     }
+ 
+-
+     /**
+      * preselect source column value when it is common to all columns.
+      */
+@@ -1360,59 +1521,33 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         if (columnLayout != null && columnLayout.size() > 0) {
+             // column layout
+             taskResolutionTableSchema = new TaskResolutionTableSchema();
+-            for (Iterator iterator = columnLayout.iterator(); iterator.hasNext();) {
+-                String columnName = (String) iterator.next();
++            for (Object element2 : columnLayout) {
++                String columnName = (String) element2;
+                 TaskResolutionSchema matchedTRSchema = getMatchedTRSchema(trParameters.getTaskResolutionTableSchema(), columnName);
+-                if (matchedTRSchema != null)
++                if (matchedTRSchema != null) {
+                     taskResolutionTableSchema.add(matchedTRSchema);
++                }
+             }
+         } else {
+             taskResolutionTableSchema = trParameters.getTaskResolutionTableSchema();
+         }
+ 
+-        TargetRecord headerBtn = new TargetRecord(taskResolutionTableSchema, null, true, false, false);
+-        TargetRecord headerC = new TargetRecord(taskResolutionTableSchema, null, false, true, false);
+-        TargetRecord inputC = new TargetRecord(taskResolutionTableSchema, trParameters.getTaskDTO().getTgtrecord(), false, false,
+-                true);
+-        ContentPanel key = new ContentPanel();
+-        key.setStyleName("panel_keyvalue"); //$NON-NLS-1$
+-        key.setHeaderVisible(false);
+-        key.setWidth(LABEL_WIDTH);
+-        key.setHeight(ICONPANEL_HEIGHT - 1);
+-        LabelField keyLabel = new LabelField(MessagesFactory.getMessages().resolution_key());
+-        keyLabel.setHeight(ICONPANEL_HEIGHT);
+-        keyLabel.setStyleName("header_label"); //$NON-NLS-1$
+-        key.add(keyLabel);
+-        key.setBodyBorder(false);
+-        key.setBodyStyleName("panel_title"); //$NON-NLS-1$
+-        ContentPanel value = new ContentPanel();
+-        value.setStyleName("panel_keyvalue"); //$NON-NLS-1$
+-        value.setHeaderVisible(false);
+-        value.setWidth(LABEL_WIDTH);
+-        value.setHeight(ICONPANEL_HEIGHT - 1);
+-        value.setBodyBorder(false);
+-        value.setBodyStyleName("panel_title"); //$NON-NLS-1$
+-        LabelField valueLabel = new LabelField(MessagesFactory.getMessages().resolution_value());
+-        valueLabel.setHeight(ICONPANEL_HEIGHT);
+-        valueLabel.setStyleName("header_label"); //$NON-NLS-1$
+-        value.add(valueLabel);
+-        header.add(headerBtn, new RowData());
+-        header.add(headerC, new RowData());
+-        header.add(inputC, new RowData());
+-        header.setBodyBorder(false);
++        headerBtn = new TargetRecord("TargetColumnControl", taskResolutionTableSchema, null, true, false, false); //$NON-NLS-1$
++        headerC = new TargetRecord("TargetColumnHeader", taskResolutionTableSchema, null, false, true, false, true); //$NON-NLS-1$
++        inputC = new TargetRecord(
++                "TargetColumnInput", taskResolutionTableSchema, trParameters.getTaskDTO().getTgtrecord(), false, false, true, true); //$NON-NLS-1$
++
++        header.add(headerBtn);
++        header.add(headerC);
++        header.add(inputC);
+         targetRecords.add(headerBtn);
+         targetRecords.add(headerC);
+         targetRecords.add(inputC);
+-        header.setWidth(caculateTargetWidth());
+-        header.setHeaderVisible(false);
+-        header.setHeight(caculateHeight() + ICONPANEL_HEIGHT + 10);
+-        header.setBodyBorder(false);
+     }
+ 
+     private TaskResolutionSchema getMatchedTRSchema(TaskResolutionTableSchema tableSchema, String columnName) {
+         TaskResolutionSchema matchedTRSchema = null;
+-        for (Iterator<TaskResolutionSchema> iterator = tableSchema.getTableSchema().iterator(); iterator.hasNext();) {
+-            TaskResolutionSchema trSchema = iterator.next();
++        for (TaskResolutionSchema trSchema : tableSchema.getTableSchema()) {
+             if (trSchema.getColumnName() != null && trSchema.getColumnName().equals(columnName)) {
+                 matchedTRSchema = trSchema;
+                 break;
+@@ -1426,7 +1561,6 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+      */
+     private void buildSourceRecordsPanel() {
+         Set<SrcrecordsDTO> srcrecordses = trParameters.getTaskDTO().getSrcrecordses();
+-        source.setScrollMode(Scroll.NONE);
+ 
+         List<SrcrecordsDTO> sortedSrcrecordses = null;
+         List<String> lineLayout = trParameters.getLineLayout();
+@@ -1435,45 +1569,39 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             sortedSrcrecordses = new ArrayList<SrcrecordsDTO>();
+             for (String lineName : lineLayout) {
+                 SrcrecordsDTO matchedSrcrecordDTO = getMatchedSrcRecDTO(srcrecordses, lineName);
+-                if (matchedSrcrecordDTO != null)
++                if (matchedSrcrecordDTO != null) {
+                     sortedSrcrecordses.add(matchedSrcrecordDTO);
++                }
+             }
+         }
+ 
+         Iterator iterator = null;
+-        if (sortedSrcrecordses == null)
++        if (sortedSrcrecordses == null) {
+             iterator = srcrecordses.iterator();
+-        else
++        } else {
+             iterator = sortedSrcrecordses.iterator();
+-        
++        }
++
+         Map<String, String> weightMap = new HashMap<String, String>();
++        int columnIndex = 0;
+         for (; iterator.hasNext();) {
+             SrcrecordsDTO srcRecord = (SrcrecordsDTO) iterator.next();
+-            if(!CommonUtil.isValidWeight(srcRecord.getWeights())) {
++            if (!CommonUtil.isValidWeight(srcRecord.getWeights())) {
+                 String tmpWeight = CommonUtil.getValidWeight(srcRecord.getWeights());
+                 weightMap.put(srcRecord.getSrcrecId(), tmpWeight);
+                 srcRecord.setWeights(tmpWeight);
+-            }    
+-            SourceRecord sourceC = new SourceRecord(srcRecord);
++            }
++            SourceRecord sourceC = new SourceRecord("SourceColumn" + columnIndex++, srcRecord); //$NON-NLS-1$
+             srcRecords.add(sourceC);
+-            source.add(sourceC, new RowData());
+-        }
+-       
+-        cp.setHeaderVisible(false);
+-        cp.setBodyBorder(false);
+-        cp.setScrollMode(Scroll.AUTO);
+-        cp.setWidth(caculateTargetWidth() + caculateSourceWidth() + 50);
+-        source.setHeaderVisible(false);
+-        source.setWidth(caculateSourceWidth() + 30);
+-        source.setHeight(caculateHeight() + ICONPANEL_HEIGHT + 10);
+-        source.setBodyBorder(false);
+-        cp.add(header, new RowData());
+-        cp.add(source, new RowData());
+-        cp.setHeight(caculateHeight() + ICONPANEL_HEIGHT + 10 + 10);
+-        
+-        if(weightMap.size() > 0) {
++            source.add(sourceC);
++        }
++
++        cp.add(header);
++        cp.add(source);
++
++        if (weightMap.size() > 0) {
+             TaskServiceAsync taskService = (TaskServiceAsync) Registry.get(MainPanel.TASK_SERVICE);
+-            taskService.updateSrcRecordsWeights(weightMap, new AsyncCallback<Void>(){
++            taskService.updateSrcRecordsWeights(weightMap, new AsyncCallback<Void>() {
+ 
+                 public void onFailure(Throwable caught) {
+                     Dispatcher.forwardEvent(AppEvents.Error, caught);
+@@ -1481,17 +1609,18 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 }
+ 
+                 public void onSuccess(Void result) {
+-                    MessageBox.alert(MessagesFactory.getMessages().warning_title(), MessagesFactory.getMessages().invalid_weight(), null);
++                    MessageBox.alert(MessagesFactory.getMessages().warning_title(), MessagesFactory.getMessages()
++                            .invalid_weight(), null);
+                 }
+-                
++
+             });
+         }
+     }
+ 
+     private SrcrecordsDTO getMatchedSrcRecDTO(Set<SrcrecordsDTO> srcrecordses, String lineName) {
+         SrcrecordsDTO matchedSrcrecordDTO = null;
+-        for (Iterator iterator = srcrecordses.iterator(); iterator.hasNext();) {
+-            SrcrecordsDTO srcrecordDTO = (SrcrecordsDTO) iterator.next();
++        for (Object element2 : srcrecordses) {
++            SrcrecordsDTO srcrecordDTO = (SrcrecordsDTO) element2;
+             if (srcrecordDTO.getSource() != null && srcrecordDTO.getSource().equals(lineName)) {
+                 matchedSrcrecordDTO = srcrecordDTO;
+                 break;
+@@ -1504,82 +1633,29 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+      * build target and source panel.
+      */
+     private void buildTargetSourcePanel() {
+-        cpTarget.setWidth(LABEL_WIDTH * 2 + LABEL_SPACING * 2);
+         ContentPanel fill = new ContentPanel();
+         fill.setWidth(UPDOWN_TOOLBAR_WIDTH - LABEL_SPACING);
+-        cpTarget.setBodyStyleName("panel_target"); //$NON-NLS-1$
+-        cpTarget.setBodyBorder(false);
+-        cpTarget.setHeight(TARGET_SOURCE_HEIGHT);
+-        cpTSource.setWidth(caculateSourceWidth());
+-        cpTSource.setBodyStyleName("panel_source"); //$NON-NLS-1$
+-        cpTSource.setBodyBorder(false);
++        cpTarget.setStyleName("panel_target"); //$NON-NLS-1$
++        cpTarget.setHeight(TARGET_SOURCE_HEIGHT + "px"); //$NON-NLS-1$
++        cpTSource.setStyleName("panel_source"); //$NON-NLS-1$
+         cpT.setSpacing(LABEL_SPACING * 2);
+         cpT.setBorderWidth(0);
+         fill.setHeaderVisible(false);
+         fill.setBodyBorder(false);
+         cpT.add(fill);
+-        cpTarget.setHeaderVisible(false);
+-        cpTarget.setBodyBorder(false);
+         LabelField targetLF = new LabelField(MessagesFactory.getMessages().resolution_target());
+         targetLF.setStyleName("header_target_label"); //$NON-NLS-1$
+         cpTarget.add(targetLF);
+         cpT.add(cpTarget);
+         LabelField sourceLF = new LabelField(MessagesFactory.getMessages().resolution_source());
+         sourceLF.setStyleName("header_source_label"); //$NON-NLS-1$
+-        cpTSource.add(sourceLF);
+-        cpTSource.setHeight(TARGET_SOURCE_HEIGHT);
+-        cpTSource.setHeaderVisible(false);
++        cpTSource.setWidget(sourceLF);
++        cpTSource.setHeight(TARGET_SOURCE_HEIGHT + "px"); //$NON-NLS-1$
+         cpT.add(cpTSource);
+ 
+-        cpT.setWidth((caculateTargetWidth() + caculateSourceWidth()) + "px"); //$NON-NLS-1$
+         cpT.setHeight(TARGET_SOURCE_HEIGHT + "px"); //$NON-NLS-1$
+     }
+ 
+-    /**
+-     * caculate the width of source panel after collapsed.
+-     * 
+-     * @return
+-     */
+-    private int caculateCollapseWidth() {
+-        int width = 0;
+-
+-        for (SourceRecord record : srcRecords) {
+-            List<LabelField> labels = record.getLabels();
+-            int labelwidth = labels.get(0).getWidth();
+-            width += labelwidth;
+-        }
+-
+-        return width + (srcRecords.size() - 1) * (LABEL_SPACING + 2);
+-    }
+-
+-    /**
+-     * caculate the width of source panel.
+-     * 
+-     * @return
+-     */
+-    private int caculateSourceWidth() {
+-        return srcRecords.size() * LABEL_WIDTH + (srcRecords.size() - 1) * (LABEL_SPACING + 3);
+-    }
+-
+-    /**
+-     * caculate the width of target panel.
+-     * 
+-     * @return
+-     */
+-    private int caculateTargetWidth() {
+-        return (targetRecords.size() * LABEL_WIDTH - (LABEL_WIDTH - UPDOWN_TOOLBAR_WIDTH)) + (targetRecords.size() - 1) * LABEL_SPACING + 8;
+-    }
+-
+-    /**
+-     * caculate the height of source panel.
+-     * 
+-     * @return
+-     */
+-    private int caculateHeight() {
+-        int rows = targetRecords.get(0).moveRowBtns.size();
+-        return rows * 25 + (rows - 1) * 4;
+-    }
+-
+     /*
+      * (non-Javadoc)
+      * 
+@@ -1703,7 +1779,7 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+             }
+         }
+     }
+-    
++
+     /**
+      * show scroes by isShowScores.
+      */
+@@ -1711,15 +1787,14 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         for (SourceRecord record : srcRecords) {
+             List<LabelField> labels = record.getLabels();
+             record.scores.setVisible(isShowScores);
+-            
++
+             for (LabelField label : labels) {
+                 Element container = label.getElement();
+-                Element scoresDiv = (Element) container.getLastChild(); 
++                Element scoresDiv = (Element) container.getLastChild();
+ 
+                 if (isShowScores) {
+                     scoresDiv.getStyle().clearProperty("visibility");
+-                }
+-                else {
++                } else {
+                     scoresDiv.getStyle().setProperty("visibility", "hidden");
+                 }
+             }
+@@ -1930,6 +2005,7 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+ 
+     /**
+      * set showing scores.
++     * 
+      * @param isShowScores
+      */
+     public void setShowScores(boolean isShowScores) {
+@@ -2052,8 +2128,9 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         Map<String, Integer> columnLayout = new HashMap<String, Integer>();
+ 
+         for (int i = 0; i < headerLabels.size(); i++) {
+-            if (headerLabels.get(i) != null)
++            if (headerLabels.get(i) != null) {
+                 columnLayout.put(headerLabels.get(i).getItemId(), i);
++            }
+         }
+ 
+         for (int i = 0; i < srcRecords.size(); i++) {
+@@ -2061,10 +2138,11 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+                 String source = srcRecords.get(i).sourceRecord.getSource();
+                 // FIXME Limitation: line layout not supported if multiple records belong to the same source
+                 if (lineLayout != null) {
+-                    if (lineLayout.containsKey(source))
++                    if (lineLayout.containsKey(source)) {
+                         lineLayout = null;
+-                    else
++                    } else {
+                         lineLayout.put(source, i);
++                    }
+                 }
+             }
+         }
+@@ -2072,71 +2150,65 @@ public class RecordMergePanel<M extends ModelData> extends LayoutContainer {
+         trUpdater.setColumnLayout(columnLayout);
+         trUpdater.setLineLayout(lineLayout);
+     }
+-    
++
+     /**
+      * remove SourceRecord by specify list of SrcrecordsDTO.
++     * 
+      * @param sourceRecords
+      */
+     public void removeSourceRecord(List<SrcrecordsDTO> sourceRecords) {
+-        for(SrcrecordsDTO srcrecordsDTO : sourceRecords) {
+-            SourceRecord sourceRec = new SourceRecord(srcrecordsDTO);
+-            List<Component> items = source.getItems();
+-            
+-            for(int index = 0; index < source.getItemCount(); index++) {
++        for (SrcrecordsDTO srcrecordsDTO : sourceRecords) {
++            for (int index = 0; index < source.getWidgetCount(); index++) {
+                 SourceRecord item = (SourceRecord) source.getWidget(index);
+-                if(item.getSourceRecord().getSrcrecId().equals(srcrecordsDTO.getSrcrecId())) {
++                if (item.getSourceRecord().getSrcrecId().equals(srcrecordsDTO.getSrcrecId())) {
+                     source.remove(item);
+                     srcRecords.remove(item);
+                 }
+             }
+         }
+-        
+-        cpTSource.setWidth(caculateCollapseWidth() - 2 + "px"); //$NON-NLS-1$
+-        cpT.setWidth(cpTSource.getWidth() + cpTarget.getWidth() + "px"); //$NON-NLS-1$
+-        cp.setWidth(cpT.getOffsetWidth() + 25);
+-        source.setWidth(caculateCollapseWidth());
++
++        cpTSource.setWidth(source.getOffsetWidth() - 4 + "px"); //$NON-NLS-1$
+     }
+-    
++
+     /**
+      * build all sequence of srcRecords's weights.
+      */
+     public void buildColWeights() {
+         Map<String, String> colWeights = new HashMap<String, String>();
+-        
+-        for(SourceRecord<ModelData> srcRecord : srcRecords) {
++
++        for (SourceRecord<ModelData> srcRecord : srcRecords) {
+             StringBuilder weights = new StringBuilder();
+-            
++
+             for (int i = 0; i < srcRecord.getLabels().size(); ++i) {
+                 LabelField lf = srcRecord.getLabels().get(i);
+                 Element container = lf.getElement();
+-                Element scoresDiv = (Element) container.getLastChild(); 
+-                
++                Element scoresDiv = (Element) container.getLastChild();
++
+                 weights.append(percentToDigits(scoresDiv.getInnerText()) + "|");
+             }
+ 
+             colWeights.put(srcRecord.sourceRecord.getSrcrecId(), weights.toString());
+         }
+-        
++
+         trUpdater.setColWeights(colWeights);
+     }
+-    
++
+     public static String digitsToPercent(Double number) {
+         StringBuilder sb = new StringBuilder();
+         sb.append(number * 100);
+         String percent;
+-        
+-        if(number > 0 && number < 1) {
++
++        if (number > 0 && number < 1) {
+             percent = sb.toString().substring(0, 4);
+-        }
+-        else {
++        } else {
+             percent = sb.toString().substring(0, 3);
+         }
+-        
+-        return percent + "%";
++
++        return percent + "%"; //$NON-NLS-1$
+     }
+-    
++
+     public static Double percentToDigits(String number) {
+-        return "".equals(number) ? 1 : Double.parseDouble(number.replace("%", ""))/100;
++        return "".equals(number) ? 1 : Double.parseDouble(number.replace("%", "")) / 100; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
+     }
+ 
+     public List<String> buildSourceScoreModelList(List<SourceScoreModelData> sourceScoreModelList) {
+diff --git a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskListGrid.java b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskListGrid.java
+index cac4d24..d5e2f1d 100644
+--- a/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskListGrid.java
++++ b/org.talend.datastewardship/src/main/java/org/talend/datastewardship/client/widget/TaskListGrid.java
+@@ -281,7 +281,7 @@ public class TaskListGrid extends ContentPanel {
+ 
+                 String status = model.get(property);
+                 if (status != null && status.equals(TaskState.NEW.getName())) {
+-                    return "<span style=\"color:400080;font-weight:bold;\">" + status + "</b>"; //$NON-NLS-1$ //$NON-NLS-2$
++                    return "<span style=\"color:#400080;font-weight:bold;\">" + status + "</span>"; //$NON-NLS-1$ //$NON-NLS-2$
+                 }
+                 return status;
+             }
+diff --git a/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/multitask/MockResolutionTask.java b/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/multitask/MockResolutionTask.java
+index 2c732d5..d43d261 100644
+--- a/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/multitask/MockResolutionTask.java
++++ b/org.talend.datastewardship/src/test/java/org/talend/datastewardship/client/test/multitask/MockResolutionTask.java
+@@ -14,7 +14,6 @@ package org.talend.datastewardship.client.test.multitask;
+ 
+ import java.util.ArrayList;
+ import java.util.HashMap;
+-import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+ 
+@@ -100,26 +99,26 @@ public class MockResolutionTask {
+     private List<SourceRecord> genSourceRecords(String[] itemIds, Map<String, String[]> sources) {
+ 
+         List<SourceRecord> srcRecords = new ArrayList<SourceRecord>();
+-
++        int columnIndex = 0;
+         for (String sourceName : sources.keySet()) {
+             Map<String, Object> srcLabelValueMap = new HashMap<String, Object>();
+             for (int i = 0; i < itemIds.length; i++) {
+                 srcLabelValueMap.put(itemIds[i], sources.get(sourceName)[i]);
+             }
+-            srcRecords.add(genSourceRecord(sourceName, srcLabelValueMap));
++            srcRecords.add(genSourceRecord("Column" + columnIndex++, sourceName, srcLabelValueMap));
+         }
+ 
+         return srcRecords;
+ 
+     }
+ 
+-    private SourceRecord genSourceRecord(String sourceName, Map<String, Object> srcLabelValueMap) {
++    private SourceRecord genSourceRecord(String columnName, String sourceName, Map<String, Object> srcLabelValueMap) {
+         SrcrecordsDTO srcrecordsDTO = new SrcrecordsDTO();
+         srcrecordsDTO.setSource(sourceName);
+-        SourceRecord sourceRecord = recordMergePanel.new SourceRecord(srcrecordsDTO);
++        SourceRecord sourceRecord = recordMergePanel.new SourceRecord(columnName, srcrecordsDTO);
+         List<LabelField> srcLabels = new ArrayList<LabelField>();
+-        for (Iterator iterator = srcLabelValueMap.keySet().iterator(); iterator.hasNext();) {
+-            String label = (String) iterator.next();
++        for (Object element : srcLabelValueMap.keySet()) {
++            String label = (String) element;
+             Object value = srcLabelValueMap.get(label);
+ 
+             LabelField nameLabel = new LabelField();

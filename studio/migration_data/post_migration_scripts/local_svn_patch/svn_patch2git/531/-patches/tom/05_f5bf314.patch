@@ -1,0 +1,182 @@
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/SystemStorageWrapper.java b/org.talend.mdm.core/src/com/amalto/core/storage/SystemStorageWrapper.java
+index d06350e..45276f0 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/SystemStorageWrapper.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/SystemStorageWrapper.java
+@@ -338,6 +338,14 @@ public class SystemStorageWrapper extends StorageWrapper {
+                 }
+                 dataRecordXmlWriter.write(result, output);
+                 if (iterator.hasNext()) {
++                    int recordsLeft = 1;
++                    while (iterator.hasNext()) { // TMDM-6712: Consumes all results in iterator
++                        iterator.next();
++                        if (recordsLeft % 10 == 0) {
++                            LOGGER.warn("Processing system query lead to unexpected number of results (" + recordsLeft + " so far).");
++                        }
++                        recordsLeft++;
++                    }
+                     throw new IllegalStateException("Expected only 1 result.");
+                 }
+                 if (isUserFormat) {
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
+index b49f4fb..80c00ae 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ProjectionIterator.java
+@@ -28,7 +28,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+ 
+     private static final Logger LOGGER = Logger.getLogger(ProjectionIterator.class);
+ 
+-    private final Iterator iterator;
++    private final CloseableIterator<Object> iterator;
+ 
+     private final List<TypedExpression> selectedFields;
+ 
+@@ -37,7 +37,7 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+     private final MappingRepository mappingMetadataRepository;
+ 
+     public ProjectionIterator(MappingRepository mappingMetadataRepository,
+-                              Iterator<Object> iterator,
++                              CloseableIterator<Object> iterator,
+                               List<TypedExpression> selectedFields,
+                               Set<EndOfResultsCallback> callbacks) {
+         this.iterator = iterator;
+@@ -46,11 +46,15 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+         this.mappingMetadataRepository = mappingMetadataRepository;
+     }
+ 
++    private boolean isClosed;
++
+     public ProjectionIterator(MappingRepository mappingMetadataRepository,
+                               final ScrollableResults results,
+                               List<TypedExpression> selectedFields,
+                               Set<EndOfResultsCallback> callbacks) {
+-        this(mappingMetadataRepository, new Iterator<Object>() {
++        this(mappingMetadataRepository, new CloseableIterator<Object>() {
++            private boolean isClosed = false;
++
+             public boolean hasNext() {
+                 return results.next();
+             }
+@@ -61,6 +65,17 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+ 
+             public void remove() {
+             }
++
++            @Override
++            public void close() throws IOException {
++                if (!isClosed) {
++                    try {
++                        results.close();
++                    } finally {
++                        isClosed = true;
++                    }
++                }
++            }
+         }, selectedFields, callbacks);
+     }
+ 
+@@ -73,12 +88,21 @@ class ProjectionIterator implements CloseableIterator<DataRecord> {
+     }
+ 
+     private void notifyCallbacks() {
+-        for (EndOfResultsCallback callback : callbacks) {
++        if (!isClosed) {
++            // TMDM-6712: Ensure all iterator resources are released.
+             try {
+-                callback.onEndOfResults();
++                iterator.close();
+             } catch (Throwable t) {
+                 LOGGER.error(t);
+             }
++            for (EndOfResultsCallback callback : callbacks) {
++                try {
++                    callback.onEndOfResults();
++                } catch (Throwable t) {
++                    LOGGER.error(t);
++                }
++            }
++            isClosed = true;
+         }
+     }
+ 
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScrollableIterator.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScrollableIterator.java
+index a66268e..d3c5f35 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScrollableIterator.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/ScrollableIterator.java
+@@ -38,6 +38,8 @@ class ScrollableIterator implements CloseableIterator<DataRecord> {
+ 
+     private final MappingRepository storageRepository;
+ 
++    private boolean isClosed;
++
+     public ScrollableIterator(MappingRepository storageRepository, StorageClassLoader storageClassLoader, ScrollableResults results, Set<EndOfResultsCallback> callbacks) {
+         this.storageRepository = storageRepository;
+         this.storageClassLoader = storageClassLoader;
+@@ -101,13 +103,22 @@ class ScrollableIterator implements CloseableIterator<DataRecord> {
+     }
+ 
+     private void notifyCallbacks() {
+-        for (EndOfResultsCallback callback : callbacks) {
++        if (!isClosed) {
++            // TMDM-6712: Ensure resources used by iterator are released.
+             try {
+-                callback.onEndOfResults();
++                results.close();
+             } catch (Throwable t) {
+-                // Catch Throwable and log it (to ensure all callbacks get called).
+-                LOGGER.error("End of result callback exception", t);
++                LOGGER.error(t);
++            }
++            for (EndOfResultsCallback callback : callbacks) {
++                try {
++                    callback.onEndOfResults();
++                } catch (Throwable t) {
++                    // Catch Throwable and log it (to ensure all callbacks get called).
++                    LOGGER.error("End of result callback exception", t);
++                }
+             }
++            isClosed = true;
+         }
+     }
+ 
+diff --git a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StandardQueryHandler.java b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StandardQueryHandler.java
+index 2dd465b..acfd8b5 100644
+--- a/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StandardQueryHandler.java
++++ b/org.talend.mdm.core/src/com/amalto/core/storage/hibernate/StandardQueryHandler.java
+@@ -12,6 +12,7 @@ package com.amalto.core.storage.hibernate;
+ 
+ import static org.hibernate.criterion.Restrictions.*;
+ 
++import java.io.IOException;
+ import java.util.*;
+ 
+ import com.amalto.core.query.user.*;
+@@ -83,9 +84,27 @@ class StandardQueryHandler extends AbstractQueryHandler {
+ 
+     protected StorageResults createResults(List list, boolean isProjection) {
+         CloseableIterator<DataRecord> iterator;
+-        Iterator listIterator = list.iterator();
++        final Iterator listIterator = list.iterator();
+         if (isProjection) {
+-            iterator = new ProjectionIterator(mappings, listIterator, selectedFields, callbacks);
++            iterator = new ProjectionIterator(mappings, new CloseableIterator<Object>() {
++                @Override
++                public void close() throws IOException {
++                }
++
++                @Override
++                public boolean hasNext() {
++                    return listIterator.hasNext();
++                }
++
++                @Override
++                public Object next() {
++                    return listIterator.next();
++                }
++
++                @Override
++                public void remove() {
++                }
++            }, selectedFields, callbacks);
+         } else {
+             iterator = new ListIterator(mappings, storageClassLoader, listIterator, callbacks);
+         }

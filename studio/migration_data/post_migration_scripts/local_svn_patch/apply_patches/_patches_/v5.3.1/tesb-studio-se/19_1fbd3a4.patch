@@ -1,0 +1,24 @@
+diff --git a/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java b/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
+index b7f0652..eeba9ff 100644
+--- a/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
++++ b/org.talend.repository.services/src/org/talend/repository/services/ui/action/ExportServiceAction.java
+@@ -21,7 +21,8 @@ import org.eclipse.emf.common.util.EList;
+ import org.eclipse.jface.operation.IRunnableWithProgress;
+ import org.talend.commons.exception.PersistenceException;
+ import org.talend.core.model.repository.ERepositoryObjectType;
+-import org.talend.core.model.repository.IRepositoryViewObject;
++import org.talend.core.model.repository.IRepositoryViewObject;
++import org.talend.core.model.utils.JavaResourcesHelper;
+ import org.talend.core.repository.constants.FileConstants;
+ import org.talend.core.repository.model.ProxyRepositoryFactory;
+ import org.talend.designer.publish.core.models.BundleModel;
+@@ -103,8 +104,7 @@ public class ExportServiceAction implements IRunnableWithProgress {
+                         if(jobNode==null) {
+                         	continue;
+                         }
+-                        String jobName = jobNode.getObject().getLabel();
+-                        operations.put(operationName, jobName);
++                        operations.put(operationName, JavaResourcesHelper.getJobClassName(jobNode));
+                         nodes.add(jobNode);
+                     }
+                 }

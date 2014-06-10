@@ -186,7 +186,6 @@ org.talend.libraries.jdbc.jtds/
 org.talend.libraries.jdbc.mysql/
 org.talend.libraries.jdbc.paraccel/
 org.talend.libraries.jdbc.postgresql/
-org.talend.libraries.jdbc.saphana/
 org.talend.libraries.jdbc.sqlite3/
 org.talend.libraries.jdbc.teradata/
 org.talend.libraries.jersey/

@@ -1,0 +1,16 @@
+diff --git a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/connections/ConnectionFigure.java b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/connections/ConnectionFigure.java
+index 2b5c797..9f14c96 100644
+--- a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/connections/ConnectionFigure.java
++++ b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/connections/ConnectionFigure.java
+@@ -81,7 +81,10 @@ public class ConnectionFigure extends PolylineConnection {
+ 
+         if (PluginChecker.isAutoParalelPluginLoaded()) {
+             addParallelFigure();
+-            initFigureMap();
++            // TDI-26611
++            if (connection != null) {
++                initFigureMap();
++            }
+         }
+     }
+ 

@@ -1,0 +1,128 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/classloader/ClassLoaderFactory.java b/org.talend.core.runtime/src/main/java/org/talend/core/classloader/ClassLoaderFactory.java
+index 8b3f4b4..79f9aa8 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/classloader/ClassLoaderFactory.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/classloader/ClassLoaderFactory.java
+@@ -31,7 +31,10 @@ import org.talend.commons.exception.ExceptionHandler;
+ import org.talend.commons.utils.workbench.resources.ResourceUtils;
+ import org.talend.core.GlobalServiceRegister;
+ import org.talend.core.ILibraryManagerService;
++import org.talend.core.database.conn.ConnParameterKeys;
+ import org.talend.core.model.general.Project;
++import org.talend.core.model.metadata.IMetadataConnection;
++import org.talend.core.model.metadata.connection.hive.HiveConnUtils;
+ import org.talend.repository.ProjectManager;
+ import org.talend.utils.io.FilesUtils;
+ 
+@@ -229,4 +232,36 @@ public class ClassLoaderFactory {
+ 
+         return new File(tmpFolderPath);
+     }
++
++    public static String[] getDriverModuleList(IMetadataConnection metadataConn) {
++        String[] moduleList;
++        String distroKey = (String) metadataConn.getParameter(ConnParameterKeys.CONN_PARA_KEY_HIVE_DISTRIBUTION);
++        String distroVersion = (String) metadataConn.getParameter(ConnParameterKeys.CONN_PARA_KEY_HIVE_VERSION);
++        String hiveModel = (String) metadataConn.getParameter(ConnParameterKeys.CONN_PARA_KEY_HIVE_MODE);
++        if (HiveConnUtils.isCustomDistro(distroKey)) {
++            String jarsStr = (String) metadataConn.getParameter(ConnParameterKeys.CONN_PARA_KEY_HADOOP_CUSTOM_JARS);
++            moduleList = jarsStr.split(";");
++        } else {
++            String index = "HIVE" + ":" + distroKey + ":" + distroVersion + ":" + hiveModel; //$NON-NLS-1$  //$NON-NLS-2$  //$NON-NLS-3$ //$NON-NLS-4$ 
++            moduleList = getDriverModuleList(index);
++        }
++        return moduleList;
++    }
++
++    public static String[] getDriverModuleList(String connKeyString) {
++        if (connKeyString != null && configurationElements != null) {
++            for (IConfigurationElement current : configurationElements) {
++                String key = current.getAttribute(INDEX_ATTR);
++                if (connKeyString.equals(key)) {
++                    String libraries = current.getAttribute(LIB_ATTR);
++                    if (StringUtils.isNotEmpty(libraries)) {
++                        String[] librariesArray = libraries.split(SEPARATOR);
++                        return librariesArray;
++                    }
++                }
++            }
++        }
++        return null;
++    }
++
+ }
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/JavaSqlFactory.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/JavaSqlFactory.java
+index 1930704..deb1266 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/JavaSqlFactory.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/JavaSqlFactory.java
+@@ -20,6 +20,8 @@ import metadata.managment.i18n.Messages;
+ import org.apache.commons.lang.StringUtils;
+ import org.apache.log4j.Logger;
+ import org.eclipse.core.resources.IProject;
++import org.eclipse.core.runtime.Path;
++import org.eclipse.core.runtime.Platform;
+ import org.talend.core.database.conn.ConnParameterKeys;
+ import org.talend.core.database.conn.DatabaseConnStrUtil;
+ import org.talend.core.database.conn.HiveConfKeysForTalend;
+@@ -30,11 +32,13 @@ import org.talend.core.model.metadata.builder.connection.MDMConnection;
+ import org.talend.core.model.metadata.builder.database.dburl.SupportDBUrlStore;
+ import org.talend.core.model.metadata.builder.database.dburl.SupportDBUrlType;
+ import org.talend.core.model.metadata.builder.util.MetadataConnectionUtils;
++import org.talend.core.repository.model.ProxyRepositoryFactory;
+ import org.talend.core.runtime.CoreRuntimePlugin;
+ import org.talend.cwm.helper.ConnectionHelper;
+ import org.talend.cwm.helper.SwitchHelpers;
+ import org.talend.cwm.helper.TaggedValueHelper;
+ import org.talend.repository.ProjectManager;
++import org.talend.repository.model.IProxyRepositoryFactory;
+ import org.talend.repository.model.IRepositoryService;
+ import org.talend.utils.sql.ConnectionUtils;
+ import org.talend.utils.sugars.ReturnCode;
+@@ -363,11 +367,22 @@ public final class JavaSqlFactory {
+     public static void doHivePreSetup(Connection connection) {
+         Connection conn = connection;
+         if (conn instanceof DatabaseConnection) {
+-            IProject project = ProjectManager.getInstance().getResourceProject(
+-                    ProjectManager.getInstance().getCurrentProject().getEmfProject());
+             // put to diffirent folder in case it will conflict when create connection with diffirent distribution
+-            String fullPathTemp = project
+-                    .getFolder("temp").getLocation().append("metastore_db").append(connection.getId()).toPortableString(); //$NON-NLS-1$ //$NON-NLS-2$
++            String id = connection.getId();
++            if (id == null) {
++                IProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
++                id = factory.getNextId();
++            }
++            String fullPathTemp;
++            if (Platform.isRunning()) {
++                IProject project = ProjectManager.getInstance().getResourceProject(
++                        ProjectManager.getInstance().getCurrentProject().getEmfProject());
++                fullPathTemp = project.getFolder("temp").getLocation().append("metastore_db").append(id).toPortableString(); //$NON-NLS-1$ //$NON-NLS-2$
++
++            } else {
++                fullPathTemp = new Path(System.getProperty("java.io.tmpdir")).append("metastore_db").append(id).toPortableString();//$NON-NLS-1$ //$NON-NLS-2$
++            }
++            // put to diffirent folder in case it will conflict when create connection with diffirent distribution
+             System.setProperty(HiveConfKeysForTalend.HIVE_CONF_KEY_JDO_CONNECTION_URL.getKey(), "jdbc:derby:;databaseName=" //$NON-NLS-1$
+                     + fullPathTemp + ";create=true"); //$NON-NLS-1$
+             DatabaseConnection dbConn = (DatabaseConnection) conn;
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/metadata/managment/hive/HiveClassLoaderFactory.java b/org.talend.metadata.managment/src/main/java/org/talend/metadata/managment/hive/HiveClassLoaderFactory.java
+index 1a2ee3d..53ebe3f 100644
+--- a/org.talend.metadata.managment/src/main/java/org/talend/metadata/managment/hive/HiveClassLoaderFactory.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/metadata/managment/hive/HiveClassLoaderFactory.java
+@@ -12,6 +12,7 @@
+ // ============================================================================
+ package org.talend.metadata.managment.hive;
+ 
++import org.eclipse.core.runtime.Platform;
+ import org.talend.core.classloader.ClassLoaderFactory;
+ import org.talend.core.database.conn.ConnParameterKeys;
+ import org.talend.core.model.metadata.IMetadataConnection;
+@@ -59,6 +60,9 @@ public class HiveClassLoaderFactory {
+      * @return
+      */
+     public ClassLoader getClassLoader(IMetadataConnection metadataConn) {
++        if (!Platform.isRunning()) {
++            return Thread.currentThread().getContextClassLoader();
++        }
+         ClassLoader classloader = null;
+         String url = metadataConn.getUrl();
+ 

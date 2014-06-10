@@ -1,0 +1,140 @@
+diff --git a/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java b/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
+index 72e0941..c03ac16 100644
+--- a/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
++++ b/org.talend.commandline/src/main/java/org/talend/commandline/util/ItemsHelper.java
+@@ -33,14 +33,8 @@ import org.eclipse.core.runtime.NullProgressMonitor;
+ import org.eclipse.core.runtime.jobs.ISchedulingRule;
+ import org.eclipse.emf.common.util.EList;
+ import org.talend.commandline.client.ICommandLineConstants;
+-import org.talend.commandline.client.filter.AndGroupFilter;
+-import org.talend.commandline.client.filter.EqualsTypeFilter;
+-import org.talend.commandline.client.filter.GroupFilter;
+ import org.talend.commandline.client.filter.ItemFilter;
+-import org.talend.commandline.client.filter.OrGroupFilter;
+-import org.talend.commandline.client.filter.UniqueElementGroupFilter;
+ import org.talend.commandline.filter.ItemFilterAcceptSwitch;
+-import org.talend.commandline.filter.ValueFilterAcceptSwitch;
+ import org.talend.commons.exception.LoginException;
+ import org.talend.commons.exception.PersistenceException;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+@@ -431,7 +425,7 @@ public class ItemsHelper {
+ 
+         for (ERepositoryObjectType type : (ERepositoryObjectType[]) ERepositoryObjectType.values()) {
+ 
+-            if (type.isResourceItem() && beforeFilterAcceptRepositoryType(itemFilter, type)) {
++            if (type.isResourceItem()) {
+                 Collection<Item> allItems = new ArrayList<Item>();
+ 
+                 List<IRepositoryViewObject> list = ProxyRepositoryFactory.getInstance().getAll(type);
+@@ -719,50 +713,6 @@ public class ItemsHelper {
+         return new ItemFilterAcceptSwitch(item).doSwitch(itemFilter);
+     }
+ 
+-    public boolean beforeFilterAcceptRepositoryType(ItemFilter parentItemFilter, ERepositoryObjectType type) {
+-        ItemFilter filter = getChildFilter(parentItemFilter);
+-        if (filter != null) {
+-            return new ValueFilterAcceptSwitch(type).doSwitch(filter);
+-        }
+-        return true; // ignore others
+-    }
+-
+-    private ItemFilter getChildFilter(ItemFilter parentItemFilter) {
+-        if (parentItemFilter instanceof EqualsTypeFilter) {
+-            return parentItemFilter;
+-        } else if (parentItemFilter instanceof GroupFilter) {
+-            List<ItemFilter> childs = ((GroupFilter) parentItemFilter).getChilds();
+-            if (parentItemFilter instanceof UniqueElementGroupFilter) {
+-                if (!childs.isEmpty()) {
+-                    return getChildFilter(childs.get(0));
+-                }
+-            }
+-            GroupFilter newGroupFilter = null;
+-            if (parentItemFilter instanceof AndGroupFilter) {
+-                newGroupFilter = new AndGroupFilter();
+-            } else if (parentItemFilter instanceof OrGroupFilter) {
+-                newGroupFilter = new OrGroupFilter();
+-            }
+-            if (newGroupFilter != null) {
+-                for (ItemFilter filter : childs) {
+-                    ItemFilter childFilter = getChildFilter(filter);
+-                    boolean isAdd = true;
+-                    if (childFilter != null && childFilter instanceof GroupFilter) {
+-                        GroupFilter groupFilter = (GroupFilter) childFilter;
+-                        if (groupFilter.getChilds() != null && groupFilter.getChilds().size() == 0) {
+-                            isAdd = false;
+-                        }
+-                    }
+-                    if (childFilter != null && isAdd) {
+-                        newGroupFilter.addChild(childFilter);
+-                    }
+-                }
+-            }
+-            return newGroupFilter;
+-        }
+-        return null; // ignore others
+-    }
+-
+     private boolean filterSystemItem(Item item) {
+         if (item == null) {
+             return false;
+diff --git a/org.talend.commandline/src/main/java/org/talend/commandline/util/JobHandler.java b/org.talend.commandline/src/main/java/org/talend/commandline/util/JobHandler.java
+index b67cd99..2b20849 100644
+--- a/org.talend.commandline/src/main/java/org/talend/commandline/util/JobHandler.java
++++ b/org.talend.commandline/src/main/java/org/talend/commandline/util/JobHandler.java
+@@ -379,27 +379,25 @@ public class JobHandler {
+     private Collection<Item> fliterJobItems(ItemFilter itemFilter, Collection<Item> jobItems, boolean withAllVersion,
+             boolean withSystem) throws PersistenceException {
+         Collection<Item> fliterItems = new HashSet<Item>();
+-        if (itemHelper.beforeFilterAcceptRepositoryType(itemFilter, getType())) {
+-            Collection<Item> allItems = new ArrayList<Item>();
+-            for (Item item : jobItems) {
+-                if (withAllVersion) {
+-                    List<IRepositoryViewObject> versions = ProxyRepositoryFactory.getInstance().getAllVersion(
+-                            item.getProperty().getId());
+-                    for (IRepositoryViewObject repositoryObject : versions) {
+-                        allItems.add(repositoryObject.getProperty().getItem());
+-                    }
+-                } else {
+-                    allItems.add(item);
++        Collection<Item> allItems = new ArrayList<Item>();
++        for (Item item : jobItems) {
++            if (withAllVersion) {
++                List<IRepositoryViewObject> versions = ProxyRepositoryFactory.getInstance().getAllVersion(
++                        item.getProperty().getId());
++                for (IRepositoryViewObject repositoryObject : versions) {
++                    allItems.add(repositoryObject.getProperty().getItem());
+                 }
++            } else {
++                allItems.add(item);
+             }
++        }
+ 
+-            for (Item item : allItems) {
+-                if (itemHelper.filterAcceptItem(itemFilter, item)) {
+-                    if (withSystem) {
+-                        fliterItems.add(item);
+-                    } else if (filterSystemItem(item)) {
+-                        fliterItems.add(item);
+-                    }
++        for (Item item : allItems) {
++            if (itemHelper.filterAcceptItem(itemFilter, item)) {
++                if (withSystem) {
++                    fliterItems.add(item);
++                } else if (filterSystemItem(item)) {
++                    fliterItems.add(item);
+                 }
+             }
+         }
+diff --git a/org.talend.commandline/src/main/java/org/talend/commandline/util/TextContentFormatter.java b/org.talend.commandline/src/main/java/org/talend/commandline/util/TextContentFormatter.java
+index 58583b3..a3538fa 100644
+--- a/org.talend.commandline/src/main/java/org/talend/commandline/util/TextContentFormatter.java
++++ b/org.talend.commandline/src/main/java/org/talend/commandline/util/TextContentFormatter.java
+@@ -345,7 +345,7 @@ public class TextContentFormatter {
+         // }
+         List<ERepositoryObjectType> rootContainerList = new ArrayList<ERepositoryObjectType>();
+         for (ERepositoryObjectType type : (ERepositoryObjectType[]) ERepositoryObjectType.values()) {
+-            if (type.isResourceItem() && new ItemsHelper().beforeFilterAcceptRepositoryType(itemFilter, type)) {
++            if (type.isResourceItem()) {
+                 if (type != null) {
+                     RootContainer<String, IRepositoryViewObject> rootContainer = factory.getMetadata(type);
+                     ERepositoryObjectType type2 = getType(rootContainer, itemFilter);

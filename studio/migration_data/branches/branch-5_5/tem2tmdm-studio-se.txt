@@ -1,0 +1,2 @@
+org.talend.mdm.engines.client
+org.talend.mdm.jobrepository

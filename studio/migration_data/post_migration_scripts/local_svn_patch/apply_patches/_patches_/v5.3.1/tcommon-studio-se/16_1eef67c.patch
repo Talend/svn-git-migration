@@ -1,0 +1,123 @@
+diff --git a/org.talend.core.repository/src/main/java/org/talend/core/repository/utils/XmiResourceManager.java b/org.talend.core.repository/src/main/java/org/talend/core/repository/utils/XmiResourceManager.java
+index 77c927e..e861297 100644
+--- a/org.talend.core.repository/src/main/java/org/talend/core/repository/utils/XmiResourceManager.java
++++ b/org.talend.core.repository/src/main/java/org/talend/core/repository/utils/XmiResourceManager.java
+@@ -610,90 +610,47 @@ public class XmiResourceManager {
+     }
+ 
+     public void propagateFileName(Property lastVersionProperty, Property resourceProperty) throws PersistenceException {
+-        // test first from the resource of the property
+-        // this test will avoid to load all other resources linked, since by default it will load all resources, big or
+-        // not.
+-        // this should save quite lots of memory when call this function.
++    	// Normally the main checks are done from LocalRepositoryFactory now for the versions, but still do some here in
++        // case.
++
++        // Note that now if need to create a new version and change the label as well, it will need to call this
++        // function 2 times.
++        // fist time it will change the version, second time it will change the name.
++
++        // Since when create a new version (without rename) it only needs one call (and not one for every existing
++        // version), it's more simple like this
+         ResourceFilenameHelper.FileName fileNameTest = ResourceFilenameHelper.create(resourceProperty.eResource(),
+                 resourceProperty, lastVersionProperty);
+-
++        if (!ResourceFilenameHelper.mustChangeVersion(fileNameTest)
++                && ResourceFilenameHelper.hasSameNameButDifferentCase(fileNameTest)) {
++            throw new PersistenceException("No change of case allowed here"); //$NON-NLS-1$
++        }
+         if (!ResourceFilenameHelper.mustChangeVersion(fileNameTest) && !ResourceFilenameHelper.mustChangeLabel(fileNameTest)) {
+             return;
+         }
+ 
+-        // now we now we need all the resources to change the file, we can load them, and execute all code of this
+-        // function.
+-        // note: at the end of the function, it will try to unload everything but not the .properties
+-
+         List<Resource> affectedResources = getAffectedResources(resourceProperty);
+         List<Resource> resourcesToSave = new ArrayList<Resource>();
+-        Property previousVersionProperty = null;
+-        IFile propertyFile = null;
+ 
+         for (Resource resource : affectedResources) {
+             ResourceFilenameHelper.FileName fileName = ResourceFilenameHelper.create(resource, resourceProperty,
+                     lastVersionProperty);
+ 
++            // only test for version OR change label.
++            // to simplify now, in case of both changes needed, we simply call the function 2 times
+             if (ResourceFilenameHelper.mustChangeVersion(fileName)) {
+-                IPath path = URIHelper.convert(resource.getURI());
+-                IPath bakPath = path.addFileExtension("bak"); //$NON-NLS-1$
+-
+-                // Create copy
+-                copyResource(resource, bakPath);
+-                IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(bakPath);
+-
+-                // move actual to new version
+-                moveResource(resource, ResourceFilenameHelper.getExpectedFilePath(fileName, false));
++                IPath path = ResourceFilenameHelper.getExpectedFilePath(fileName, false);
++                resource.setURI(URIHelper.convert(path));
+                 resourcesToSave.add(resource);
+-
+-                // restore copy as previous version
+-                ResourceUtils.moveResource(file, path);
+-                file = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+-
+-                if (isPropertyFile(file)) {
+-                    propertyFile = file;
+-                }
+             } else if (ResourceFilenameHelper.mustChangeLabel(fileName)) {
+                 resourceProperty.setLabel(lastVersionProperty.getLabel());
+                 resourceProperty.setDisplayName(lastVersionProperty.getDisplayName());
+-                if (!ResourceFilenameHelper.hasSameNameButDifferentCase(fileName)) {
+-                    moveResource(resource, ResourceFilenameHelper.getExpectedFilePath(fileName, false));
+-                }
+-                resourcesToSave.add(resource);
+-            }
+-        }
+-
+-        if (propertyFile != null) {
+-            previousVersionProperty = loadProperty(propertyFile);
+-        }
+-
+-        if (previousVersionProperty != null) {
+-            List<Resource> previousVersionResources = getAffectedResources(previousVersionProperty);
+-            for (Resource resource : previousVersionResources) {
+-                FileName fileName = ResourceFilenameHelper.create(resource, previousVersionProperty, lastVersionProperty);
+-
+-                if (ResourceFilenameHelper.mustChangeLabel(fileName)) {
+-                    IPath expectedFilePath = ResourceFilenameHelper.getExpectedFilePath(fileName, true);
+-                    previousVersionProperty.setLabel(lastVersionProperty.getLabel());
+-                    previousVersionProperty.setDisplayName(lastVersionProperty.getDisplayName());
+-                    if (!ResourceFilenameHelper.hasSameNameButDifferentCase(fileName)) {
+-                        moveResource(resource, expectedFilePath);
+-                    }
+-                }
++                moveResource(resource, ResourceFilenameHelper.getExpectedFilePath(fileName, false));
+                 resourcesToSave.add(resource);
+             }
+-            if (lastVersionProperty.getItem().getParent() instanceof FolderItem) {
+-                FolderItem folderItem = (FolderItem) lastVersionProperty.getItem().getParent();
+-                folderItem.getChildren().add(previousVersionProperty.getItem());
+-            }
+         }
+ 
+         for (Resource resource : resourcesToSave) {
+-            // add for bug TDI-20844
+-            // if (ResourceFilenameHelper.mustChangeLabel(fileNameTest) && resource.getURI() != null
+-            // && resource.getURI().toString().endsWith(".screenshot")) {
+-            // continue;
+-            // }
+             saveResource(resource);
+         }
+         if (!resourceProperty.equals(lastVersionProperty)) {
+@@ -706,8 +663,7 @@ public class XmiResourceManager {
+             }
+         }
+     }
+-
+-    private void copyResource(Resource resource, IPath path) throws PersistenceException {
++    protected void copyResource(Resource resource, IPath path) throws PersistenceException {
+         IFile file = URIHelper.getFile(resource.getURI());
+         try {
+             file.copy(path, true, null);

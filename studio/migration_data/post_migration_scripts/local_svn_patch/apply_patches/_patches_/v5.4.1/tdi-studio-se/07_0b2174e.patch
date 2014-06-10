@@ -1,0 +1,26 @@
+diff --git a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
+index d9470a1..64227aa 100644
+--- a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
++++ b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/RepositoryChangeMetadataCommand.java
+@@ -36,6 +36,7 @@ import org.talend.core.model.repository.IRepositoryViewObject;
+ import org.talend.core.model.utils.ContextParameterUtils;
+ import org.talend.core.model.utils.IDragAndDropServiceHandler;
+ import org.talend.core.utils.TalendQuoteUtils;
++import org.talend.cwm.helper.TaggedValueHelper;
+ import org.talend.designer.core.model.components.EParameterName;
+ import org.talend.designer.core.model.components.EmfComponent;
+ import org.talend.designer.core.ui.editor.nodes.Node;
+@@ -122,7 +123,12 @@ public class RepositoryChangeMetadataCommand extends ChangeMetadataCommand {
+ 
+         node.getElementParameter(EParameterName.UPDATE_COMPONENTS.getName()).setValue(true);
+         if (newOutputMetadata != null) {
+-            setDBTableFieldValue(node, newOutputMetadata.getTableName(), oldOutputMetadata.getTableName());
++            Map<String, String> addMap = newOutputMetadata.getAdditionalProperties();
++            if (addMap.get(TaggedValueHelper.SYSTEMTABLENAME) != null && node.getComponent().getName().equals("tAS400CDC")) {
++                setDBTableFieldValue(node, addMap.get(TaggedValueHelper.SYSTEMTABLENAME), oldOutputMetadata.getTableName());
++            } else {
++                setDBTableFieldValue(node, newOutputMetadata.getTableName(), oldOutputMetadata.getTableName());
++            }
+             IElementParameter parameter = node.getElementParameter("SAP_FUNCTION");
+             if (parameter != null)
+                 setSAPFunctionName(node, parameter.getValue() == null ? null : (String) parameter.getValue());

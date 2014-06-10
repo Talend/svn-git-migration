@@ -1,0 +1,501 @@
+diff --git a/org.talend.designer.cdc/resource/cdc_AS400.xml b/org.talend.designer.cdc/resource/cdc_AS400.xml
+index 1cd8eb4..5336c2f 100755
+--- a/org.talend.designer.cdc/resource/cdc_AS400.xml
++++ b/org.talend.designer.cdc/resource/cdc_AS400.xml
+@@ -28,10 +28,10 @@
+ 			<SQL> DROP TABLE %quote%TSUBSCRIBERS%quote% @SQLEndChar@</SQL>
+ 		</DROP>
+ 		<DELETE  property="AllData">
+-			<SQL> DELETE FROM  %quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%sourceTableName%' @SQLEndChar@</SQL>
++			<SQL> DELETE FROM  %quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_SYSTEM_TABLE%quote%='%systemTable%' AND %quote%TALEND_CDC_SYSTEM_SCHEMA%quote%='%systemSchema%' @SQLEndChar@</SQL>
+ 		</DELETE>
+ 		<DELETE property="Data">
+-			<SQL> DELETE FROM  %quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_TABLE_TO_WATCH%quote%='%sourceTableName%' AND %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%='%subscriberName%' @SQLEndChar@</SQL>
++			<SQL> DELETE FROM  %quote%TSUBSCRIBERS%quote%  WHERE %quote%TALEND_CDC_SYSTEM_TABLE%quote%='%systemTable%' AND %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%='%subscriberName%' @SQLEndChar@</SQL>
+ 		</DELETE>
+ 	</CDCFoundation>
+ 	<CDCTable>
+@@ -39,10 +39,13 @@
+ 			<SQL> INSERT INTO  %quote%TSUBSCRIBERS%quote%
+   (
+    %quote%TALEND_CDC_TABLE_TO_WATCH%quote%,
++   %quote%TALEND_CDC_SYSTEM_TABLE%quote%,
++   %quote%TALEND_CDC_SCHEMA_TO_WATCH%quote%,
++   %quote%TALEND_CDC_SYSTEM_SCHEMA%quote%,
+    %quote%TALEND_CDC_SUBSCRIBER_NAME%quote%,
+    %quote%TALEND_CDC_CREATION_DATE%quote%
+   )
+-   values ('%sourceTableName%','%subscriberName%',@SystemDate@) @SQLEndChar@</SQL>
++   values ('%sourceTableName%','%systemTable%','%sourceSchemaName%','%systemSchema%','%subscriberName%',@SystemDate@) @SQLEndChar@</SQL>
+ 		</INSERT>
+ 		<CREATE>
+ 			<SQL><!--   CREATE TABLE  %quote%TCDC_%sourceTableName%%quote% 
+@@ -55,7 +58,7 @@
+   ) @SQLEndChar@--></SQL>  	
+ 		</CREATE>
+ 		<DROP>
+-			<SQL> DROP TABLE %quote%%sourceTableName%%quote% @SQLEndChar@</SQL> 
++			<SQL> DROP TABLE %quote%%systemTable%%quote% @SQLEndChar@</SQL> 
+ 		</DROP>
+ 	</CDCTable>
+ 	<CDCView>
+diff --git a/org.talend.designer.cdc/resource/fitcdc.savf b/org.talend.designer.cdc/resource/fitcdc.savf
+index 1a03ad8..39a95a8 100755
+Binary files a/org.talend.designer.cdc/resource/fitcdc.savf and b/org.talend.designer.cdc/resource/fitcdc.savf differ
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/ActivateCDCAction.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/ActivateCDCAction.java
+index af8cfcc..8c85785 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/ActivateCDCAction.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/ActivateCDCAction.java
+@@ -76,8 +76,9 @@ public class ActivateCDCAction extends AbstractCDCCreateAction {
+             String sql = manager.generateActiveTriggerSQL(table);
+             boolean exec = false;
+             if (manager instanceof AS400CDCManager) {
+-                AS400CDCManager as400Manager = (AS400CDCManager) manager;
+-                exec = as400Manager.executeFtpCmd(as400Manager.generateActiveCmd(table, true, true));
++            	  // do nothing
++                // show a dialog to the user to let him activate the journal
++                exec = true;
+             } else {
+                 CreateCDCDialog dialog = new CreateCDCDialog(new Shell(), manager, sql, getConnection());
+                 dialog.open();
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/AddCDCAction.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/AddCDCAction.java
+index 9bc2bf9..32e1ac3 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/AddCDCAction.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/AddCDCAction.java
+@@ -95,8 +95,11 @@ public class AddCDCAction extends AbstractCDCCreateAction {
+                 dialog.open();
+                 boolean exec = dialog.isExec();
+                 if (exec && manager instanceof AS400CDCManager) {
+-                    AS400CDCManager as400Manager = (AS400CDCManager) manager;
+-                    exec = as400Manager.executeFtpCmd(as400Manager.generateActiveCmd(table, true, true));
++                	 // AS400CDCManager as400Manager = (AS400CDCManager) manager;
++                    // exec = as400Manager.executeFtpCmd(as400Manager.generateActiveCmd(table, true, true));
++                    // do nothing
++                    // show a dialog to the user to let him activate the journal
++                    exec = true;
+                 }
+                 if (exec) {
+                     List<String> existNames = new ArrayList<String>();
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeactivateCDCAction.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeactivateCDCAction.java
+index 8f224d3..0282bd5 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeactivateCDCAction.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeactivateCDCAction.java
+@@ -75,8 +75,11 @@ public class DeactivateCDCAction extends AbstractCDCCreateAction {
+             boolean exec = false;
+             String sql = manager.generateDeactiveTriggerSQL(table);
+             if (manager instanceof AS400CDCManager) {
+-                AS400CDCManager as400Manager = (AS400CDCManager) manager;
+-                exec = as400Manager.executeFtpCmd(as400Manager.generateActiveCmd(table, false, true));
++            	 // AS400CDCManager as400Manager = (AS400CDCManager) manager;
++                // exec = as400Manager.executeFtpCmd(as400Manager.generateActiveCmd(table, false, true));
++                // do nothing
++                // show a dialog to the user to let him activate the journal
++                exec = true;
+             } else {
+                 CreateCDCDialog dialog = new CreateCDCDialog(new Shell(), manager, sql);
+                 dialog.open();
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeleteCDCConnectionAction.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeleteCDCConnectionAction.java
+index c220a50..3c41d73 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeleteCDCConnectionAction.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/action/DeleteCDCConnectionAction.java
+@@ -124,9 +124,9 @@ public class DeleteCDCConnectionAction extends AbstractCDCAction {
+                     manager.setCdcModeId(null); // must be setup to clear
+                     String[] sql = manager.genDeleteCDCSQL(table, false);
+                     sqlList.addAll(Arrays.asList(sql));
+-                    if (manager instanceof AS400CDCManager && table.isActivatedCDC()) {
+-                        as400DeactiveCmd.append(((AS400CDCManager) manager).generateActiveCmd(table, false, false));
+-                    }
++//                    if (manager instanceof AS400CDCManager && table.isActivatedCDC()) {
++//                        as400DeactiveCmd.append(((AS400CDCManager) manager).generateActiveCmd(table, false, false));
++//                    }
+                 }
+             }
+             // system
+@@ -163,12 +163,12 @@ public class DeleteCDCConnectionAction extends AbstractCDCAction {
+             CreateCDCDialog dialog = new CreateCDCDialog(new Shell(), manager, sql);
+             dialog.open();
+             if (dialog.isExec()) {
+-                if (manager instanceof AS400CDCManager) {
+-                    AS400CDCManager as400Manager = (AS400CDCManager) manager;
+-                    as400DeactiveCmd.append(as400Manager.generateDeleteJournalNameCmd());
+-                    as400DeactiveCmd.append(AS400CDCManager.CMD_QUITE);
+-                    as400Manager.executeFtpCmd(as400DeactiveCmd.toString());
+-                }
++//                if (manager instanceof AS400CDCManager) {
++//                    AS400CDCManager as400Manager = (AS400CDCManager) manager;
++//                    as400DeactiveCmd.append(as400Manager.generateDeleteJournalNameCmd());
++//                    as400DeactiveCmd.append(AS400CDCManager.CMD_QUITE);
++//                    as400Manager.executeFtpCmd(as400DeactiveCmd.toString());
++//                }
+                 connection.setCdcTypeMode(null);
+                 connection.getCdcConns().getCdcTypes().clear();
+                 connection.setCdcConns(null);
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/AS400CDCManager.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/AS400CDCManager.java
+index 8fd95e4..40007a4 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/AS400CDCManager.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/AS400CDCManager.java
+@@ -35,9 +35,11 @@ import org.talend.commons.utils.system.EnvironmentUtils;
+ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
+ import org.talend.core.model.metadata.builder.connection.MetadataTable;
+ import org.talend.core.model.properties.DatabaseConnectionItem;
++import org.talend.cwm.helper.TaggedValueHelper;
+ import org.talend.designer.cdc.CDCPlugin;
+ import org.talend.designer.cdc.i18n.Messages;
+ import org.talend.designer.cdc.template.utils.TemplateConstants;
++import orgomg.cwm.objectmodel.core.TaggedValue;
+ 
+ /**
+  * cli class global comment. Detailled comment
+@@ -106,23 +108,17 @@ public class AS400CDCManager extends CDCManagerForTemplate {
+         return valid;
+     }
+ 
+-    protected String getJournalName() {
+-        String name = getCDCLib();
+-        if (name != null) {
+-            // use label, because the cdc component
+-            String string = "J_" + name; //$NON-NLS-1$
+-            if (string.length() > 10) { // for as400, must less than 10 character.
+-                string = string.substring(0, 7) + "_01"; //$NON-NLS-1$
+-            }
+-            return string;
+-        }
+-        return "JRN_TALCDC"; //$NON-NLS-1$
+-    }
+-
+     @Override
+     protected String getAllChangesSql(MetadataTable table) {
+-        String sql = "SELECT * FROM " + getCDCLib() + TemplateConstants.DOT //$NON-NLS-1$
+-                + this.getTemplateManager().checkFieldAndAddDBQuote(table.getSourceName());
++        String sql;
++        TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++        if (tv != null) {
++            sql = "SELECT * FROM " + getCDCLib() + TemplateConstants.DOT //$NON-NLS-1$
++                    + this.getTemplateManager().checkFieldAndAddDBQuote(tv.getValue());
++        } else {
++            sql = "SELECT * FROM " + getCDCLib() + TemplateConstants.DOT //$NON-NLS-1$
++                    + this.getTemplateManager().checkFieldAndAddDBQuote(table.getSourceName());
++        }
+         return sql;
+     }
+ 
+@@ -239,8 +235,6 @@ public class AS400CDCManager extends CDCManagerForTemplate {
+             cmd.append("quote rcmd \"dltf qgpl/instfitcdc\""); //$NON-NLS-1$
+             cmd.append(TemplateConstants.RETURN);
+ 
+-            cmd.append(generateCreateJournalNameCmd());
+-
+             cmd.append(CMD_QUITE);
+ 
+             return cmd.toString();
+@@ -251,60 +245,23 @@ public class AS400CDCManager extends CDCManagerForTemplate {
+ 
+     }
+ 
+-    public String generateActiveCmd(MetadataTable table, boolean active, boolean quit) {
+-        StringBuffer cmd = new StringBuffer();
+-
+-        if (table != null) {
+-            final String lib = getLib();
+-            final String cdcLib = getCDCLib();
+-            final String sourceName = table.getSourceName();
+-
+-            cmd.append("cd "); //$NON-NLS-1$
+-            cmd.append(lib);
+-            cmd.append(TemplateConstants.RETURN);
+-            if (active) {
+-                cmd.append("quote rcmd \"STRJRNPF FILE("); //$NON-NLS-1$
+-                cmd.append(lib);
+-                cmd.append("/"); //$NON-NLS-1$
+-                cmd.append(sourceName);
+-                cmd.append(") JRN("); //$NON-NLS-1$
+-                cmd.append(cdcLib);
+-                cmd.append("/"); //$NON-NLS-1$
+-                cmd.append(getJournalName());
+-                cmd.append(") IMAGES(*BOTH)\""); //$NON-NLS-1$
+-            } else {
+-                cmd.append("quote rcmd \"ENDJRNPF FILE("); //$NON-NLS-1$
+-                cmd.append(lib);
+-                cmd.append("/"); //$NON-NLS-1$
+-                cmd.append(sourceName);
+-                cmd.append(")\""); //$NON-NLS-1$
+-            }
+-            cmd.append(TemplateConstants.RETURN);
+-        }
+-        if (quit) {
+-            cmd.append(CMD_QUITE);
+-        }
+-        return cmd.toString();
+-    }
+-
+     public String generateRunCDCCmd(MetadataTable table) {
+         StringBuffer cmd = new StringBuffer();
+         if (table != null) {
+ 
+             final String database = getLib();
+             final String cdcLib = getCDCLib();
+-            final String sourceName = table.getSourceName();
++            final String sourceName;
++            TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++            if (tv != null) {
++                sourceName = tv.getValue();
++            } else {
++                sourceName = table.getSourceName();
++            }
+             cmd.append("cd "); //$NON-NLS-1$
+             cmd.append(cdcLib);
+             cmd.append(TemplateConstants.RETURN);
+ 
+-            cmd.append("quote rcmd \"CHGJRN JRN("); //$NON-NLS-1$ 
+-            cmd.append(cdcLib);
+-            cmd.append("/"); //$NON-NLS-1$ 
+-            cmd.append(getJournalName());
+-            cmd.append(") JRNRCV(*GEN)\""); //$NON-NLS-1$ 
+-            cmd.append(TemplateConstants.RETURN);
+-
+             cmd.append("quote rcmd \""); //$NON-NLS-1$
+             cmd.append(cdcLib);
+             cmd.append("/RUNCDC FILE("); //$NON-NLS-1$
+@@ -321,75 +278,6 @@ public class AS400CDCManager extends CDCManagerForTemplate {
+         return cmd.toString();
+     }
+ 
+-    private String generateCreateJournalNameCmd() {
+-        StringBuffer cmd = new StringBuffer();
+-
+-        final String cdcLib = getCDCLib();
+-        final String journalName = getJournalName();
+-        cmd.append("cd "); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        cmd.append("quote rcmd \"CRTJRNRCV JRNRCV("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(journalName);
+-        cmd.append(")\""); //$NON-NLS-1$
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        cmd.append("quote rcmd \"CRTJRN JRN("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(journalName);
+-        cmd.append(") JRNRCV("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(journalName);
+-        cmd.append(")\""); //$NON-NLS-1$
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        return cmd.toString();
+-    }
+-
+-    public String generateDeleteJournalNameCmd() {
+-        StringBuffer cmd = new StringBuffer();
+-
+-        final String cdcLib = getCDCLib();
+-        final String journalName = getJournalName();
+-
+-        cmd.append("cd "); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        cmd.append("quote rcmd \"DLTJRN JRN("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(journalName);
+-        cmd.append(")\""); //$NON-NLS-1$
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        cmd.append("quote rcmd \"DLTJRNRCV JRNRCV("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(journalName);
+-        cmd.append(")\""); //$NON-NLS-1$
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        String shortJournalName = journalName;
+-        // need calc the name
+-        if (shortJournalName.length() > 4) {
+-            shortJournalName = shortJournalName.substring(0, 4);
+-        }
+-        cmd.append("quote rcmd \"DLTJRNRCV JRNRCV("); //$NON-NLS-1$
+-        cmd.append(cdcLib);
+-        cmd.append("/"); //$NON-NLS-1$
+-        cmd.append(shortJournalName);
+-        cmd.append("*) DLTOPT(*IGNINQMSG)\""); //$NON-NLS-1$
+-        cmd.append(TemplateConstants.RETURN);
+-
+-        return cmd.toString();
+-    }
+-
+     private boolean generateFtpBatFile(File batFile, String cmd) throws IOException {
+         String host = getIMetadataConnection().getServerName();
+         String userName = getIMetadataConnection().getUsername();
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
+index 0d27efd..8a39ec0 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/manager/CDCManagerForTemplate.java
+@@ -35,6 +35,7 @@ import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
+ import org.talend.core.model.properties.DatabaseConnectionItem;
+ import org.talend.core.model.utils.TalendTextUtils;
+ import org.talend.core.utils.KeywordsValidator;
++import org.talend.cwm.helper.TaggedValueHelper;
+ import org.talend.designer.cdc.template.manager.CDCTemplateManager;
+ import org.talend.designer.cdc.template.manager.TemplateManagerFactory;
+ import org.talend.designer.cdc.template.model.EActionCDC;
+@@ -44,6 +45,7 @@ import org.talend.designer.cdc.template.model.InnerVariable;
+ import org.talend.designer.cdc.template.utils.TemplateConstants;
+ import org.talend.designer.cdc.util.CDCException;
+ import org.talend.designer.cdc.util.CDCUtils;
++import orgomg.cwm.objectmodel.core.TaggedValue;
+ 
+ /**
+  * cli class global comment. Detailled comment
+@@ -389,7 +391,13 @@ public class CDCManagerForTemplate extends CDCManager {
+ 
+     protected String[] getTriggerOptions(MetadataTable table) {
+         if (table != null) {
+-            String sourceTableName = table.getSourceName();
++        	 String sourceTableName;
++             TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++             if (tv != null) {
++                 sourceTableName = tv.getValue();
++             } else {
++                 sourceTableName = table.getSourceName();
++             }
+             String sql = getTriggersSQL(sourceTableName);
+             if (sql != null) {
+                 return retrieveTriggersFromDB(sourceTableName, sql);
+@@ -516,6 +524,18 @@ public class CDCManagerForTemplate extends CDCManager {
+         Map<ExVariable, String> exVarMap = getExVariablesForGlobal();
+         if (table != null) {
+             exVarMap.put(ExVariable.SourceTableName, getTemplateManager().checkString(table.getSourceName()));
++            TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_TABLE, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_SCHEMA, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.TABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SCHEMA_TO_WATCH, getTemplateManager().checkString(tv.getValue()));
++            }
+         }
+         return exVarMap;
+     }
+@@ -547,7 +567,18 @@ public class CDCManagerForTemplate extends CDCManager {
+             exVarMap.put(ExVariable.SubscriberName, getTemplateManager().checkString(subscriberName));
+         }
+         exVarMap.put(ExVariable.SourceTableName, getTemplateManager().checkString(table.getSourceName()));
+-
++        TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++        if (tv != null) {
++            exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_TABLE, getTemplateManager().checkString(tv.getValue()));
++        }
++        tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLESCHEMA, table.getTaggedValue());
++        if (tv != null) {
++            exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_SCHEMA, getTemplateManager().checkString(tv.getValue()));
++        }
++        tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.TABLESCHEMA, table.getTaggedValue());
++        if (tv != null) {
++            exVarMap.put(ExVariable.TALEND_CDC_SCHEMA_TO_WATCH, getTemplateManager().checkString(tv.getValue()));
++        }
+         return exVarMap;
+     }
+ 
+@@ -566,6 +597,18 @@ public class CDCManagerForTemplate extends CDCManager {
+         if (table != null) {
+             exVarMap.put(ExVariable.Schema, getTemplateManager().checkAndAddDotForSchema(getAssistSchema()));
+             exVarMap.put(ExVariable.SourceTableName, getTemplateManager().checkString(table.getSourceName()));
++            TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_TABLE, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_SCHEMA, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.TABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SCHEMA_TO_WATCH, getTemplateManager().checkString(tv.getValue()));
++            }
+         }
+         return exVarMap;
+     }
+@@ -707,6 +750,18 @@ public class CDCManagerForTemplate extends CDCManager {
+         exVarMap.put(ExVariable.SchemaForTrigger, getTemplateManager().checkAndAddDotForSchema(getCDCSchemaForTrigger()));
+         if (table != null) {
+             exVarMap.put(ExVariable.SourceTableName, getTemplateManager().checkString(table.getSourceName()));
++            TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_TABLE, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SYSTEM_SCHEMA, getTemplateManager().checkString(tv.getValue()));
++            }
++            tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.TABLESCHEMA, table.getTaggedValue());
++            if (tv != null) {
++                exVarMap.put(ExVariable.TALEND_CDC_SCHEMA_TO_WATCH, getTemplateManager().checkString(tv.getValue()));
++            }
+         }
+         return exVarMap;
+     }
+@@ -722,7 +777,12 @@ public class CDCManagerForTemplate extends CDCManager {
+             setCdcModeId(cdcModeIdFromTable);
+             return cdcModeIdFromTable;
+         }
+-        return table.getSourceName();
++        TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++        if (tv != null) {
++            return tv.getValue();
++        } else {
++            return table.getSourceName();
++        }
+ 
+     }
+ 
+@@ -738,13 +798,23 @@ public class CDCManagerForTemplate extends CDCManager {
+      * @return
+      */
+     public String getCdcModeIdFromTable(MetadataTable table) {
+-        return table.getSourceName();
++    	 TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++         if (tv != null) {
++             return tv.getValue();
++         } else {
++             return table.getSourceName();
++         }
+     }
+ 
+     protected String getAllChangesSql(MetadataTable table) {
+         String cdcModeIdFromTable = getCdcModeIdFromTable(table);
+         if (cdcModeIdFromTable == null || "".equals(cdcModeIdFromTable)) {
+-            cdcModeIdFromTable = table.getSourceName();
++        	 TaggedValue tv = TaggedValueHelper.getTaggedValue(TaggedValueHelper.SYSTEMTABLENAME, table.getTaggedValue());
++             if (tv != null) {
++                 cdcModeIdFromTable = tv.getValue();
++             } else {
++                 cdcModeIdFromTable = table.getSourceName();
++             }
+         }
+ 
+         String tableName = getTableName(cdcModeIdFromTable, CDCConstants.TABLE);
+diff --git a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/template/model/ExVariable.java b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/template/model/ExVariable.java
+index 38f1765..7d10ff7 100755
+--- a/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/template/model/ExVariable.java
++++ b/org.talend.designer.cdc/src/main/java/org/talend/designer/cdc/template/model/ExVariable.java
+@@ -89,6 +89,10 @@ public enum ExVariable {
+     // add for Sybase with bug TDI-17931
+     pkColumnSelsForTriggerInserted(),
+     pkColumnSelsForTriggerDeleted(),
++    
++    TALEND_CDC_SYSTEM_TABLE("systemTable"),
++    TALEND_CDC_SCHEMA_TO_WATCH("sourceSchemaName"),
++    TALEND_CDC_SYSTEM_SCHEMA("systemSchema"),
+ 
+     ;
+ 

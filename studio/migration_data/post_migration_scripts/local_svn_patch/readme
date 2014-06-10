@@ -1,0 +1,11 @@
+Before run the "doApplyLocalPatches.sh", make sure the "final_repos" have existed all git repositories:
+	$ ls
+	tamc-ee            tdi-studio-ee   tesb-studio-se  toem-studio-ee
+	tbd-studio-ee      tdi-studio-se   tmdm-server-ee  toem-studio-se
+	tbd-studio-se      tdq-studio-ee   tmdm-server-se
+	tcommon-studio-ee  tdq-studio-se   tmdm-studio-ee
+	tcommon-studio-se  tesb-studio-ee  tmdm-studio-se
+	
+
+Then, run the doApplyLocalPatches.sh:
+	$ ./doApplyLocalPatches.sh /home/talend/final_repos

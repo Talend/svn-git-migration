@@ -1,0 +1,122 @@
+diff --git a/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBLogDetailReader.java b/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBLogDetailReader.java
+index 8c2820e..f5ddf31 100644
+--- a/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBLogDetailReader.java
++++ b/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBLogDetailReader.java
+@@ -87,7 +87,7 @@ public class DBLogDetailReader extends AbstractDBReader implements ILogDetailRea
+             if (results != null) {
+                 while (results.next()) {
+                     catcherLog = new CatcherLog();
+-                    catcherLog.setMoment(results.getString(PluginConst.DATE_NAME));
++                    catcherLog.setMoment(results.getTimestamp(PluginConst.DATE_NAME) + "");
+                     catcherLog.setPid(results.getString(PluginConst.PID_NAME));
+                     catcherLog.setRootPID(results.getString(PluginConst.ROOT_PID));
+                     catcherLog.setFatherPID(results.getString(PluginConst.FATHER_PID));
+@@ -99,11 +99,8 @@ public class DBLogDetailReader extends AbstractDBReader implements ILogDetailRea
+                     catcherLog.setOriginName(results.getString(PluginConst.ORIGIN_NAME));
+                     catcherLog.setMessage(results.getString(PluginConst.MESSAGE_NAME));
+                     catcherLog.setCode(results.getString(PluginConst.CODE_NAME));
+-                    // catcherLog.setPerlErrorMessage(results.getString(PluginConst.PERLERRORMSG_NAME));
+-                    // catcherLog.setPerlErrorCode(results.getString(PluginConst.PERLERRORCODE_NAME));
+                     catcherLogList.add(catcherLog);
+                 }
+-
+                 // clean up
+                 results.close();
+             }
+diff --git a/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBStatReader.java b/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBStatReader.java
+index dfc48c9..8b858e9 100644
+--- a/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBStatReader.java
++++ b/org.talend.amc/src/main/java/org/talend/amc/datasource/database/DBStatReader.java
+@@ -15,7 +15,6 @@ package org.talend.amc.datasource.database;
+ import java.sql.ResultSet;
+ import java.sql.SQLException;
+ import java.util.ArrayList;
+-import java.util.Date;
+ import java.util.List;
+ 
+ import org.talend.amc.ISingleSourceService;
+@@ -36,7 +35,6 @@ import org.talend.amc.model.job.IJob;
+ import org.talend.amc.model.job.Job;
+ import org.talend.amc.model.statlog.ISimpleStatEntry;
+ import org.talend.amc.model.statlog.detailstat.DetailStatSet;
+-import org.talend.amc.util.DateUtil;
+ import org.talend.amc.util.JobInforLoader;
+ import org.talend.amc.util.WebJobInforLoader;
+ 
+@@ -74,9 +72,7 @@ public class DBStatReader extends AbstractDBReader implements IStatReader {
+ 
+     private SimpleStatItem getSimpleStatItem(ResultSet results) throws SQLException, AMCPluginException {
+         SimpleStatItem simpleStatItem = new SimpleStatItem();
+-        Date date = null; // TODO: when the date default value display, maybe need to change format
+-        date = DateUtil.getInstance().strToDate(results.getString(PluginConst.DATE_NAME));
+-        simpleStatItem.setMoment(date);
++        simpleStatItem.setMoment(results.getTimestamp(PluginConst.DATE_NAME)); 
+         simpleStatItem.setPid(results.getString(PluginConst.PID_NAME));
+         simpleStatItem.setRootPID(results.getString(PluginConst.ROOT_PID));
+         simpleStatItem.setFatherPID(results.getString(PluginConst.FATHER_PID));
+@@ -94,9 +90,7 @@ public class DBStatReader extends AbstractDBReader implements IStatReader {
+ 
+     private DetailStatItem getDeatilItem(ResultSet results) throws SQLException, AMCPluginException {
+         DetailStatItem detailStatItem = new DetailStatItem();
+-        Date date = null; // TODO: when the date default value display, maybe need to change format
+-        date = DateUtil.getInstance().strToDate(results.getString(PluginConst.DATE_NAME));
+-        detailStatItem.setMoment(date);
++        detailStatItem.setMoment(results.getTimestamp(PluginConst.DATE_NAME));
+         detailStatItem.setPid(results.getString(PluginConst.PID_NAME));
+         detailStatItem.setRootPID(results.getString(PluginConst.ROOT_PID));
+         detailStatItem.setFatherPID(results.getString(PluginConst.FATHER_PID));
+@@ -189,27 +183,6 @@ public class DBStatReader extends AbstractDBReader implements IStatReader {
+                 executeQuery.close();
+             }
+             executeQuery = null;
+-
+-            // for AMC CHART set subjob names with escapetime
+-            // for (ISimpleStatEntry simpleEntry : job.getSimpleStats()) {
+-            // String sqlForChart = generateSqlForRelatedSubJobStatment(simpleEntry);
+-            // executeQuery = stmt.executeQuery(sqlForChart);
+-            //
+-            // while (executeQuery.next()) {
+-            // String elapsed = executeQuery.getString(PluginConst.DURATION_NAME);
+-            // if (elapsed == null || "".equals(elapsed)) {
+-            // continue;
+-            // }
+-            //
+-            // RelatedSubJob subJob = new RelatedSubJob();
+-            // subJob.setJobName(executeQuery.getString(PluginConst.JOB_NAME));
+-            // subJob.setElapsedTime(new Long(elapsed));
+-            // ((SimpleStat) simpleEntry).addRelatedSubJobs(subJob);
+-            // }
+-            // executeQuery.close();
+-            // TimeMeasure.step("initStats", sqlForChart);
+-            // }
+-
+             job.setStatsInit(true);
+         } catch (SQLException e) {
+             throw new AMCPluginException(Messages.getString("AbstractDBReader.connectDBFailure"), e); //$NON-NLS-1$
+@@ -219,26 +192,6 @@ public class DBStatReader extends AbstractDBReader implements IStatReader {
+         return true;
+     }
+ 
+-    // public void fillDetailStats(ResultSet results) throws SQLException, AMCPluginException {
+-    // DBTempDetailStatSetMap statSetMap = DBTempDetailStatSetMap.getInstance();
+-    // DetailStat detailStat;
+-    // String originName = results.getString(PluginConst.ORIGIN_NAME);
+-    // detailStat = new DetailStat();
+-    // Date date = null;
+-    // date = DateUtil.getInstance().strToDate(results.getString(PluginConst.DATE_NAME));
+-    // detailStat.setDate(date);
+-    // detailStat.setOriginName(originName);
+-    // String duration = results.getString(PluginConst.DURATION_NAME);
+-    // Long durationTime = duration == null ? null : new Long(duration);
+-    // detailStat.setElapsedTime(durationTime);
+-    // detailStat.setMessage(results.getString(PluginConst.MESSAGE_NAME));
+-    // detailStat.setMessageType(results.getString(PluginConst.MESSAGE_TYPE_NAME));
+-    // detailStat.setRepositoryId(results.getString(PluginConst.JOB_REPOSITORY_ID));
+-    // detailStat.setRootPid(results.getString(PluginConst.ROOT_PID));
+-    // detailStat.setPid(results.getString(PluginConst.PID_NAME));
+-    // statSetMap.addNormalStat(detailStat, getDeatilItem(results));
+-    // }
+-
+     /*
+      * (non-Javadoc)
+      * 

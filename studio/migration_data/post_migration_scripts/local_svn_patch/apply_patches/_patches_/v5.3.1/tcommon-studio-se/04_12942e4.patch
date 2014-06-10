@@ -1,0 +1,14 @@
+diff --git a/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java b/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
+index 7287a4c..ec67211 100644
+--- a/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
++++ b/org.talend.repository.localprovider/src/main/java/org/talend/repository/localprovider/model/LocalRepositoryFactory.java
+@@ -1960,9 +1960,6 @@ public class LocalRepositoryFactory extends AbstractEMFRepositoryFactory impleme
+     @Override
+     public void setMigrationTasksDone(Project project, List<MigrationTask> list) throws PersistenceException {
+         List oldMigrationTasks = project.getEmfProject().getMigrationTask();
+-        if (oldMigrationTasks.size() == list.size()) {
+-            return;
+-        }
+         project.getEmfProject().getMigrationTask().clear();
+         project.getEmfProject().getMigrationTask().addAll(list);
+         saveProject(project);

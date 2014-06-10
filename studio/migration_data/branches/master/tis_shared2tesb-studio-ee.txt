@@ -16,4 +16,5 @@ org.talend.rcp.branding.esbdqteamedition-feature
 org.talend.rcp.branding.esbenterprise-feature
 org.talend.rcp.branding.talendplatform.esbbpm-feature
 org.talend.resources.export.route
+org.talend.resources.export.route.nl
 org.talend.slf4j-feature

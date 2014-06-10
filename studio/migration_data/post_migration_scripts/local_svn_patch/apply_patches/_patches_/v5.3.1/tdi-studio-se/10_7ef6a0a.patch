@@ -1,0 +1,61 @@
+diff --git a/org.talend.repository/src/main/java/messages.properties b/org.talend.repository/src/main/java/messages.properties
+index e4612c9..21517f6 100644
+--- a/org.talend.repository/src/main/java/messages.properties
++++ b/org.talend.repository/src/main/java/messages.properties
+@@ -785,4 +785,6 @@ UseDynamicJobSelectionDialog.downBtnText=Down
+ 
+ RepositoryService.projectNotFound=The project '{0}' is not found.
+ RepositoryService.projectReadonlyTitle=Information
+-RepositoryService.projectReadonly=The current login project is readonly.
+\ No newline at end of file
++RepositoryService.projectReadonly=The current login project is readonly.
++
++JobScriptsManager.ResourceNotFoundForExport="Resource cannot be found for export: " {0} 
+\ No newline at end of file
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/JobScriptsManager.java b/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/JobScriptsManager.java
+index 6b35802..fd931f5 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/JobScriptsManager.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/ui/wizards/exportjob/scriptsmanager/JobScriptsManager.java
+@@ -825,22 +825,37 @@ public abstract class JobScriptsManager {
+ 
+                 IPath itemFilePath;
+                 String itemVersionString = (itemVersion == null) ? "" : "_" + itemVersion;
++
++                if (itemPath.startsWith(typeFolderPath.toString())) {
++                    itemPath = itemPath.substring(typeFolderPath.toString().length());
++                }
+                 if (item.getFileExtension() == null || "".equals(item.getFileExtension())) { //$NON-NLS-1$
+                     itemFilePath = projectRootPath.append(typeFolderPath).append(itemPath)
+-                            .append(itemName + itemVersionString + "." + FileConstants.ITEM_EXTENSION); //$NON-NLS-1$ //$NON-NLS-2$
++                            .append(itemName + itemVersionString + "." + FileConstants.ITEM_EXTENSION); //$NON-NLS-1$ 
+                 } else {
+                     itemFilePath = projectRootPath.append(typeFolderPath).append(itemPath)
+-                            .append(itemName + itemVersionString + "." + item.getFileExtension()); //$NON-NLS-1$ //$NON-NLS-2$
++                            .append(itemName + itemVersionString + "." + item.getFileExtension()); //$NON-NLS-1$ 
+                 }
+ 
+                 IPath propertiesFilePath = projectRootPath.append(typeFolderPath).append(itemPath)
+-                        .append(itemName + itemVersionString + "." //$NON-NLS-1$ //$NON-NLS-2$
++                        .append(itemName + itemVersionString + "." //$NON-NLS-1$ 
+                                 + FileConstants.PROPERTIES_EXTENSION);
+ 
+                 List<URL> metadataNameFileUrls = new ArrayList<URL>();
+ 
+-                metadataNameFileUrls.add(FileLocator.toFileURL(itemFilePath.toFile().toURL()));
+-                metadataNameFileUrls.add(FileLocator.toFileURL(propertiesFilePath.toFile().toURL()));
++                File itemFile = itemFilePath.toFile();
++                if (itemFile.exists()) {
++                    metadataNameFileUrls.add(FileLocator.toFileURL(itemFile.toURI().toURL()));
++                } else {
++                    ExceptionHandler.log(Messages.getString("JobScriptsManager.ResourceNotFoundForExport", itemFilePath));
++                }
++
++                File propertiesFile = propertiesFilePath.toFile();
++                if (propertiesFile.exists()) {
++                    metadataNameFileUrls.add(FileLocator.toFileURL(propertiesFile.toURI().toURL()));
++                } else {
++                    ExceptionHandler.log(Messages.getString("JobScriptsManager.ResourceNotFoundForExport", propertiesFilePath));
++                }
+ 
+                 String basePath = JOB_ITEMS_FOLDER_NAME + PATH_SEPARATOR + projectName + PATH_SEPARATOR
+                         + typeFolderPath.toString();

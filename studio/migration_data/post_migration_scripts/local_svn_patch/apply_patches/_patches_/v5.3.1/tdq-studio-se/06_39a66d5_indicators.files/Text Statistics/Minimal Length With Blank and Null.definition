@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_9HDjMJSOEd-TE5ti6XNR2Q" name="Minimal Length With Blank and Null" label="Minimal Length With Blank and Null">
+  <taggedValue xmi:id="_9HDjMZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the minimal length of a text field, counting blank and null as zero length values."/>
+  <taggedValue xmi:id="_9HDjMpSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the length of the smallest textual record"/>
+  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
+  <sqlGenericExpression xmi:id="_9HDjNJSOEd-TE5ti6XNR2Q" body="SELECT MIN(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQL"/>
+  <sqlGenericExpression xmi:id="_9HDjNZSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH('XX' || CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Oracle"/>
+  <sqlGenericExpression xmi:id="_9HDjNpSOEd-TE5ti6XNR2Q" body="SELECT MIN(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
+  <sqlGenericExpression xmi:id="_9HDjN5SOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="DB2"/>
+  <sqlGenericExpression xmi:id="_9HDjOJSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Ingres"/>
+  <sqlGenericExpression xmi:id="_9HDjPJSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQLite"/>
+  <sqlGenericExpression xmi:id="_3iN4kPC8EeGgeNoy8x7q7Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Hive"/>
+      <sqlGenericExpression xmi:id="_w0FC8JOzEeOujvooylLxyQ" body="SELECT MIN(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Netezza" /> 
+</dataquality.indicators.definition:IndicatorDefinition>

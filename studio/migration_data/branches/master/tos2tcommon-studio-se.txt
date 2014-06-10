@@ -97,8 +97,13 @@ org.talend.rcp.nl
 org.talend.registration
 org.talend.registration.nl
 org.talend.repository.items.importexport
+org.talend.repository.items.importexport.nl
 org.talend.repository.items.importexport.test
 org.talend.repository.items.importexport.ui
+org.talend.repository.items.importexport.ui.nl
+org.talend.repository.localprovider
+org.talend.repository.localprovider.nl
+org.talend.repository.localprovider.test
 org.talend.repository.mdm
 org.talend.repository.mdm.nl
 org.talend.repository.metadata

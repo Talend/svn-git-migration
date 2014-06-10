@@ -31,6 +31,7 @@ org.talend.designer.filemultischemas
 org.talend.designer.fileoutputxml
 org.talend.designer.fileoutputxml.nl
 org.talend.designer.gefabstractmap
+org.talend.designer.gefabstractmap.nl
 org.talend.designer.hl7
 org.talend.designer.hl7.nl
 org.talend.designer.mapper
@@ -73,7 +74,6 @@ org.talend.libraries.jetty
 org.talend.libraries.microsoft
 org.talend.libraries.mondrian
 org.talend.libraries.mozilla
-org.talend.libraries.novabpm
 org.talend.libraries.palo
 org.talend.libraries.saaj
 org.talend.libraries.salesforce
@@ -92,9 +92,6 @@ org.talend.repository.ftp
 org.talend.repository.ftp.nl
 org.talend.repository.json
 org.talend.repository.json.nl
-org.talend.repository.localprovider
-org.talend.repository.localprovider.nl
-org.talend.repository.localprovider.test
 org.talend.repository.nl
 org.talend.repository.test
 org.talend.repository.view.di

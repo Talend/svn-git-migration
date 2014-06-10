@@ -34,6 +34,7 @@ org.talend.repository.databaseprovider.nl
 org.talend.repository.refproject
 org.talend.repository.remoteprovider
 org.talend.repository.remoteprovider-feature
+org.talend.repository.remoteprovider.nl
 org.talend.repository.remoteprovider.test
 org.talend.repository.svnprovider
 org.talend.repository.svnprovider-feature

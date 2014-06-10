@@ -1,0 +1,39 @@
+org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
+org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
+org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
+org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
+org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
+org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
+org.talend.dataprofiler.core/plugin.xml
+org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
+org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
+org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
+org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
+
+
+
+
+
+
+
+
+
+
+org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/migration/impl/AddNetezzaExpressionInIndicatorsTask.java
+
+org.talend.dataprofiler.core/indicators/Fraud Detection/Benford Law Frequency.definition
+org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Frequency Table.definition
+org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Low Frequency Table.definition
+org.talend.dataprofiler.core/indicators/Soundex/Soundex Frequency Table.definition
+org.talend.dataprofiler.core/indicators/Soundex/Soundex Low Frequency Table.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Blank and Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Average Length.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Blank and Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Blank and Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Null.definition
+org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length.definition
+
+

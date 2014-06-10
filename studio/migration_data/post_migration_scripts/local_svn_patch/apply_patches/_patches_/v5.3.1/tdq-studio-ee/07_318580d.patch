@@ -1,0 +1,1054 @@
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dataprofiler/persistence/utils/i18n/messages.properties b/org.talend.dataprofiler.persistence/src/org/talend/dataprofiler/persistence/utils/i18n/messages.properties
+index ff1cd43..cd421cb 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dataprofiler/persistence/utils/i18n/messages.properties
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dataprofiler/persistence/utils/i18n/messages.properties
+@@ -12,10 +12,12 @@ ReportDBManager.cannotClose=Could not close connection : {0}
+ AbstractPersistenceHandler.cannot=Can't find the definition of indicator '{0}'
+ AbstractPersistenceHandler.cannot2=Can't find the UUID of the indicator's definition '{0}'
+ AbstractPersistenceHandler.cannot3=Can't find the category of indicator '{0}'
++AbstractPersistenceHandler.cannot4=Can't find the property of definition '{0}'
+ AbstractPersistenceHandler.isnull=The name of the indicator definition is null for indicator {0}
+ AbstractPersistenceHandler.cannot4=Can't find the UUID of the indicator's category '{0}'
+ ColumnAnaPersistenceHandler.cannot=Could not get the date row corresponding to {0}. Check that the calendar table is correctly filled with data.
+ ColumnAnaPersistenceHandler.cannot2=Could not get the time row corresponding to {0}. Check that the time table is correctly filled with data.
++ColumnAnaPersistenceHandler.executionDateIsNull=The execution date is null!
+ ColumnDependencyPersistenceHandler.notContain=The analysis '{0}' not contains a corresponding RowMatchingIndicator!
+ ColumnSetAnaPersistenceHandler.isNull=indicator in "{0}" is null.
+ 
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/AbstractPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/AbstractPersistenceHandler.java
+index 7e4f8ea..701e552 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/AbstractPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/AbstractPersistenceHandler.java
+@@ -65,6 +65,7 @@ import org.talend.dq.indicators.definitions.DefinitionHandler;
+ import org.talend.dq.persistence.IPersistenceHandler;
+ import org.talend.dq.persistence.PluginConstant;
+ import org.talend.resource.ResourceManager;
++import org.talend.utils.dates.DateUtils;
+ import org.talend.utils.format.StringFormatUtil;
+ import orgomg.cwm.objectmodel.core.ModelElement;
+ import orgomg.cwm.objectmodel.core.Namespace;
+@@ -331,7 +332,7 @@ public abstract class AbstractPersistenceHandler implements IPersistenceHandler
+                     .add(Expression.eq("eltVersion", analyzedEleVersion)).list();//$NON-NLS-1$
+             dbAnalyzedElement = (TdqAnalyzedElement) list.get(0);
+             if (!dbAnalyzedElement.valueEqual(createTdqAnalyzedElement)) {
+-                dbAnalyzedElement.setEltEndDate(new Date(System.currentTimeMillis()));
++                dbAnalyzedElement.setEltEndDate(DateUtils.convert2StandardTime(new Date(System.currentTimeMillis())));
+                 session.update(dbAnalyzedElement);
+                 createTdqAnalyzedElement.setEltVersion(dbAnalyzedElement.getEltVersion() + 1);
+                 session.save(createTdqAnalyzedElement);
+@@ -351,7 +352,7 @@ public abstract class AbstractPersistenceHandler implements IPersistenceHandler
+         TdqAnalyzedElement dbAnalyzedElement = new TdqAnalyzedElement();
+         String uuid = ResourceHelper.getUUID(modelElement);
+         dbAnalyzedElement.setEltUuid(uuid);
+-        dbAnalyzedElement.setEltBeginDate(new Date(System.currentTimeMillis()));
++        dbAnalyzedElement.setEltBeginDate(DateUtils.convert2StandardTime(new Date(System.currentTimeMillis())));
+         String columnName = null;
+         String columnSetOwnerName = null;
+         // MOD mzhao 2009-02-25 Schema name and Catalog name should be different when saving to database.
+@@ -617,7 +618,7 @@ public abstract class AbstractPersistenceHandler implements IPersistenceHandler
+                     Expression.eq("indVersion", indDefinitionVersion)).list();//$NON-NLS-1$
+             dbIndDefinition = (TdqIndicatorDefinition) list.get(0);
+             if (!dbIndDefinition.valueEqual(createTdqIndicatorDefinition)) {
+-                dbIndDefinition.setIndEndDate(new Date(System.currentTimeMillis()));
++                dbIndDefinition.setIndEndDate(DateUtils.convert2StandardTime(new Date(System.currentTimeMillis())));
+                 session.update(dbIndDefinition);
+                 createTdqIndicatorDefinition.setIndVersion(dbIndDefinition.getIndVersion() + 1);
+                 // session.save(createTdqIndicatorDefinition);
+@@ -635,9 +636,9 @@ public abstract class AbstractPersistenceHandler implements IPersistenceHandler
+     private TdqIndicatorDefinition createTdqIndicatorDefinition(Indicator indicator) {
+         TdqIndicatorDefinition dbIndicatorDefinition = new TdqIndicatorDefinition();
+         dbIndicatorDefinition.setIndUuid(this.getIndicatorDefinitionUuid(indicator));
+-        dbIndicatorDefinition.setIndBeginDate(new Date(System.currentTimeMillis()));
++        dbIndicatorDefinition.setIndBeginDate(DateUtils.convert2StandardTime(new Date(System.currentTimeMillis())));
+         dbIndicatorDefinition.setIndCategory(this.getCategoryLabel(indicator));
+-        dbIndicatorDefinition.setIndEndDate(SqlConstants.END_DATE);
++        dbIndicatorDefinition.setIndEndDate(DateUtils.convert2StandardTime(SqlConstants.END_DATE));
+         dbIndicatorDefinition.setIndLabel(this.getIndicatorDefinitionName(indicator));
+         dbIndicatorDefinition.setIndCategUuid(this.getCategoryUuid(indicator));
+         // MOD mzhao 2009-03-02 Add critical level column,default value is 0.
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnAnaPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnAnaPersistenceHandler.java
+index cae1e7a..c629642 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnAnaPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnAnaPersistenceHandler.java
+@@ -48,6 +48,7 @@ import org.talend.dataquality.indicators.sql.UserDefIndicator;
+ import org.talend.dataquality.indicators.util.IndicatorsSwitch;
+ import org.talend.dataquality.reports.TdReport;
+ import org.talend.dq.helper.UDIHelper;
++import org.talend.utils.dates.DateUtils;
+ 
+ /**
+  * This class is handler for persistence COLUMNS_COMPARISON {@link AnalysisType} type.
+@@ -113,36 +114,39 @@ public final class ColumnAnaPersistenceHandler extends AbstractPersistenceHandle
+         // Do the same for TdqIndicatorDefinition (get the definition with its LABEL which identifies a row)
+         // update only if something has changed (then update END_DATE, VERSION)
+         TdqIndicatorDefinition persistIndicatorDefinition = getCachedTdqIndicatorDef(indicator);
+-
+         // get the tdqCalendar object and the TdqDayTime from the database given the date
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+         if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
+             TdqIndicatorValue[] createTdqindicatorValues = createTdqindicatorValues(indicator, tdqAnalysis,
+                     persistAnalyzedElement, persistIndicatorDefinition, analysis);
+-            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list();//$NON-NLS-1$
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list();//$NON-NLS-1$
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-            list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate)))//$NON-NLS-1$
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate)))//$NON-NLS-1$
+                     .list();
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+             for (TdqIndicatorValue tdqIndicatorValue : createTdqindicatorValues) {
+                 tdqIndicatorValue.setTdqCalendar(dbCalendar);
+                 tdqIndicatorValue.setTdqDayTime(dbDayTime);
+-                tdqIndicatorValue.setAnRuntime(executionDate);
++                tdqIndicatorValue.setAnRuntime(utcExecutionDate);
+ 
+                 // ADD msjian TDQ-5889: Store the report execution time in the datamart
+                 tdqIndicatorValue.setRepDuration(report.getExecInformations().getExecutionDuration());
+-                tdqIndicatorValue.setRepRuntime(report.getExecInformations().getExecutionDate());
++                tdqIndicatorValue.setRepRuntime(DateUtils.convert2StandardTime(report.getExecInformations().getExecutionDate()));
+                 // TDQ-5889~
+                 needSaveObjects.add(tdqIndicatorValue);
+             }
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+     }
+ 
+@@ -336,7 +340,7 @@ public final class ColumnAnaPersistenceHandler extends AbstractPersistenceHandle
+                 if (value == null || value.toLowerCase().equals("null")) {//$NON-NLS-1$
+                     indicatorValue.setIndvDateValue(null);
+                 } else {
+-                    indicatorValue.setIndvDateValue(createDateFormater(dataType).parse(value));
++                    indicatorValue.setIndvDateValue(DateUtils.convert2StandardTime(createDateFormater(dataType).parse(value)));
+                 }
+                 // ~12143
+             } catch (ParseException e) {
+@@ -412,14 +416,16 @@ public final class ColumnAnaPersistenceHandler extends AbstractPersistenceHandle
+                 dThreshDateOk = isInRange(date2Double(iThreshold, dataType), date2Double(currentValue, dataType));
+                 if (!StringUtils.isBlank(iThreshold[0])) {
+                     try {
+-                        indicatorValue.setIndvIDateThresholdLow(createDateFormater(dataType).parse(iThreshold[0]));
++                        indicatorValue.setIndvIDateThresholdLow(DateUtils.convert2StandardTime(createDateFormater(dataType)
++                                .parse(iThreshold[0])));
+                     } catch (ParseException e) {
+                         log.error(e, e);
+                     }
+                 }
+                 if (!StringUtils.isBlank(iThreshold[1])) {
+                     try {
+-                        indicatorValue.setIndvIDateThresholdHigh(createDateFormater(dataType).parse(iThreshold[1]));
++                        indicatorValue.setIndvIDateThresholdHigh(DateUtils.convert2StandardTime(createDateFormater(dataType)
++                                .parse(iThreshold[1])));
+                     } catch (ParseException e) {
+                         log.error(e, e);
+                     }
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnDependencyPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnDependencyPersistenceHandler.java
+index d81bd17..7165079 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnDependencyPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnDependencyPersistenceHandler.java
+@@ -35,6 +35,7 @@ import org.talend.dataquality.indicators.Indicator;
+ import org.talend.dataquality.indicators.columnset.ColumnDependencyIndicator;
+ import org.talend.dataquality.indicators.columnset.util.ColumnsetSwitch;
+ import org.talend.dataquality.reports.TdReport;
++import org.talend.utils.dates.DateUtils;
+ import orgomg.cwm.resource.relational.ColumnSet;
+ 
+ /**
+@@ -96,7 +97,7 @@ public final class ColumnDependencyPersistenceHandler extends AbstractPersistenc
+                 analysis);
+         // ADD msjian TDQ-5889: Store the report execution time in the datamart
+         tdqMatchIndValue.setRepDuration(report.getExecInformations().getExecutionDuration());
+-        tdqMatchIndValue.setRepRuntime(report.getExecInformations().getExecutionDate());
++        tdqMatchIndValue.setRepRuntime(DateUtils.convert2StandardTime(report.getExecInformations().getExecutionDate()));
+         // TDQ-5889~
+         // needSaveObjects.add(tdqMatchIndValue);
+ 
+@@ -150,25 +151,30 @@ public final class ColumnDependencyPersistenceHandler extends AbstractPersistenc
+         tdqMatchIndValue.setTdqIndicatorOptions(currentTdqOptions);
+ 
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+-        List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list(); //$NON-NLS-1$
+-        if (list.isEmpty()) {
+-            log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
+-            return tdqMatchIndValue;
+-        }
+-        TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-        list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate))) //$NON-NLS-1$
+-                .list();
+-        if (list.isEmpty()) {
+-            log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
+-            return tdqMatchIndValue;
++        if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list(); //$NON-NLS-1$
++            if (list.isEmpty()) {
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
++                return tdqMatchIndValue;
++            }
++            TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate))) //$NON-NLS-1$
++                    .list();
++            if (list.isEmpty()) {
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
++                return tdqMatchIndValue;
++            }
++            TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
++            tdqMatchIndValue.setTdqCalendar(dbCalendar);
++            tdqMatchIndValue.setTdqDayTime(dbDayTime);
++            tdqMatchIndValue.setAnRuntime(utcExecutionDate);
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+-        TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+-        tdqMatchIndValue.setTdqCalendar(dbCalendar);
+-        tdqMatchIndValue.setTdqDayTime(dbDayTime);
+-        tdqMatchIndValue.setAnRuntime(executionDate);
+ 
+         return tdqMatchIndValue;
+-
+     }
+ 
+     private void fillThresholdValue(Indicator indicator, TdqMatchIndValue tdqMatchIndValue) {
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnSetAnaPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnSetAnaPersistenceHandler.java
+index 71fb668..216cbb0 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnSetAnaPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnSetAnaPersistenceHandler.java
+@@ -47,6 +47,7 @@ import org.talend.dataquality.indicators.RegexpMatchingIndicator;
+ import org.talend.dataquality.indicators.columnset.AllMatchIndicator;
+ import org.talend.dataquality.reports.TdReport;
+ import org.talend.dq.analysis.ColumnSetAnalysisHandler;
++import org.talend.utils.dates.DateUtils;
+ import orgomg.cwm.objectmodel.core.ModelElement;
+ 
+ /**
+@@ -182,24 +183,26 @@ public final class ColumnSetAnaPersistenceHandler extends AbstractPersistenceHan
+         // get the tdqCalendar object and the TdqDayTime from the database given the date
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+         if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
+             TdqSetIndvalue createTdqindicatorValues = createTdqindicatorValues(indicator, tdqAnalysis,
+                     persistIndicatorDefinition, analysis);
+-            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list();//$NON-NLS-1$
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list();//$NON-NLS-1$
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-            list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate)))//$NON-NLS-1$
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate)))//$NON-NLS-1$
+                     .list();
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+             createTdqindicatorValues.setTdqCalendar(dbCalendar);
+             createTdqindicatorValues.setTdqDayTime(dbDayTime);
+-            createTdqindicatorValues.setAnRuntime(executionDate);
++            createTdqindicatorValues.setAnRuntime(utcExecutionDate);
+             createTdqindicatorValues.setVersion(getMaximumVersionNumber(tdqAnalysis));
+             createTdqindicatorValues.setTablePk(anaTableElement);
+             // ADD yyi 2010-06-17 13656:Persistence of AllMatchIndicator and generate the report
+@@ -213,9 +216,12 @@ public final class ColumnSetAnaPersistenceHandler extends AbstractPersistenceHan
+             // ~
+             // ADD msjian TDQ-5889: Store the report execution time in the datamart
+             createTdqindicatorValues.setRepDuration(report.getExecInformations().getExecutionDuration());
+-            createTdqindicatorValues.setRepRuntime(report.getExecInformations().getExecutionDate());
++            createTdqindicatorValues.setRepRuntime(DateUtils
++                    .convert2StandardTime(report.getExecInformations().getExecutionDate()));
+             // TDQ-5889~
+             needSaveObjects.add(createTdqindicatorValues);
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+     }
+ 
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnsCompareAnaPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnsCompareAnaPersistenceHandler.java
+index 713bc42..9783635 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnsCompareAnaPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/ColumnsCompareAnaPersistenceHandler.java
+@@ -36,6 +36,7 @@ import org.talend.dataquality.indicators.Indicator;
+ import org.talend.dataquality.indicators.columnset.ColumnsCompareIndicator;
+ import org.talend.dataquality.indicators.columnset.util.ColumnsetSwitch;
+ import org.talend.dataquality.reports.TdReport;
++import org.talend.utils.dates.DateUtils;
+ import orgomg.cwm.resource.relational.ColumnSet;
+ 
+ /**
+@@ -45,6 +46,7 @@ public final class ColumnsCompareAnaPersistenceHandler extends AbstractPersisten
+ 
+     private ColumnsetSwitch<ColumnsCompareIndicator> columnsetSwitch = new ColumnsetSwitch<ColumnsCompareIndicator>() {
+ 
++        @Override
+         public ColumnsCompareIndicator caseColumnsCompareIndicator(ColumnsCompareIndicator object) {
+             return object;
+         }
+@@ -95,7 +97,7 @@ public final class ColumnsCompareAnaPersistenceHandler extends AbstractPersisten
+                 analysis);
+         // ADD msjian TDQ-5889: Store the report execution time in the datamart
+         tdqMatchIndValue.setRepDuration(report.getExecInformations().getExecutionDuration());
+-        tdqMatchIndValue.setRepRuntime(report.getExecInformations().getExecutionDate());
++        tdqMatchIndValue.setRepRuntime(DateUtils.convert2StandardTime(report.getExecInformations().getExecutionDate()));
+         // TDQ-5889~
+         needSaveObjects.add(tdqMatchIndValue);
+ 
+@@ -137,9 +139,7 @@ public final class ColumnsCompareAnaPersistenceHandler extends AbstractPersisten
+ 
+         // MOD yyi 2011-04-19 20492: run report with compare analysis failed
+         tdqMatchIndValue.setIndvMatchPercent(0L == columnSetBRows.doubleValue() ? SqlConstants.DEFAULT_PERC_ZERO_DATA
+-                : columnsCompareIndicator
+-                .getMatchingValueCount().doubleValue()
+-                / columnSetBRows.doubleValue());
++                : columnsCompareIndicator.getMatchingValueCount().doubleValue() / columnSetBRows.doubleValue());
+         // set indicator threshold value
+         fillThresholdValue(columnsCompareIndicator, tdqMatchIndValue);
+ 
+@@ -148,22 +148,28 @@ public final class ColumnsCompareAnaPersistenceHandler extends AbstractPersisten
+         tdqMatchIndValue.setTdqIndicatorOptions(currentTdqOptions);
+ 
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+-        List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list();//$NON-NLS-1$
+-        if (list.isEmpty()) {
+-            log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
+-            return tdqMatchIndValue;
++        if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list();//$NON-NLS-1$
++            if (list.isEmpty()) {
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
++                return tdqMatchIndValue;
++            }
++            TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate)))//$NON-NLS-1$
++                    .list();
++            if (list.isEmpty()) {
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
++                return tdqMatchIndValue;
++            }
++            TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
++            tdqMatchIndValue.setTdqCalendar(dbCalendar);
++            tdqMatchIndValue.setTdqDayTime(dbDayTime);
++            tdqMatchIndValue.setAnRuntime(utcExecutionDate);
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+-        TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-        list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate)))//$NON-NLS-1$
+-                .list();
+-        if (list.isEmpty()) {
+-            log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
+-            return tdqMatchIndValue;
+-        }
+-        TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+-        tdqMatchIndValue.setTdqCalendar(dbCalendar);
+-        tdqMatchIndValue.setTdqDayTime(dbDayTime);
+-        tdqMatchIndValue.setAnRuntime(executionDate);
+ 
+         return tdqMatchIndValue;
+ 
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/OverviewAnaPersistence.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/OverviewAnaPersistence.java
+index 15c378a..523cc9d 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/OverviewAnaPersistence.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/OverviewAnaPersistence.java
+@@ -38,6 +38,7 @@ import org.talend.dataquality.indicators.schema.SchemaIndicator;
+ import org.talend.dataquality.indicators.schema.TableIndicator;
+ import org.talend.dataquality.indicators.schema.ViewIndicator;
+ import org.talend.dataquality.reports.TdReport;
++import org.talend.utils.dates.DateUtils;
+ 
+ /**
+  * DOC mzhao class global comment. Detailled comment
+@@ -72,20 +73,22 @@ public abstract class OverviewAnaPersistence extends AbstractPersistenceHandler
+         // the date
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+         if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
+             // Connection element persistence.
+             List<TdqOverviewIndvalue> createTdqOverviewIndvalues = createTdqOverviewIndvalue(indicator, tdqAnalysis,
+                     persistAnalyzedElement, persistIndicatorDefinition, analysis);
+ 
+-            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list();//$NON-NLS-1$
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list();//$NON-NLS-1$
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-            list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate)))//$NON-NLS-1$
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate)))//$NON-NLS-1$
+                     .list();
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+@@ -108,17 +111,20 @@ public abstract class OverviewAnaPersistence extends AbstractPersistenceHandler
+                 // TDQ-5146~
+ 
+                 tdqOverviewIndvalue.setAnDuration(execDuration);
+-                tdqOverviewIndvalue.setAnRuntime(executionDate);
++                tdqOverviewIndvalue.setAnRuntime(utcExecutionDate);
+                 if ("".equals(tdqOverviewIndvalue.getTvName()) || tdqOverviewIndvalue.getTvName() == null) {//$NON-NLS-1$
+                     tdqOverviewIndvalue.setTvName(SqlConstants.NULL_VALUE);
+                 }
+ 
+                 // ADD msjian TDQ-5889: Store the report execution time in the datamart
+                 tdqOverviewIndvalue.setRepDuration(report.getExecInformations().getExecutionDuration());
+-                tdqOverviewIndvalue.setRepRuntime(report.getExecInformations().getExecutionDate());
++                tdqOverviewIndvalue
++                        .setRepRuntime(DateUtils.convert2StandardTime(report.getExecInformations().getExecutionDate()));
+                 // TDQ-5889~
+                 needSaveObjects.add(tdqOverviewIndvalue);
+             }
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+     }
+ 
+@@ -142,9 +148,7 @@ public abstract class OverviewAnaPersistence extends AbstractPersistenceHandler
+         List<TdqOverviewIndvalue> rets = new Vector<TdqOverviewIndvalue>();
+         for (TableIndicator ti : tis) {
+             TdqIndicatorDefinition persistIndicatorDefinition = getCachedTdqIndicatorDef(ti);
+-            rets
+-                    .add(buildTdqOverviewIndvalueTable(tdqAnalysis, persistAnalyzedElement, persistIndicatorDefinition, analysis,
+-                            ti));
++            rets.add(buildTdqOverviewIndvalueTable(tdqAnalysis, persistAnalyzedElement, persistIndicatorDefinition, analysis, ti));
+         }
+         return rets;
+     }
+diff --git a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/TableAnaPersistenceHandler.java b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/TableAnaPersistenceHandler.java
+index b80ca38..e150ef4 100644
+--- a/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/TableAnaPersistenceHandler.java
++++ b/org.talend.dataprofiler.persistence/src/org/talend/dq/persistence/handlertype/TableAnaPersistenceHandler.java
+@@ -38,6 +38,7 @@ import org.talend.dataquality.indicators.definition.util.DefinitionSwitch;
+ import org.talend.dataquality.indicators.sql.WhereRuleAideIndicator;
+ import org.talend.dataquality.reports.TdReport;
+ import org.talend.dataquality.rules.WhereRule;
++import org.talend.utils.dates.DateUtils;
+ 
+ /**
+  * 
+@@ -90,31 +91,35 @@ public class TableAnaPersistenceHandler extends AbstractPersistenceHandler {
+         }
+         Date executionDate = analysis.getResults().getResultMetadata().getExecutionDate();
+         if (executionDate != null) {
++            Date utcExecutionDate = DateUtils.convert2StandardTime(executionDate);
+             TdqIndicatorValue[] createTdqindicatorValues = createTdqindicatorValues(indicator, tdqAnalysis,
+                     persistAnalyzedElement, persistIndicatorDefinition, analysis);
+-            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", executionDate)).list();//$NON-NLS-1$
++            List<?> list = session.createCriteria(TdqCalendar.class).add(Expression.eq("calDate", utcExecutionDate)).list();//$NON-NLS-1$
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqCalendar dbCalendar = (TdqCalendar) list.get(0);
+-            list = session.createCriteria(TdqDayTime.class).add(Expression.eq("timeLabel", getSimpleDateString(executionDate)))//$NON-NLS-1$
++            list = session.createCriteria(TdqDayTime.class)
++                    .add(Expression.eq("timeLabel", getSimpleDateString(utcExecutionDate)))//$NON-NLS-1$
+                     .list();
+             if (list.isEmpty()) {
+-                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", executionDate));//$NON-NLS-1$
++                log.error(Messages.getString("ColumnAnaPersistenceHandler.cannot2", utcExecutionDate));//$NON-NLS-1$
+                 return; // break here
+             }
+             TdqDayTime dbDayTime = (TdqDayTime) list.get(0);
+             for (TdqIndicatorValue tdqIndicatorValue : createTdqindicatorValues) {
+                 tdqIndicatorValue.setTdqCalendar(dbCalendar);
+                 tdqIndicatorValue.setTdqDayTime(dbDayTime);
+-                tdqIndicatorValue.setAnRuntime(executionDate);
++                tdqIndicatorValue.setAnRuntime(utcExecutionDate);
+                 // ADD msjian TDQ-5889: Store the report execution time in the datamart
+                 tdqIndicatorValue.setRepDuration(report.getExecInformations().getExecutionDuration());
+-                tdqIndicatorValue.setRepRuntime(report.getExecInformations().getExecutionDate());
++                tdqIndicatorValue.setRepRuntime(DateUtils.convert2StandardTime(report.getExecInformations().getExecutionDate()));
+                 // TDQ-5889~
+                 needSaveObjects.add(tdqIndicatorValue);
+             }
++        } else {
++            log.error(Messages.getString("ColumnAnaPersistenceHandler.executionDateIsNull"));//$NON-NLS-1$
+         }
+ 
+     }
+diff --git a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
+index c62cddf..48cf314 100644
+--- a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
++++ b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/ReportDocGenerator.java
+@@ -70,6 +70,7 @@ import org.talend.dq.helper.EObjectHelper;
+ import org.talend.dq.helper.ReportUtils;
+ import org.talend.dq.helper.resourcehelper.RepResourceFileHelper;
+ import org.talend.dq.persistence.DatabasePersistence;
++import org.talend.utils.dates.DateUtils;
+ import org.talend.utils.sugars.ReturnCode;
+ import orgomg.cwm.foundation.softwaredeployment.DataManager;
+ 
+@@ -508,7 +509,7 @@ public abstract class ReportDocGenerator {
+         // ~ADD mzhao 2009-02-06 Add Analysis date filter.
+ 
+         if (report.getDateFrom() != null) {
+-            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_FROM, report.getDateFrom());
++            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_FROM, DateUtils.convert2StandardTime(report.getDateFrom()));
+         } else {
+             String theEaliest = "1970";//$NON-NLS-1$
+             SimpleDateFormat sdf = new SimpleDateFormat("yyyy");//$NON-NLS-1$
+@@ -519,9 +520,10 @@ public abstract class ReportDocGenerator {
+             }
+         }
+         if (report.getDateTo() != null) {
+-            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_TO, report.getDateTo());
++            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_TO, DateUtils.convert2StandardTime(report.getDateTo()));
+         } else {
+-            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_TO, new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24));
++            builder.addParameter(JasperReportBuilder.AN_DATEFILTER_TO,
++                    DateUtils.convert2StandardTime(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)));
+         }
+         // ~
+ 
+diff --git a/org.talend.dataquality.reporting/reports/column/b02_column_evolution.jrxml b/org.talend.dataquality.reporting/reports/column/b02_column_evolution.jrxml
+index 8e1e638..166f698 100644
+--- a/org.talend.dataquality.reporting/reports/column/b02_column_evolution.jrxml
++++ b/org.talend.dataquality.reporting/reports/column/b02_column_evolution.jrxml
+@@ -4,7 +4,7 @@
+ 	<property name="ireport.encoding" value="UTF-8"/>
+ 	<property name="ireport.zoom" value="1.2100000000000006"/>
+ 	<property name="ireport.x" value="0"/>
+-	<property name="ireport.y" value="0"/>
++	<property name="ireport.y" value="347"/>
+ 	<import value="net.sf.jasperreports.engine.*"/>
+ 	<import value="java.util.*"/>
+ 	<import value="net.sf.jasperreports.engine.data.*"/>
+@@ -33,6 +33,12 @@ _IpFnwBIoEd6pt-TgDw7oCA]]></parameterDescription>
+ 	<parameter name="TITLE_FILE" class="java.lang.String">
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT
+ 	VERS.PR_VERSION,
+@@ -72,7 +78,7 @@ WHEN (IND_UUID='_yRkFIezIEeG0fbygDv6UrQ' AND TVALUE.VAL_STRING='0') THEN 'invali
+ 	CASE WHEN VAL.INDV_VALUE_TYPE_INDICATOR='I' THEN
+                (CASE WHEN DEFIND.IND_UUID='_ccIR4BF2Ed2PKb6nEJEvhw' THEN (CASE WHEN VAL.INDV_ROW_COUNT=0 THEN 0.0 ELSE VAL.INDV_INT_VALUE /VAL.INDV_ROW_COUNT END) ELSE VAL.INDV_INT_VALUE END)
+ 	ELSE
+-		(CASE WHEN VAL.INDV_VALUE_TYPE_INDICATOR='R' THEN   (CASE WHEN DEFIND.IND_UUID='_ccI48RF2Ed2PKb6nEJEvhw' THEN (CASE WHEN VAL.INDV_ROW_COUNT=0 THEN 0.0 ELSE VAL.INDV_REAL_VALUE/VAL.INDV_ROW_COUNT END)
++		(CASE WHEN VAL.INDV_VALUE_TYPE_INDICATOR='R' THEN   (CASE WHEN DEFIND.IND_UUID='_ccI48RF2Ed2PKb6nEJEvhw' THEN (CASE WHEN VAL.INDV_ROW_COUNT=0 THEN 0.0 ELSE VAL.INDV_REAL_VALUE END)
+                                                                         ELSE VAL.INDV_REAL_VALUE END)
+                 ELSE 0 END )
+ 	END AS NEW_INDV_VALUE,
+@@ -98,8 +104,7 @@ FROM TDQ_INDICATOR_VALUE  VAL
+ 	INNER JOIN TDQ_DAY_TIME TIM ON TIM.TIME_PK=VAL.TIME_PK
+ 	CROSS JOIN TDQ_PRODUCT VERS
+ WHERE not DEFIND.IND_UUID IN ('_8i9eQBI5Ed6TWL6NwMMHzQ','_ccIR4RF2Ed2PKb6nEJEvhw')
+-AND VAL.AN_RUNTIME>=$P{RUN_TIME_FROM} AND VAL.AN_RUNTIME <=$P{RUN_TIME_TO} AND DEFIND.IND_CATEG_UUID IN ( '_tJjIwIDEEd2nDvn5vy_C5A', '_ccKHEBF2Ed2PKb6nEJEvhw', '_ccKuIBF2Ed2PKb6nEJEvhw','_ccKHERF2Ed2PKb6nEJEvhw','_ccKuIRF2Ed2PKb6nEJEvhw','_Ohyz4bEEEeCVE-ofo1XCug','_b5F7QHqTEd67hM2eKD3QgQ','_Frd2gHsXEd63r-VLO3_0OQ','_wxkncJ6tEd6t2KtWPIcDmg','_Ba7OYXsXEd63r-VLO3_0OQ','_2aGLUOzJEeG0fbygDv6UrQ')
+-and not ((DEFIND.IND_UUID= '_ccJgABF2Ed2PKb6nEJEvhw' OR  DEFIND.IND_UUID ='_ccJgARF2Ed2PKb6nEJEvhw') AND VAL.INDV_VALUE_TYPE_INDICATOR='D' )
++AND VAL.AN_RUNTIME>=$P{RUN_TIME_FROM} AND VAL.AN_RUNTIME <=$P{RUN_TIME_TO} AND NOT ((DEFIND.IND_UUID= '_ccJgABF2Ed2PKb6nEJEvhw' OR  DEFIND.IND_UUID ='_ccJgARF2Ed2PKb6nEJEvhw') AND VAL.INDV_VALUE_TYPE_INDICATOR='D' )
+ AND  ANA.REP_UUID=$P{REPORT_UUID}  AND  ANA.AN_UUID=$P{ANA_UUID}
+ ORDER BY  ANA.REP_UUID,ANA.AN_UUID,ELEMENT.ELT_CONNECTION_UUID,DEFIND.IND_CATEG_UUID,IND_LABEL,	DEFIND.IND_UUID,VAL.REP_RUNTIME, VAL_STRING]]>
+ 	</queryString>
+@@ -126,7 +131,7 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID,ELEMENT.ELT_CONNECTION_UUID,DEFIND.IND_CATEG_
+ 	<field name="IND_LABEL" class="java.lang.String"/>
+ 	<field name="VAL_STRING" class="java.lang.String"/>
+ 	<field name="AN_DURATION" class="java.math.BigDecimal"/>
+-	<field name="INDV_ROW_COUNT" class="java.lang.Integer"/>
++	<field name="INDV_ROW_COUNT" class="java.lang.Long"/>
+ 	<field name="INDV_VALUE_POURCENT" class="java.lang.Double"/>
+ 	<field name="NEW_INDV_VALUE_STRING" class="java.lang.String"/>
+ 	<field name="NEW_INDV_VALUE" class="java.lang.Double"/>
+@@ -195,12 +200,12 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID,ELEMENT.ELT_CONNECTION_UUID,DEFIND.IND_CATEG_
+ 		<initialValueExpression><![CDATA[Boolean.valueOf("_ccIR4RF2Ed2PKb6nEJEvhw".equals($F{IND_UUID}))]]></initialValueExpression>
+ 	</variable>
+ 	<variable name="frequency" class="java.lang.Double" resetType="Group" resetGroup="ANALYSIS">
+-		<variableExpression><![CDATA[(-1.0d == $V{rowCount}.doubleValue() || 0 == $V{rowCount}.intValue()) ?
++		<variableExpression><![CDATA[(-1.0d == $V{rowCount}.doubleValue() || 0 == $V{rowCount}.longValue()) ?
+ Double.valueOf(Double.NaN) :
+ Double.valueOf( $F{NEW_INDV_VALUE}.doubleValue()*100/$V{rowCount}.doubleValue())]]></variableExpression>
+-		<initialValueExpression><![CDATA[(-1.0d == $V{rowCount}.doubleValue() || 0 == $V{rowCount}.intValue()) ? Double.valueOf(Double.NaN) : Double.valueOf( $F{NEW_INDV_VALUE}.doubleValue()*100/$V{rowCount}.doubleValue())]]></initialValueExpression>
++		<initialValueExpression><![CDATA[(-1.0d == $V{rowCount}.doubleValue() || 0 == $V{rowCount}.longValue()) ? Double.valueOf(Double.NaN) : Double.valueOf( $F{NEW_INDV_VALUE}.doubleValue()*100/$V{rowCount}.doubleValue())]]></initialValueExpression>
+ 	</variable>
+-	<variable name="rowCount" class="java.lang.Integer" resetType="Group" resetGroup="ANALYSIS">
++	<variable name="rowCount" class="java.lang.Long" resetType="Group" resetGroup="ANALYSIS">
+ 		<variableExpression><![CDATA[$F{INDV_ROW_COUNT}]]></variableExpression>
+ 		<initialValueExpression><![CDATA[$F{INDV_ROW_COUNT}]]></initialValueExpression>
+ 	</variable>
+@@ -334,7 +339,7 @@ $V{isBenfordLawFrequency}.booleanValue() ||
+ $V{isUsePieStatistics}.booleanValue()
+ )?
+  ($V{isBenfordLawFrequency}.booleanValue()? ($F{VAL_STRING}.equals("invalid_0")?"0":$F{VAL_STRING}):$F{VAL_STRING}):$F{IND_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[Double.valueOf(  $F{NEW_INDV_VALUE}.doubleValue())]]></valueExpression>
+ 							<labelExpression><![CDATA["$V{frequency} !=null? $V{frequency} : Double.valueOf(0d)"]]></labelExpression>
+ 						</timeSeries>
+@@ -386,6 +391,7 @@ $V{isUsePieStatistics}.booleanValue()
+ 						<reportElement key="Simple-Statistics_evo" mode="Transparent" x="7" y="8" width="524" height="224" backcolor="#000000">
+ 							<printWhenExpression><![CDATA[Boolean.valueOf( $V{isSimpleStatistics}.booleanValue() ||
+ $V{isTextStatistics}.booleanValue() ||
++$V{isSummaryStatistics}.booleanValue() ||
+ $V{isPhoneNumStatistics}.booleanValue()&&
+ !$V{isUsePieStatistics}.booleanValue() )]]></printWhenExpression>
+ 						</reportElement>
+@@ -406,8 +412,8 @@ $V{isPhoneNumStatistics}.booleanValue()&&
+ 						<dataset resetType="Group" resetGroup="ANALYSIS"/>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$F{IND_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
+-							<valueExpression><![CDATA[$V{isTextStatistics}.booleanValue() ||
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME}))]]></timePeriodExpression>
++							<valueExpression><![CDATA[$V{isTextStatistics}.booleanValue() || $V{isSummaryStatistics}.booleanValue()||
+ $V{isSimpleStatistics}.booleanValue() || $V{isPaternMatching}.booleanValue() ||
+ $V{isPatternFinderStatistic}.booleanValue()|| $V{isPhoneNumStatistics}.booleanValue() ? $V{indicatorValue} : Double.valueOf(0d)]]></valueExpression>
+ 						</timeSeries>
+@@ -478,7 +484,7 @@ $V{isPatternFinderStatistic}.booleanValue()|| $V{isPhoneNumStatistics}.booleanVa
+ 						</dataset>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$V{isPaternMatching}.booleanValue() ? $F{INO_REGEXP_LABEL}:""]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$V{frequency} !=null? $V{frequency} : Double.valueOf(0d)]]></valueExpression>
+ 						</timeSeries>
+ 					</timeSeriesDataset>
+@@ -546,7 +552,7 @@ $V{isPatternFinderStatistic}.booleanValue()|| $V{isPhoneNumStatistics}.booleanVa
+ 						<dataset resetType="Group" resetGroup="ANALYSIS"/>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$V{isUsePieStatistics}.booleanValue()?$F{VAL_STRING}:$F{IND_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$F{INDV_VALUE_POURCENT}]]></valueExpression>
+ 						</timeSeries>
+ 					</timeSeriesDataset>
+diff --git a/org.talend.dataquality.reporting/reports/columnset/b02_column_set_evolution.jrxml b/org.talend.dataquality.reporting/reports/columnset/b02_column_set_evolution.jrxml
+index 80789bd..3efb7ce 100644
+--- a/org.talend.dataquality.reporting/reports/columnset/b02_column_set_evolution.jrxml
++++ b/org.talend.dataquality.reporting/reports/columnset/b02_column_set_evolution.jrxml
+@@ -35,11 +35,17 @@ _IpFnwBIoEd6pt-TgDw7oCA]]></parameterDescription>
+ 	<parameter name="TITLE_FILE" class="java.lang.String">
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT
+ 	VERS.PR_VERSION,
+ 	VAL.REP_RUNTIME AS AN_RUNTIME,
+-        ANA.AN_PK,
++    ANA.AN_PK,
+ 	ANA.REP_UUID,
+ 	ANA.AN_UUID,
+ 	ANA.REP_LABEL,
+@@ -101,7 +107,7 @@ ORDER BY VAL.REP_RUNTIME,ANA.AN_UUID,INDDEF.IND_UUID]]>
+ 						</dataset>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$F{IND_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$F{SIV_INT_VALUE}]]></valueExpression>
+ 						</timeSeries>
+ 					</timeSeriesDataset>
+diff --git a/org.talend.dataquality.reporting/reports/dq_rule/b04_column_dq_rules_evolution.jrxml b/org.talend.dataquality.reporting/reports/dq_rule/b04_column_dq_rules_evolution.jrxml
+index 2305b5d..4115d83 100644
+--- a/org.talend.dataquality.reporting/reports/dq_rule/b04_column_dq_rules_evolution.jrxml
++++ b/org.talend.dataquality.reporting/reports/dq_rule/b04_column_dq_rules_evolution.jrxml
+@@ -3,8 +3,8 @@
+ 	<property name="ireport.scriptlethandling" value="0"/>
+ 	<property name="ireport.encoding" value="UTF-8"/>
+ 	<property name="ireport.zoom" value="1.3310000000000017"/>
+-	<property name="ireport.x" value="0"/>
+-	<property name="ireport.y" value="0"/>
++	<property name="ireport.x" value="8"/>
++	<property name="ireport.y" value="548"/>
+ 	<import value="net.sf.jasperreports.engine.*"/>
+ 	<import value="java.util.*"/>
+ 	<import value="net.sf.jasperreports.engine.data.*"/>
+@@ -35,10 +35,16 @@ _IpFnwBIoEd6pt-TgDw7oCA]]></parameterDescription>
+ 	<parameter name="TITLE_FILE" class="java.lang.String">
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT
+ 	VERS.PR_VERSION,
+-	VAL.REP_RUNTIME AS AN_RUNTIME,
++	VAL.REP_RUNTIME AS AN_RUNTIME_FILED,
+ 	ANA.REP_UUID,
+ 	ANA.AN_UUID,
+ 	ANA.REP_LABEL,
+@@ -85,7 +91,7 @@ AND    ANA.REP_UUID =$P{REPORT_UUID} AND ANA.AN_UUID=$P{ANA_UUID}
+ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUID,DEFIND.IND_CATEG_UUID]]>
+ 	</queryString>
+ 	<field name="PR_VERSION" class="java.lang.String"/>
+-	<field name="AN_RUNTIME" class="java.sql.Timestamp"/>
++	<field name="AN_RUNTIME_FILED" class="java.sql.Timestamp"/>
+ 	<field name="REP_UUID" class="java.lang.String"/>
+ 	<field name="AN_UUID" class="java.lang.String"/>
+ 	<field name="REP_LABEL" class="java.lang.String"/>
+@@ -105,8 +111,8 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUI
+ 	<field name="IND_CATEGORY" class="java.lang.String"/>
+ 	<field name="IND_LABEL" class="java.lang.String"/>
+ 	<field name="AN_DURATION" class="java.math.BigDecimal"/>
+-	<field name="INDV_ROW_COUNT" class="java.lang.Integer"/>
+-	<field name="MATCH_INT_VALUE" class="java.lang.Integer"/>
++	<field name="INDV_ROW_COUNT" class="java.lang.Long"/>
++	<field name="MATCH_INT_VALUE" class="java.lang.Long"/>
+ 	<field name="INDV_DTHRESH_OK" class="java.lang.String"/>
+ 	<field name="INDV_DTHRESH_LOW" class="java.lang.Long"/>
+ 	<field name="INDV_DTHRESH_HI" class="java.lang.Long"/>
+@@ -120,18 +126,12 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUI
+ 	<field name="INO_COUNT_NULLS" class="java.lang.String"/>
+ 	<field name="INO_COUNT_BLANKS" class="java.lang.String"/>
+ 	<field name="ELT_PROJECT_NAME" class="java.lang.String"/>
+-	<variable name="NotMatchValue" class="java.lang.Integer" resetType="Group" resetGroup="ANALYSIS">
+-		<variableExpression><![CDATA[new java.lang.Integer(  ($F{INDV_ROW_COUNT}.intValue()) -($F{MATCH_INT_VALUE}.intValue()) )]]></variableExpression>
+-	</variable>
+ 	<variable name="percMatch" class="java.lang.Double" resetType="Group" resetGroup="ANALYSIS">
+-		<variableExpression><![CDATA[Double.valueOf(  (100)* ($F{MATCH_INT_VALUE}.floatValue()) /($F{INDV_ROW_COUNT}.floatValue()) )]]></variableExpression>
++		<variableExpression><![CDATA[Double.valueOf(  (100)* ($F{MATCH_INT_VALUE}.doubleValue()) /($F{INDV_ROW_COUNT}.doubleValue()) )]]></variableExpression>
+ 	</variable>
+ 	<variable name="percMatchRound" class="java.math.BigDecimal">
+ 		<variableExpression><![CDATA[Double.isNaN($V{percMatch}) ? new BigDecimal("0"): new BigDecimal($V{percMatch}.toString()).setScale(7,BigDecimal.ROUND_HALF_UP)]]></variableExpression>
+ 	</variable>
+-	<variable name="percNotMatch" class="java.lang.Double" resetType="Group" resetGroup="ANALYSIS">
+-		<variableExpression><![CDATA[Double.valueOf(    ( 100f )   -($V{percMatch}.doubleValue()) )]]></variableExpression>
+-	</variable>
+ 	<group name="CATALOG">
+ 		<groupExpression><![CDATA[$F{ELT_CONNECTION_UUID}]]></groupExpression>
+ 		<groupHeader>
+@@ -139,7 +139,7 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUI
+ 				<subreport>
+ 					<reportElement x="7" y="0" width="524" height="180"/>
+ 					<subreportParameter name="AN_RUNTIME">
+-						<subreportParameterExpression><![CDATA[$F{AN_RUNTIME}]]></subreportParameterExpression>
++						<subreportParameterExpression><![CDATA[$F{AN_RUNTIME_FILED}]]></subreportParameterExpression>
+ 					</subreportParameter>
+ 					<subreportParameter name="AN_AUTHOR">
+ 						<subreportParameterExpression><![CDATA[$F{AN_AUTHOR}]]></subreportParameterExpression>
+@@ -208,8 +208,8 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUI
+ 					<timeSeriesDataset timePeriod="Second">
+ 						<dataset resetType="Group" resetGroup="ANALYSIS"/>
+ 						<timeSeries>
+-							<seriesExpression><![CDATA[$F{AN_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<seriesExpression><![CDATA[$F{IND_LABEL}]]></seriesExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME_FILED}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$F{MATCH_INT_VALUE}]]></valueExpression>
+ 							<labelExpression><![CDATA["Matching DQ Rules"]]></labelExpression>
+ 						</timeSeries>
+@@ -280,8 +280,8 @@ ORDER BY  ANA.REP_UUID,ANA.AN_UUID, DEFIND.IND_UUID,  ELEMENT.ELT_CONNECTION_UUI
+ 					<timeSeriesDataset timePeriod="Second">
+ 						<dataset resetType="Group" resetGroup="ANALYSIS"/>
+ 						<timeSeries>
+-							<seriesExpression><![CDATA[$F{AN_LABEL}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<seriesExpression><![CDATA[$F{IND_LABEL}]]></seriesExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME_FILED}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$V{percMatchRound}]]></valueExpression>
+ 							<labelExpression><![CDATA["% Matching Dq Rules"]]></labelExpression>
+ 						</timeSeries>
+diff --git a/org.talend.dataquality.reporting/reports/overview/b04_overview_evolution.jrxml b/org.talend.dataquality.reporting/reports/overview/b04_overview_evolution.jrxml
+index d0f6ab7..20abd90 100644
+--- a/org.talend.dataquality.reporting/reports/overview/b04_overview_evolution.jrxml
++++ b/org.talend.dataquality.reporting/reports/overview/b04_overview_evolution.jrxml
+@@ -1,10 +1,10 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="b04_01_overview_evolution" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="5" bottomMargin="5">
++<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="b04_01_overview_evolution" pageWidth="595" pageHeight="1107" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="5" bottomMargin="5">
+ 	<property name="ireport.scriptlethandling" value="0"/>
+ 	<property name="ireport.encoding" value="UTF-8"/>
+ 	<property name="ireport.zoom" value="1.1000000000000005"/>
+ 	<property name="ireport.x" value="0"/>
+-	<property name="ireport.y" value="0"/>
++	<property name="ireport.y" value="649"/>
+ 	<import value="net.sf.jasperreports.engine.*"/>
+ 	<import value="java.util.*"/>
+ 	<import value="net.sf.jasperreports.engine.data.*"/>
+@@ -35,12 +35,17 @@ _xRGNoBInEd6pt-TgDw7oCA]]></parameterDescription>
+ 	<parameter name="TITLE_FILE" class="java.lang.String">
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT
+ 	VERS.PR_VERSION,
+ 	(OVERVIEW.AN_DURATION/1000) AS AN_DURATION,
+-	OVERVIEW.REP_RUNTIME AS AN_RUNTIME,
+-	OVERVIEW.REP_RUNTIME AS AN_RUNTIME2,
++	OVERVIEW.REP_RUNTIME AS AN_RUNTIME_FILED,
+ 	ANA.REP_UUID,
+ 	ANA.AN_UUID,
+ 	ANA.REP_LABEL AS REP_LABEL1 ,
+@@ -77,15 +82,14 @@ FROM TDQ_OVERVIEW_INDVALUE  OVERVIEW
+     	INNER JOIN  TDQ_V_ALL_RUN_OVERVIEW_ANALY ALLRUN ON  ALLRUN.ANALYSIS_PK=OVERVIEW.AN_PK
+         INNER JOIN  TDQ_CALENDAR  CALANDAR ON CALANDAR.CAL_PK=OVERVIEW.CAL_PK
+  	CROSS JOIN TDQ_PRODUCT VERS
+-WHERE OVERVIEW.AN_RUNTIME>=$P{RUN_TIME_FROM} AND OVERVIEW.AN_RUNTIME <=$P{RUN_TIME_TO} AND (OVERVIEW.TV_TABLECOUNT >0 and ( OVERVIEW.TV_ROWCOUNT +  OVERVIEW.TV_TABLECOUNT+ OVERVIEW.TV_KEYCOUNT+ OVERVIEW.TV_INDEXCOUNT+ OVERVIEW.TV_TRIGGERCOUNT+ TV_VIEWCOUNT)>0)
++WHERE OVERVIEW.AN_RUNTIME>=$P{RUN_TIME_FROM} AND OVERVIEW.AN_RUNTIME <=$P{RUN_TIME_TO} AND ((OVERVIEW.TV_TABLECOUNT >0 OR OVERVIEW.TV_VIEWCOUNT>0) and ( OVERVIEW.TV_ROWCOUNT +  OVERVIEW.TV_TABLECOUNT+ OVERVIEW.TV_KEYCOUNT+ OVERVIEW.TV_INDEXCOUNT+ OVERVIEW.TV_TRIGGERCOUNT+ TV_VIEWCOUNT)>0)
+ AND ALLRUN.AN_RUNTIME=  OVERVIEW.AN_RUNTIME
+ and     ANA.REP_UUID=$P{REPORT_UUID} and ANA.AN_UUID=$P{ANA_UUID}
+ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERVIEW.TV_ROWCOUNT ,OVERVIEW.REP_RUNTIME]]>
+ 	</queryString>
+ 	<field name="PR_VERSION" class="java.lang.String"/>
+ 	<field name="AN_DURATION" class="java.math.BigDecimal"/>
+-	<field name="AN_RUNTIME" class="java.sql.Timestamp"/>
+-	<field name="AN_RUNTIME2" class="java.sql.Timestamp"/>
++	<field name="AN_RUNTIME_FILED" class="java.sql.Timestamp"/>
+ 	<field name="REP_UUID" class="java.lang.String"/>
+ 	<field name="AN_UUID" class="java.lang.String"/>
+ 	<field name="REP_LABEL1" class="java.lang.String"/>
+@@ -105,7 +109,7 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 	<field name="TV_NAME1" class="java.lang.String"/>
+ 	<field name="TV_CATALOGCOUNT" class="java.lang.Integer"/>
+ 	<field name="TV_SCHEMACOUNT" class="java.lang.Integer"/>
+-	<field name="TV_ROWCOUNT" class="java.lang.Integer"/>
++	<field name="TV_ROWCOUNT" class="java.lang.Long"/>
+ 	<field name="TV_TABLECOUNT" class="java.lang.Integer"/>
+ 	<field name="TV_KEYCOUNT" class="java.lang.Integer"/>
+ 	<field name="TV_INDEXCOUNT" class="java.lang.Integer"/>
+@@ -127,7 +131,7 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 				<subreport>
+ 					<reportElement x="7" y="0" width="524" height="192"/>
+ 					<subreportParameter name="AN_RUNTIME">
+-						<subreportParameterExpression><![CDATA[$F{AN_RUNTIME}]]></subreportParameterExpression>
++						<subreportParameterExpression><![CDATA[$F{AN_RUNTIME_FILED}]]></subreportParameterExpression>
+ 					</subreportParameter>
+ 					<subreportParameter name="TV_TABLE_FILTER">
+ 						<subreportParameterExpression><![CDATA[$F{TV_TABLE_FILTER}]]></subreportParameterExpression>
+@@ -174,7 +178,7 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 	<group name="CATALOG">
+ 		<groupExpression><![CDATA[$V{CatalogOrSchema}]]></groupExpression>
+ 		<groupHeader>
+-			<band height="538">
++			<band height="805">
+ 				<timeSeriesChart>
+ 					<chart evaluationTime="Group" evaluationGroup="CATALOG" customizerClass="org.talend.dataquality.reporting.TalendChartCustomizer">
+ 						<reportElement key="Graphics_catalog" x="7" y="7" width="524" height="260"/>
+@@ -198,7 +202,7 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 						<dataset resetType="Group" resetGroup="CATALOG"/>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$V{CatalogOrSchema}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME_FILED}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$F{TV_ROWCOUNT}]]></valueExpression>
+ 							<labelExpression><![CDATA["Rows"]]></labelExpression>
+ 						</timeSeries>
+@@ -268,7 +272,7 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 						<dataset resetType="Group" resetGroup="CATALOG"/>
+ 						<timeSeries>
+ 							<seriesExpression><![CDATA[$V{CatalogOrSchema}]]></seriesExpression>
+-							<timePeriodExpression><![CDATA[$F{AN_RUNTIME}]]></timePeriodExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME_FILED}))]]></timePeriodExpression>
+ 							<valueExpression><![CDATA[$F{TV_TABLECOUNT}]]></valueExpression>
+ 							<labelExpression><![CDATA["Tables"]]></labelExpression>
+ 						</timeSeries>
+@@ -315,6 +319,76 @@ order by REP_LABEL1  , AN_LABEL1 , OVERVIEW.ELT_PK ,OVERVIEW.TV_VIEWCOUNT, OVERV
+ 						</valueAxisFormat>
+ 					</timeSeriesPlot>
+ 				</timeSeriesChart>
++				<timeSeriesChart>
++					<chart evaluationTime="Group" evaluationGroup="CATALOG" customizerClass="org.talend.dataquality.reporting.TalendChartCustomizer">
++						<reportElement key="Graphics_cat_views" x="7" y="541" width="524" height="260"/>
++						<box>
++							<pen lineWidth="1.0" lineColor="#AEB0B2"/>
++							<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#AEB0B2"/>
++							<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#AEB0B2"/>
++							<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#AEB0B2"/>
++							<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#AEB0B2"/>
++						</box>
++						<chartTitle color="#000000">
++							<font fontName="Serif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++							<titleExpression><![CDATA["NUMBER OF VIEWS"]]></titleExpression>
++						</chartTitle>
++						<chartSubtitle/>
++						<chartLegend textColor="#000000" backgroundColor="#FFFFFF">
++							<font fontName="Serif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++						</chartLegend>
++					</chart>
++					<timeSeriesDataset timePeriod="Second">
++						<dataset resetType="Group" resetGroup="CATALOG"/>
++						<timeSeries>
++							<seriesExpression><![CDATA[$V{CatalogOrSchema}]]></seriesExpression>
++							<timePeriodExpression><![CDATA[$P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($F{AN_RUNTIME_FILED}))]]></timePeriodExpression>
++							<valueExpression><![CDATA[$F{TV_VIEWCOUNT}]]></valueExpression>
++							<labelExpression><![CDATA["Views"]]></labelExpression>
++						</timeSeries>
++					</timeSeriesDataset>
++					<timeSeriesPlot>
++						<plot backcolor="#E7FDE9">
++							<seriesColor seriesOrder="0" color="#F49320"/>
++							<seriesColor seriesOrder="1" color="#8077B2"/>
++							<seriesColor seriesOrder="2" color="#BED530"/>
++							<seriesColor seriesOrder="3" color="#239DBE"/>
++							<seriesColor seriesOrder="4" color="#FAD410"/>
++							<seriesColor seriesOrder="5" color="#EA1C24"/>
++							<seriesColor seriesOrder="6" color="#C0835B"/>
++							<seriesColor seriesOrder="7" color="#EC1785"/>
++							<seriesColor seriesOrder="8" color="#A49B64"/>
++							<seriesColor seriesOrder="9" color="#F4781E"/>
++							<seriesColor seriesOrder="10" color="#80A8C9"/>
++							<seriesColor seriesOrder="11" color="#BEA92A"/>
++							<seriesColor seriesOrder="12" color="#257EAF"/>
++							<seriesColor seriesOrder="13" color="#FAAE0F"/>
++							<seriesColor seriesOrder="14" color="#FAD410"/>
++							<seriesColor seriesOrder="15" color="#EB682F"/>
++							<seriesColor seriesOrder="16" color="#EA1C24"/>
++						</plot>
++						<timeAxisFormat>
++							<axisFormat>
++								<labelFont>
++									<font fontName="Serif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++								</labelFont>
++								<tickLabelFont>
++									<font fontName="Serif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++								</tickLabelFont>
++							</axisFormat>
++						</timeAxisFormat>
++						<valueAxisFormat>
++							<axisFormat>
++								<labelFont>
++									<font fontName="Serif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++								</labelFont>
++								<tickLabelFont>
++									<font fontName="Serif" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
++								</tickLabelFont>
++							</axisFormat>
++						</valueAxisFormat>
++					</timeSeriesPlot>
++				</timeSeriesChart>
+ 			</band>
+ 		</groupHeader>
+ 		<groupFooter>
+diff --git a/org.talend.dataquality.reporting/reports/subreports/b01_column_set_basic_subreport1.jrxml b/org.talend.dataquality.reporting/reports/subreports/b01_column_set_basic_subreport1.jrxml
+index 2d0d00e..fbaf806 100644
+--- a/org.talend.dataquality.reporting/reports/subreports/b01_column_set_basic_subreport1.jrxml
++++ b/org.talend.dataquality.reporting/reports/subreports/b01_column_set_basic_subreport1.jrxml
+@@ -10,6 +10,15 @@
+ 		<parameterDescription><![CDATA[title file]]></parameterDescription>
+ 	</parameter>
+ 	<parameter name="REP_LABEL" class="java.lang.String"/>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocalZ" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss Z",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT
+         ELEMENT.ELT_COLUMN_NAME,
+@@ -91,7 +100,7 @@ WHERE ANA.AN_PK=$P{AN_PK}]]>
+ 				<textElement textAlignment="Left" verticalAlignment="Middle">
+ 					<font fontName="DejaVu Sans" size="10"/>
+ 				</textElement>
+-				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{AN_RUNTIME}]]></textFieldExpression>
++				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{DateFormatterLocalZ}.format($P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($P{AN_RUNTIME})))]]></textFieldExpression>
+ 			</textField>
+ 			<textField isBlankWhenNull="false">
+ 				<reportElement key="textField" mode="Opaque" x="8" y="84" width="257" height="14"/>
+diff --git a/org.talend.dataquality.reporting/reports/subreports/s01_column_subreport.jrxml b/org.talend.dataquality.reporting/reports/subreports/s01_column_subreport.jrxml
+index 750d709..851fb6a 100644
+--- a/org.talend.dataquality.reporting/reports/subreports/s01_column_subreport.jrxml
++++ b/org.talend.dataquality.reporting/reports/subreports/s01_column_subreport.jrxml
+@@ -1,8 +1,10 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="s01_column_subreport" pageWidth="528" pageHeight="182" columnWidth="528" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+ 	<property name="ireport.zoom" value="1.4641000000000008"/>
+-	<property name="ireport.x" value="15"/>
++	<property name="ireport.x" value="0"/>
+ 	<property name="ireport.y" value="0"/>
++	<import value="java.text.*"/>
++	<import value="java.util.*"/>
+ 	<parameter name="TITLE_FILE" class="java.lang.String"/>
+ 	<parameter name="REP_LABEL" class="java.lang.String"/>
+ 	<parameter name="ELT_CONNECTION_NAME" class="java.lang.String"/>
+@@ -14,6 +16,15 @@
+ 	<parameter name="AN_LABEL" class="java.lang.String"/>
+ 	<parameter name="AN_DURATION" class="java.math.BigDecimal"/>
+ 	<parameter name="TABLE_COLUMN" class="java.lang.String"/>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocalZ" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss Z",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT count(*) FROM TDQ_VALUES]]>
+ 	</queryString>
+@@ -72,7 +83,7 @@
+ 				<textElement textAlignment="Left" verticalAlignment="Middle">
+ 					<font fontName="DejaVu Sans" size="10"/>
+ 				</textElement>
+-				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{AN_RUNTIME}]]></textFieldExpression>
++				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{DateFormatterLocalZ}.format($P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($P{AN_RUNTIME})))]]></textFieldExpression>
+ 			</textField>
+ 			<textField isBlankWhenNull="false">
+ 				<reportElement key="textField" mode="Opaque" x="8" y="84" width="257" height="14"/>
+diff --git a/org.talend.dataquality.reporting/reports/subreports/s03_sub_overview.jrxml b/org.talend.dataquality.reporting/reports/subreports/s03_sub_overview.jrxml
+index 5990fca..090bdd8 100644
+--- a/org.talend.dataquality.reporting/reports/subreports/s03_sub_overview.jrxml
++++ b/org.talend.dataquality.reporting/reports/subreports/s03_sub_overview.jrxml
+@@ -15,6 +15,15 @@
+ 	<parameter name="AN_DURATION" class="java.math.BigDecimal"/>
+ 	<parameter name="TV_TABLE_FILTER" class="java.lang.String"/>
+ 	<parameter name="TV_VIEW_FILTER" class="java.lang.String"/>
++	<parameter name="DateFormatterUTC" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, java.util.TimeZone.getTimeZone("UTC"))]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocal" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
++	<parameter name="DateFormatterLocalZ" class="java.text.DateFormat">
++		<defaultValueExpression><![CDATA[$P{REPORT_FORMAT_FACTORY}.createDateFormat("yyyy-MM-dd HH:mm:ss Z",$P{REPORT_LOCALE}, $P{REPORT_TIME_ZONE})]]></defaultValueExpression>
++	</parameter>
+ 	<queryString>
+ 		<![CDATA[SELECT count(*) FROM TDQ_VALUES]]>
+ 	</queryString>
+@@ -73,7 +82,7 @@
+ 				<textElement textAlignment="Left" verticalAlignment="Middle">
+ 					<font fontName="DejaVu Sans" size="10"/>
+ 				</textElement>
+-				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{AN_RUNTIME}]]></textFieldExpression>
++				<textFieldExpression class="java.lang.String"><![CDATA["RUN TIME: "+$P{DateFormatterLocalZ}.format($P{DateFormatterUTC}.parse($P{DateFormatterLocal}.format($P{AN_RUNTIME})))]]></textFieldExpression>
+ 			</textField>
+ 			<textField isBlankWhenNull="false">
+ 				<reportElement key="textField" mode="Opaque" x="8" y="84" width="257" height="14"/>

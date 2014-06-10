@@ -1,0 +1,1802 @@
+diff --git a/org.talend.repository.remoteprovider/src/messages.properties b/org.talend.repository.remoteprovider/src/messages.properties
+index 187e3e3..22558d6 100755
+--- a/org.talend.repository.remoteprovider/src/messages.properties
++++ b/org.talend.repository.remoteprovider/src/messages.properties
+@@ -3,3 +3,6 @@ RemoteRepositoryFactory_LogonProjectMessage=Log on in project "{0}".
+ RemoteRepositoryFactory_NotFoundUserMessage=Unable to find user to logon.
+ RemoteRepositoryFactory_RefProjectWithTwoBranchesMessage=Can not do reference on the project "{0}" with two branches "{1}" and "{2}" at same time.
+ RemoteRepositoryFactory_Warning=Warning from Administration Center : 
++ServletUtil_CreateProjectFailure=Create project failure.
++ServletUtil_invalidAdminAccess=Invalid administrator access.
++ServletUtil_unableAccessUrl=Unable to access to url : 
+diff --git a/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/ServletUtil.java b/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/ServletUtil.java
+index 65e675e..2587c18 100755
+--- a/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/ServletUtil.java
++++ b/org.talend.repository.remoteprovider/src/org/talend/repository/remoteprovider/ServletUtil.java
+@@ -1,879 +1,907 @@
+-// ============================================================================
+-//
+-// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
+-//
+-// This source code is available under agreement available at
+-// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+-//
+-// You should have received a copy of the agreement
+-// along with this program; if not, write to Talend SA
+-// 9 rue Pages 92150 Suresnes, France
+-//
+-// ============================================================================
+-package org.talend.repository.remoteprovider;
+-
+-import java.io.BufferedReader;
+-import java.io.ByteArrayInputStream;
+-import java.io.ByteArrayOutputStream;
+-import java.io.DataOutputStream;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.IOException;
+-import java.io.InputStreamReader;
+-import java.io.UnsupportedEncodingException;
+-import java.net.HttpURLConnection;
+-import java.net.URL;
+-import java.net.URLEncoder;
+-import java.security.KeyManagementException;
+-import java.security.KeyStore;
+-import java.security.NoSuchAlgorithmException;
+-import java.security.cert.CertificateException;
+-import java.security.cert.X509Certificate;
+-import java.util.Collection;
+-import java.util.Collections;
+-
+-import javax.net.ssl.HostnameVerifier;
+-import javax.net.ssl.HttpsURLConnection;
+-import javax.net.ssl.KeyManagerFactory;
+-import javax.net.ssl.SSLContext;
+-import javax.net.ssl.SSLSession;
+-import javax.net.ssl.SSLSocketFactory;
+-import javax.net.ssl.TrustManagerFactory;
+-import javax.net.ssl.X509TrustManager;
+-
+-import org.eclipse.emf.common.util.EList;
+-import org.eclipse.emf.ecore.EObject;
+-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
+-import org.talend.commons.exception.LoginException;
+-import org.talend.commons.exception.PersistenceException;
+-import org.talend.core.model.general.Project;
+-import org.talend.core.model.properties.Item;
+-import org.talend.core.model.properties.User;
+-import org.talend.core.model.repository.ERepositoryObjectType;
+-import org.talend.core.repository.model.ProxyRepositoryFactory;
+-import org.talend.repository.ProjectManager;
+-import org.talend.repository.remoteprovider.AdministratorClient.Action;
+-import org.talend.utils.json.JSONArray;
+-import org.talend.utils.json.JSONException;
+-import org.talend.utils.json.JSONObject;
+-import org.talend.utils.security.CryptoHelper;
+-
+-/***/
+-public class ServletUtil {
+-
+-    private static final String UTF8 = "UTF8";
+-
+-    public static final String PASSWD = "passwd";
+-
+-    public static final String LOGIN = "login";
+-
+-    public static final String ACTION = "action";
+-
+-    public static final String ERROR = "ERROR:";
+-
+-    public static final String LOGIN_ERROR = "LOGINERROR:";
+-
+-    public static final String RESPONSE = "RESPONSE:";
+-
+-    private static final String SEP3 = "&";
+-
+-    private static final String SEP2 = "=";
+-
+-    private static final String SEP1 = "?";
+-
+-    private static final String SERVLET_LOCATION = "/remoteConnection";
+-
+-    public static final String VERSION = "version";
+-
+-    public static final String PROJECT = "project";
+-
+-    public static final String BRANCH = "branch";
+-
+-    public static final String VIRTUAL_SERVER = "virtualserver";
+-
+-    public static final String SESSION_ID = "sessionId";
+-
+-    public static final String OK = "ok";
+-
+-    public static String COMMAND_LIST_PROJECTS_HOOK = "commandLineListProjectsHook";
+-
+-    public static final String INVALID_ADMINISTRATOR_ACCESS = "Invalid administrator access.";
+-
+-    public static final String CREATE_PROJECT_FAILURE = "Create project failure.";
+-
+-    public static final String APPLICATION = "application";
+-
+-    private static final String META_ACTION_LOCK = "locks";
+-
+-    private static final String META_ITEM_ID = "itemId";
+-
+-    private static SSLContext sslcontext;
+-
+-    private static final String TAC_SSL_KEYSTORE = "AdminKeyStore.keystore";
+-
+-    private static final String TAC_SSL_SYSTEM_KEY = "tac.net.ssl.KeyStore";
+-
+-    private static final String TAC_SSL_SYSTEM_PASS = "tac.net.ssl.KeyStorePass";
+-
+-    public static String computeLoginUrl(String version, String login, byte[] password, String project)
+-            throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(computeUrl(Action.Login.toString(), version, login, password));
+-        buffer.append(SEP3);
+-        buffer.append(PROJECT);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(project));
+-
+-        return buffer.toString();
+-    }
+-
+-    public static String computeBestExecutionServerUrl(String version, String login, byte[] password, String virtualServerName)
+-            throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(computeUrl(Action.BestExecutionServer.toString(), version, login, password));
+-        buffer.append(SEP3);
+-        buffer.append(VIRTUAL_SERVER);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(virtualServerName));
+-
+-        return buffer.toString();
+-    }
+-
+-    public static String computeSessionUrl(String action, String version, String login, byte[] password, long sessionId)
+-            throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(computeUrl(action, version, login, password));
+-        buffer.append(SEP3);
+-        buffer.append(SESSION_ID);
+-        buffer.append(SEP2);
+-        buffer.append(sessionId);
+-
+-        return buffer.toString();
+-    }
+-
+-    public static String computeSessionUrl(String action, String version, String login, byte[] password, String projectLabel,
+-            String branchLabel, long sessionId) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-        buffer.append(computeSessionUrl(action, version, login, password, sessionId));
+-        buffer.append(SEP3);
+-        buffer.append(PROJECT);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(projectLabel));
+-        buffer.append(SEP3);
+-        buffer.append(BRANCH);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(branchLabel));
+-        return buffer.toString();
+-    }
+-
+-    public static String computeUrl(String action, String version, String login, byte[] password) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(computeUrl(action, version));
+-        buffer.append(SEP3);
+-        buffer.append(LOGIN);
+-        buffer.append(SEP2);
+-        if (login != null) {
+-            buffer.append(urlEncode(login));
+-        }
+-        buffer.append(SEP3);
+-        buffer.append(PASSWD);
+-        buffer.append(SEP2);
+-        if (password != null) {
+-            buffer.append(urlEncode(EncryptionHelper.encode64(password)));
+-        }
+-
+-        return buffer.toString();
+-    }
+-
+-    public static String computeUrl(String action, String version, String login, byte[] password, String projectLabel,
+-            String branchLabel) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-        buffer.append(computeUrl(action, version, login, password));
+-        buffer.append(SEP3);
+-        buffer.append(PROJECT);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(projectLabel));
+-        buffer.append(SEP3);
+-        buffer.append(BRANCH);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(branchLabel));
+-        return buffer.toString();
+-    }
+-
+-    public static String computeDroolsUrl(String login, String idSession) {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append("login");
+-        buffer.append(SEP2);
+-        buffer.append(login);
+-        buffer.append(SEP3);
+-        buffer.append("idSession");
+-        buffer.append(SEP2);
+-        buffer.append(idSession);
+-
+-        return buffer.toString();
+-    }
+-
+-    public static String computeUrl(String login, byte[] password) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append("login");
+-        buffer.append(SEP2);
+-        if (login != null) {
+-            buffer.append(urlEncode(login));
+-        }
+-        buffer.append(SEP3);
+-        buffer.append("password");
+-        buffer.append(SEP2);
+-        if (password != null) {
+-            buffer.append(urlEncode(EncryptionHelper.encode64(password)));
+-        }
+-
+-        return buffer.toString();
+-    }
+-
+-    private static String computeUrl(String action, String version) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(SERVLET_LOCATION);
+-        buffer.append(SEP1);
+-        buffer.append(ACTION);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(action));
+-        buffer.append(SEP3);
+-        buffer.append(VERSION);
+-        buffer.append(SEP2);
+-        buffer.append(urlEncode(version));
+-
+-        return buffer.toString();
+-    }
+-
+-    private static String urlEncode(String url) throws PersistenceException {
+-        try {
+-            return URLEncoder.encode(url, UTF8);
+-        } catch (UnsupportedEncodingException e) {
+-            throw new PersistenceException(e);
+-        }
+-    }
+-
+-    public static String getContent(String adminUrl, String urlString) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-        try {
+-            URL url = new URL(adminUrl + urlString);
+-            BufferedReader in = null;
+-            if (adminUrl.startsWith("https://")) {
+-                final SSLSocketFactory socketFactory = getSSLContext().getSocketFactory();
+-                HttpsURLConnection httpsCon = (HttpsURLConnection) url.openConnection();
+-                httpsCon.setSSLSocketFactory(socketFactory);
+-                httpsCon.setHostnameVerifier(new HostnameVerifier() {
+-
+-                    @Override
+-                    public boolean verify(String arg0, SSLSession arg1) {
+-                        return true;
+-                    }
+-                });
+-                httpsCon.connect();
+-                in = new BufferedReader(new InputStreamReader(httpsCon.getInputStream()));
+-            } else {
+-                in = new BufferedReader(new InputStreamReader(url.openStream()));
+-            }
+-
+-            String inputLine;
+-            while ((inputLine = in.readLine()) != null) {
+-                buffer.append(inputLine);
+-            }
+-
+-            in.close();
+-        } catch (Exception e) {
+-            throw new PersistenceException("Unable to access to url : " + adminUrl);
+-        }
+-
+-        return buffer.toString();
+-    }
+-
+-    /**
+-     * DOC ycbai Comment method "getContentWithPost".
+-     * 
+-     * @param adminUrl
+-     * @param urlString
+-     * @return
+-     * @throws PersistenceException
+-     */
+-    public static String getContentWithPost(String adminUrl, String urlString) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        String servletStr = urlString;
+-        String urlParameters = null;
+-        if (urlString != null && urlString.indexOf(SEP1) != -1) {
+-            servletStr = urlString.substring(0, urlString.indexOf(SEP1));
+-            urlParameters = urlString.substring(urlString.indexOf(SEP1) + 1);
+-        }
+-        try {
+-            URL url = new URL(adminUrl + servletStr);
+-            HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+-            if (adminUrl.startsWith("https://")) { //$NON-NLS-1$
+-                final SSLSocketFactory socketFactory = getSSLContext().getSocketFactory();
+-                HttpsURLConnection httpsConn = (HttpsURLConnection) urlConn;
+-                httpsConn.setSSLSocketFactory(socketFactory);
+-                httpsConn.setHostnameVerifier(new HostnameVerifier() {
+-
+-                    @Override
+-                    public boolean verify(String arg0, SSLSession arg1) {
+-                        return true;
+-                    }
+-                });
+-            }
+-            urlConn.setRequestMethod("POST"); //$NON-NLS-1$
+-            urlConn.setDoOutput(true);
+-            urlConn.setDoInput(true);
+-            urlConn.setUseCaches(false);
+-            urlConn.setAllowUserInteraction(false);
+-
+-            if (urlParameters != null) {
+-                DataOutputStream wr = new DataOutputStream(urlConn.getOutputStream());
+-                wr.writeBytes(urlParameters);
+-                wr.flush();
+-                wr.close();
+-            }
+-
+-            BufferedReader bfreader = new BufferedReader(new InputStreamReader(urlConn.getInputStream()));
+-            String line = ""; //$NON-NLS-1$
+-            while ((line = bfreader.readLine()) != null) {
+-                buffer.append(line);
+-            }
+-            bfreader.close();
+-        } catch (Exception e) {
+-            throw new PersistenceException("Unable to access to url : " + adminUrl);
+-        }
+-
+-        return buffer.toString();
+-    }
+-
+-    private static SSLContext getSSLContext() {
+-        if (sslcontext == null) {
+-            try {
+-                String keystorePath = System.getProperty(TAC_SSL_SYSTEM_KEY);
+-                String keyStorePass = System.getProperty(TAC_SSL_SYSTEM_PASS);
+-                if (keystorePath == null) {
+-                    // if user does not set the keystore path in the .ini,we need to look for the keystore file under
+-                    // the root dir of product
+-                    String userDir = System.getProperty("user.dir");
+-                    File keystorePathFile = new File(userDir + "/" + TAC_SSL_KEYSTORE);
+-                    keystorePath = keystorePathFile.getAbsolutePath();
+-                }
+-
+-                if (keyStorePass == null) {
+-                    // since if user does not set the password in the talend.ini,we only can make it empty by
+-                    // default,but not sure the ssl can connect
+-                    keyStorePass = "";
+-                }
+-
+-                File keystoreFile = new File(keystorePath);
+-                if (!keystoreFile.canRead()) {
+-                    throw new RuntimeException("Can't find or read the SSL Keystore file at: '" + keystoreFile.getAbsolutePath()
+-                            + "'");
+-                }
+-
+-                sslcontext = SSLContext.getInstance("SSL");
+-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+-
+-                KeyStore ks = KeyStore.getInstance("JKS");
+-                KeyStore tks = KeyStore.getInstance("JKS");
+-
+-                ks.load(new FileInputStream(keystorePath), keyStorePass.toCharArray());
+-                tks.load(new FileInputStream(keystorePath), keyStorePass.toCharArray());
+-                kmf.init(ks, keyStorePass.toCharArray());
+-                tmf.init(tks);
+-
+-                sslcontext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+-            } catch (NoSuchAlgorithmException e) {
+-                e.printStackTrace();
+-            } catch (KeyManagementException e) {
+-                e.printStackTrace();
+-            } catch (Exception e) {
+-                // TODO Auto-generated catch block
+-                e.printStackTrace();
+-            }
+-        }
+-        return sslcontext;
+-    }
+-
+-    // accept all certificate
+-    private static class TrustAnyTrustManager implements X509TrustManager {
+-
+-        @Override
+-        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+-        }
+-
+-        @Override
+-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+-        }
+-
+-        @Override
+-        public X509Certificate[] getAcceptedIssuers() {
+-            return new X509Certificate[] {};
+-        }
+-    }
+-
+-    public static void handleError(String content) throws PersistenceException {
+-        if (content.startsWith(ERROR)) {
+-            String errorMessage = content.substring(ERROR.length());
+-            throw new PersistenceException(errorMessage);
+-        }
+-    }
+-
+-    public static void handleLoginError(String content) throws LoginException {
+-        if (content.startsWith(LOGIN_ERROR)) {
+-            String errorMessage = content.substring(LOGIN_ERROR.length());
+-            throw new LoginException(errorMessage);
+-        }
+-    }
+-
+-    public static String handleResponse(String content) {
+-        if (content.startsWith(RESPONSE)) {
+-            return content.substring(RESPONSE.length());
+-        }
+-        return content;
+-    }
+-
+-    public static String serializeObjects(Collection<EObject> objects) throws IOException {
+-        XMIResourceImpl resource = createResource();
+-        resource.getContents().addAll(objects);
+-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+-        resource.save(outputStream, Collections.EMPTY_MAP);
+-        return EncryptionHelper.encode64(outputStream.toByteArray());
+-    }
+-
+-    public static EList<EObject> deserializeObjects(String xmi) throws IOException {
+-        byte[] decode = EncryptionHelper.decode64(xmi);
+-        XMIResourceImpl resource = createResource();
+-        ByteArrayInputStream inputStream = new ByteArrayInputStream(decode);
+-        resource.load(inputStream, Collections.EMPTY_MAP);
+-        return resource.getContents();
+-    }
+-
+-    public static JSONObject deserializeJsonObject(String xmi) throws JSONException {
+-        // byte[] decode = EncryptionHelper.decode64(xmi);
+-        return new JSONObject(new String(xmi));
+-    }
+-
+-    private static XMIResourceImpl createResource() {
+-        return new XMIResourceImpl() {
+-
+-            @Override
+-            protected boolean useUUIDs() {
+-                return true;
+-            }
+-        };
+-    }
+-
+-    private static final String META_SERVLET = "/metaServlet";
+-
+-    private static final String META_ACTION = "actionName";
+-
+-    private static final String META_AUTH_USER = "authUser";
+-
+-    private static final String META_AUTH_PASS = "authPass";
+-
+-    private static final String META_PROJECT_NAME = "projectName";
+-
+-    private static final String META_PROJECT_DESC = "projectDescription";
+-
+-    private static final String META_PROJECT_LANGUAGE = "projectLanguage";
+-
+-    private static final String META_PROJECT_AUTHOR_LOGIN = "projectAuthorLogin";
+-
+-    // private static final String META_PROJECT_SVN_URL = "projectSvnLocation";
+-    //
+-    // private static final String META_PROJECT_SVN_LOGIN = "projectSvnLogin";
+-    //
+-    // private static final String META_PROJECT_SVN_PASSWORD = "projectSvnPassword";
+-
+-    private static final String META_PROJECT_TYPE = "projects";
+-
+-    private static final String META_USER_LOGIN = "userLogin";
+-
+-    private static final String META_USER_PASSWORD = "userPassword";
+-
+-    private static final String META_USER_FIRSTNAME = "userFirstName";
+-
+-    private static final String META_USER_LASTNAME = "userLastName";
+-
+-    // bug 19913
+-    private static final String META_SVN_Folder_Creation = "forceSvnFolderCreation";
+-
+-    private static final String ADD_TECHNICAL_NAME = "addTechNameAtURL";
+-
+-    private static final String META_ITEM_IDS = "itemIds";
+-
+-    private static final String META_ITEM_LABEL = "itemLabel";
+-
+-    private static final String META_ITEM_TYPE = "itemType";
+-
+-    private static final String META_BRANCH = "branch";
+-
+-    private static final String META_LOCKS = "locks";
+-
+-    private static final String APPLICATION_NAME = "applicationName";
+-
+-    // feature TDI-16917
+-    private static final String META_TASK_NAME = "taskName";
+-
+-    private static final String META_JOB_NAME = "jobName";
+-
+-    private static final String META_ACTIVE = "active";
+-
+-    private static final String META_DESC = "description";
+-
+-    private static final String META_APPLY_CONTEXT_TO_CHILDREN = "applyContextToChildren";
+-
+-    private static final String META_PROJET_NAME = "projectName";
+-
+-    private static final String META_CONTEXT_NAME = "contextName";
+-
+-    private static final String META_JOB_VERSION = "jobVersion";
+-
+-    private static final String META_REGENERATE = "regenerateJobOnChange";
+-
+-    private static final String META_EXECUTION_SERVER = "executionServerName";
+-
+-    private static final String META_STATIC_ENABLE = "execStatisticsEnabled";
+-
+-    private static final String META_ADD_CODE_STATIC_ENABLE = "addStatisticsCodeEnabled";
+-
+-    private static final String META_UNKNOEWN_STATE_JOB = "onUnknownStateJob";
+-
+-    private static final String META_CREATE_TAG_SOURCE = "source";
+-
+-    private static final String META_CREATE_TAG_TARGET = "target";
+-
+-    // private static final String META_USER_SVN_LOGIN = "userSvnLogin";
+-    //
+-    // private static final String META_USER_SVN_PASSWORD = "userSvnPassword";
+-
+-    protected static String computeMetaUrl(JSONObject jsonObject) throws PersistenceException {
+-        StringBuffer buffer = new StringBuffer();
+-
+-        buffer.append(META_SERVLET);
+-        buffer.append(SEP1);
+-
+-        try {
+-            buffer.append(CryptoHelper.encode64(jsonObject.toString().getBytes(UTF8)));
+-        } catch (UnsupportedEncodingException e) {
+-            throw new PersistenceException(e);
+-        }
+-
+-        return buffer.toString();
+-    }
+-
+-    protected static JSONObject computeMetaUrl(String action, String version, String login, String password)
+-            throws PersistenceException {
+-
+-        JSONObject jsonObject = new JSONObject();
+-        try {
+-            jsonObject.put(META_ACTION, action);
+-            // jsonObject.put(VERSION, version);
+-            jsonObject.put(META_USER_LOGIN, login);
+-
+-            if (login != null) {
+-                jsonObject.put(META_AUTH_USER, login);
+-            }
+-            if (password != null) {
+-                jsonObject.put(META_AUTH_PASS, password);
+-            }
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return jsonObject;
+-    }
+-
+-    protected static JSONObject computeTagUrl(String action, String user, String pass, String source, String target)
+-            throws PersistenceException {
+-
+-        JSONObject jsonObject = new JSONObject();
+-        try {
+-            Project currentProject = ProjectManager.getInstance().getCurrentProject();
+-            jsonObject.put(META_ACTION, action);
+-
+-            if (currentProject != null) {
+-                if (currentProject.getLabel() != null) {
+-                    jsonObject.put(META_PROJECT_NAME, currentProject.getLabel());
+-                }
+-            }
+-            if (user != null) {
+-                jsonObject.put(META_AUTH_USER, user);
+-            }
+-            if (pass != null) {
+-                jsonObject.put(META_AUTH_PASS, pass);
+-            }
+-            if (source != null) {
+-                jsonObject.put(META_CREATE_TAG_SOURCE, source);
+-            }
+-            if (target != null) {
+-                jsonObject.put(META_CREATE_TAG_TARGET, target);
+-            }
+-
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return jsonObject;
+-    }
+-
+-    public static String computeEnableSandboxProjectUrl(String action, String version, String login, String password)
+-            throws PersistenceException {
+-        JSONObject jsonObject = ServletUtil.computeMetaUrl(action, version, login, password);
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    /**
+-     * 
+-     * ggu Comment method "computeCreateSandboxProjectUrl".
+-     * 
+-     * in fact, the login and password are ingored for TAC in some condition.
+-     */
+-    public static String computeCreateSandboxProjectUrl(String version, String login, String password, Project newProject)
+-            throws PersistenceException {
+-
+-        JSONObject jsonObject = computeMetaUrl(Action.createSandboxProject.toString(), version, login, password);
+-
+-        try {
+-            if (newProject != null) {
+-                if (newProject.getLabel() != null) {
+-                    jsonObject.put(META_PROJECT_NAME, newProject.getLabel());
+-                }
+-
+-                if (newProject.getLanguage() != null) {
+-                    jsonObject.put(META_PROJECT_LANGUAGE, newProject.getLanguage().getName());
+-                }
+-
+-                if (newProject.getDescription() != null) {
+-                    jsonObject.put(META_PROJECT_DESC, newProject.getDescription());
+-                }
+-                // String type = System.getProperty("talend.branding.type");
+-                // if (type == null || type.equals("")) {
+-                // type = "DI";
+-                // }
+-                // jsonObject.put(META_PROJECT_TYPE, type);
+-                // if (projectSvnUrl != null) { // project must be existed
+-                // jsonObject.put(META_PROJECT_SVN_URL, projectSvnUrl);
+-                //
+-                // if (projectSvnLogin != null) {// projectSvnUrl must be existed
+-                // jsonObject.put(META_PROJECT_SVN_LOGIN, projectSvnLogin);
+-                //
+-                // if (projectSvnPass != null) {// projectSvnLogin must be existed
+-                // jsonObject.put(META_PROJECT_SVN_PASSWORD, projectSvnPass);
+-                // }
+-                // }
+-                // }
+-                User author = newProject.getAuthor();
+-                if (author != null && newProject.getAuthor().getLogin() != null) {
+-                    jsonObject.put(META_USER_LOGIN, newProject.getAuthor().getLogin());
+-
+-                    if (author.getPassword() != null) {
+-                        jsonObject.put(META_USER_PASSWORD, new String(author.getPassword(), "UTF8"));
+-                    }
+-                    if (author.getFirstName() != null) {
+-                        jsonObject.put(META_USER_FIRSTNAME, author.getFirstName());
+-                    }
+-
+-                    if (author.getLastName() != null) {
+-                        jsonObject.put(META_USER_LASTNAME, author.getLastName());
+-                    }
+-
+-                    // if (userSvnLogin != null && !"".equals(userSvnLogin)) {
+-                    // jsonObject.put(META_USER_SVN_LOGIN, userSvnLogin);
+-                    //
+-                    // if (userSvnPass != null && !"".equals(userSvnPass))
+-                    // jsonObject.put(META_USER_SVN_PASSWORD, userSvnPass);
+-                    // }
+-
+-                }
+-            }
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        } catch (UnsupportedEncodingException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    /**
+-     * DOC ycbai Comment method "computeLockUrl".
+-     * 
+-     * @param version
+-     * @param branch
+-     * @param item
+-     * @return
+-     * @throws PersistenceException
+-     */
+-    public static String computeLockUrl(Action action, final User user, final String password, String version, String branch,
+-            Item item) throws PersistenceException {
+-        org.talend.core.model.properties.Project project = ProxyRepositoryFactory.getInstance().getProject(item);
+-        Project generalProject = new Project(project);
+-        JSONObject jsonObject = null;
+-        try {
+-            jsonObject = computeMetaUrl(action.toString(), version, user.getLogin(), password);
+-            jsonObject.put(META_BRANCH, branch);
+-            jsonObject.put(APPLICATION_NAME, "studio");
+-            jsonObject.put(META_PROJECT_NAME, generalProject.getLabel());
+-            switch (action) {
+-            case addLocks:
+-                JSONArray detailPara = new JSONArray();
+-                jsonObject.put(META_ACTION, action);
+-                JSONObject innerPara = new JSONObject();
+-                innerPara.put(META_ITEM_ID, item.getProperty().getId());
+-                innerPara.put(META_ITEM_LABEL, item.getProperty().getLabel());
+-                innerPara.put(META_ITEM_TYPE, ERepositoryObjectType.getItemType(item).getKey());
+-                detailPara.put(innerPara);
+-                jsonObject.put(META_ACTION_LOCK, detailPara);
+-                break;
+-            case removeLocks:
+-                jsonObject.put(META_ACTION, action);
+-                JSONArray detailRemoveLocks = new JSONArray();
+-                JSONObject innerRemoveLocksPara = new JSONObject();
+-                innerRemoveLocksPara.put(META_ITEM_ID, item.getProperty().getId());
+-                innerRemoveLocksPara.put(META_ITEM_LABEL, item.getProperty().getLabel());
+-                innerRemoveLocksPara.put(META_ITEM_TYPE, ERepositoryObjectType.getItemType(item).getKey());
+-                detailRemoveLocks.put(innerRemoveLocksPara);
+-                jsonObject.put(META_ACTION_LOCK, detailRemoveLocks);
+-                break;
+-            case isLocked:
+-                jsonObject.put(META_ITEM_IDS, new String[] { item.getProperty().getId() });
+-                break;
+-            case listLocks:
+-                // nothing, all parameters are set as global already
+-            }
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeCreateProjectUrl(String version, Project newProject) throws PersistenceException {
+-        JSONObject jsonObject = new JSONObject();
+-        try {
+-            jsonObject.put(META_ACTION, Action.createProject.toString());
+-            // jsonObject.put(VERSION, version);
+-
+-            if (newProject != null) {
+-                User author = newProject.getAuthor();
+-                if (author != null) {
+-                    if (author.getLogin() != null) {
+-                        jsonObject.put(META_PROJECT_AUTHOR_LOGIN, author.getLogin());
+-                        jsonObject.put(META_AUTH_USER, author.getLogin());
+-                        /*
+-                         * bug 0019913,need to create project using technical name under the root repository and also
+-                         * the structure for the created project(trunk,branch,tags)
+-                         */
+-                        jsonObject.put(META_SVN_Folder_Creation, true);
+-                        jsonObject.put(ADD_TECHNICAL_NAME, true);
+-                        if (author.getPassword() != null) {
+-                            jsonObject.put(META_AUTH_PASS, new String(author.getPassword(), "UTF8"));
+-                        }
+-                    }
+-                }
+-                if (newProject.getLabel() != null) {
+-                    jsonObject.put(META_PROJECT_NAME, newProject.getLabel());
+-                }
+-
+-                if (newProject.getLanguage() != null) {
+-                    jsonObject.put(META_PROJECT_LANGUAGE, newProject.getLanguage().getName());
+-                }
+-
+-                if (newProject.getDescription() != null) {
+-                    jsonObject.put(META_PROJECT_DESC, newProject.getDescription());
+-                }
+-            }
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        } catch (UnsupportedEncodingException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeCreateTaskUrl(User user, String password, String taskName, boolean active, String description,
+-            String branchName, String jobName, String jobVersion, String jobContext, boolean applyContextToChildren,
+-            boolean regenerateJobOnChange, String executionServer, boolean statistic, String unaviableJobServer,
+-            boolean addStatisCodeEnable, String onUnknownStateJob) throws PersistenceException {
+-        JSONObject jsonObject = new JSONObject();
+-        try {
+-            jsonObject.put(META_ACTION, Action.createTask.toString());
+-            if (user != null) {
+-                jsonObject.put(META_AUTH_USER, user.getLogin());
+-
+-                jsonObject.put(META_AUTH_PASS, password);
+-                if (taskName != null) {
+-                    jsonObject.put(META_TASK_NAME, taskName);
+-                }
+-                if (jobName != null) {
+-                    jsonObject.put(META_JOB_NAME, jobName);
+-                }
+-                Project currentProject = ProjectManager.getInstance().getCurrentProject();
+-                if (currentProject != null) {
+-                    if (currentProject.getLabel() != null) {
+-                        jsonObject.put(META_PROJECT_NAME, currentProject.getLabel());
+-                    }
+-
+-                    if (currentProject.getLanguage() != null) {
+-                        jsonObject.put(META_PROJECT_LANGUAGE, currentProject.getLanguage().getName());
+-                    }
+-
+-                    if (currentProject.getDescription() != null) {
+-                        jsonObject.put(META_PROJECT_DESC, currentProject.getDescription());
+-                    }
+-                }
+-                jsonObject.put(META_PROJECT_NAME, ProjectManager.getInstance().getCurrentProject().getLabel());
+-                jsonObject.put(META_BRANCH, branchName == null ? "" : branchName);
+-                jsonObject.put(META_ACTIVE, active);
+-
+-                jsonObject.put(META_APPLY_CONTEXT_TO_CHILDREN, applyContextToChildren);
+-                jsonObject.put(META_DESC, description == null ? "" : description);
+-                jsonObject.put(META_CONTEXT_NAME, jobContext == null ? "" : jobContext);
+-                jsonObject.put(META_JOB_VERSION, jobVersion == null ? "" : jobVersion);
+-
+-                jsonObject.put(META_REGENERATE, regenerateJobOnChange);
+-                jsonObject.put(META_EXECUTION_SERVER, executionServer == null ? "" : executionServer);
+-                jsonObject.put(META_STATIC_ENABLE, statistic);
+-                jsonObject.put(META_ADD_CODE_STATIC_ENABLE, addStatisCodeEnable);
+-                jsonObject.put(META_UNKNOEWN_STATE_JOB, onUnknownStateJob == null ? "" : onUnknownStateJob);
+-
+-            }
+-
+-        } catch (JSONException e) {
+-            throw new PersistenceException(e);
+-        }
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeArchivaUrl(Action action, final User user, final String password, String version)
+-            throws PersistenceException {
+-        JSONObject jsonObject = computeMetaUrl(action.toString(), version, user.getLogin(), password);
+-        // userLogin is no use for get properties of archiva
+-        jsonObject.remove(META_USER_LOGIN);
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeUrlForGetLicense(String action, String version, String login, String password)
+-            throws PersistenceException {
+-        JSONObject jsonObject = computeMetaUrl(action.toString(), version, login, password);
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeCreateTagUrl(Action action, String user, String pass, String source, String target)
+-            throws PersistenceException {
+-        JSONObject jsonObject = computeTagUrl(action.toString(), user, pass, source, target);
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-
+-    public static String computeUrlForgetLibLocation(Action action, String login, String password, String version)
+-            throws PersistenceException {
+-        JSONObject jsonObject = computeMetaUrl(action.toString(), version, login, password);
+-        return ServletUtil.computeMetaUrl(jsonObject);
+-    }
+-}
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.repository.remoteprovider;
++
++import java.io.BufferedReader;
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.DataOutputStream;
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.io.UnsupportedEncodingException;
++import java.net.HttpURLConnection;
++import java.net.URL;
++import java.net.URLEncoder;
++import java.security.KeyManagementException;
++import java.security.KeyStore;
++import java.security.NoSuchAlgorithmException;
++import java.security.cert.CertificateException;
++import java.security.cert.X509Certificate;
++import java.util.Collection;
++import java.util.Collections;
++
++import javax.net.ssl.HostnameVerifier;
++import javax.net.ssl.HttpsURLConnection;
++import javax.net.ssl.KeyManager;
++import javax.net.ssl.KeyManagerFactory;
++import javax.net.ssl.SSLContext;
++import javax.net.ssl.SSLSession;
++import javax.net.ssl.SSLSocketFactory;
++import javax.net.ssl.TrustManager;
++import javax.net.ssl.TrustManagerFactory;
++import javax.net.ssl.X509TrustManager;
++
++import org.eclipse.core.runtime.Platform;
++import org.eclipse.emf.common.util.EList;
++import org.eclipse.emf.ecore.EObject;
++import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
++import org.talend.commons.exception.ExceptionHandler;
++import org.talend.commons.exception.LoginException;
++import org.talend.commons.exception.PersistenceException;
++import org.talend.core.model.general.Project;
++import org.talend.core.model.properties.Item;
++import org.talend.core.model.properties.User;
++import org.talend.core.model.repository.ERepositoryObjectType;
++import org.talend.core.repository.model.ProxyRepositoryFactory;
++import org.talend.repository.ProjectManager;
++import org.talend.repository.remoteprovider.AdministratorClient.Action;
++import org.talend.repository.remoteprovider.i18n.Messages;
++import org.talend.utils.json.JSONArray;
++import org.talend.utils.json.JSONException;
++import org.talend.utils.json.JSONObject;
++import org.talend.utils.security.CryptoHelper;
++
++/***/
++public class ServletUtil {
++
++    private static final String UTF8 = "UTF8"; //$NON-NLS-1$
++
++    public static final String PASSWD = "passwd"; //$NON-NLS-1$
++
++    public static final String LOGIN = "login"; //$NON-NLS-1$
++
++    public static final String ACTION = "action"; //$NON-NLS-1$
++
++    public static final String ERROR = "ERROR:"; //$NON-NLS-1$
++
++    public static final String LOGIN_ERROR = "LOGINERROR:"; //$NON-NLS-1$
++
++    public static final String RESPONSE = "RESPONSE:"; //$NON-NLS-1$
++
++    private static final String SEP3 = "&"; //$NON-NLS-1$
++
++    private static final String SEP2 = "="; //$NON-NLS-1$
++
++    private static final String SEP1 = "?"; //$NON-NLS-1$
++
++    private static final String SERVLET_LOCATION = "/remoteConnection"; //$NON-NLS-1$
++
++    public static final String VERSION = "version"; //$NON-NLS-1$
++
++    public static final String PROJECT = "project"; //$NON-NLS-1$
++
++    public static final String BRANCH = "branch"; //$NON-NLS-1$
++
++    public static final String VIRTUAL_SERVER = "virtualserver"; //$NON-NLS-1$
++
++    public static final String SESSION_ID = "sessionId"; //$NON-NLS-1$
++
++    public static final String OK = "ok"; //$NON-NLS-1$
++
++    public static String COMMAND_LIST_PROJECTS_HOOK = "commandLineListProjectsHook"; //$NON-NLS-1$
++
++    public static final String INVALID_ADMINISTRATOR_ACCESS = Messages.getString("ServletUtil_invalidAdminAccess"); //$NON-NLS-1$
++
++    public static final String CREATE_PROJECT_FAILURE = Messages.getString("ServletUtil_CreateProjectFailure"); //$NON-NLS-1$
++
++    public static final String APPLICATION = "application"; //$NON-NLS-1$
++
++    private static final String META_ACTION_LOCK = "locks"; //$NON-NLS-1$
++
++    private static final String META_ITEM_ID = "itemId"; //$NON-NLS-1$
++
++    private static SSLContext sslcontext;
++
++    private static final String TAC_SSL_KEYSTORE = "clientKeystore.jks"; //$NON-NLS-1$
++
++    private static final String TAC_SSL_TRUSTSTORE = "clientTruststore.jks"; //$NON-NLS-1$
++
++    private static final String TAC_SSL_CLIENT_KEY = "tac.net.ssl.ClientKeyStore"; //$NON-NLS-1$
++
++    private static final String TAC_SSL_CLIENT_TRUST_KEY = "tac.net.ssl.ClientTrustStore"; //$NON-NLS-1$
++
++    private static final String TAC_SSL_KEYSTORE_PASS = "tac.net.ssl.KeyStorePass"; //$NON-NLS-1$
++
++    private static final String TAC_SSL_TRUSTSTORE_PASS = "tac.net.ssl.TrustStorePass"; //$NON-NLS-1$
++
++    public static String computeLoginUrl(String version, String login, byte[] password, String project)
++            throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(computeUrl(Action.Login.toString(), version, login, password));
++        buffer.append(SEP3);
++        buffer.append(PROJECT);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(project));
++
++        return buffer.toString();
++    }
++
++    public static String computeBestExecutionServerUrl(String version, String login, byte[] password, String virtualServerName)
++            throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(computeUrl(Action.BestExecutionServer.toString(), version, login, password));
++        buffer.append(SEP3);
++        buffer.append(VIRTUAL_SERVER);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(virtualServerName));
++
++        return buffer.toString();
++    }
++
++    public static String computeSessionUrl(String action, String version, String login, byte[] password, long sessionId)
++            throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(computeUrl(action, version, login, password));
++        buffer.append(SEP3);
++        buffer.append(SESSION_ID);
++        buffer.append(SEP2);
++        buffer.append(sessionId);
++
++        return buffer.toString();
++    }
++
++    public static String computeSessionUrl(String action, String version, String login, byte[] password, String projectLabel,
++            String branchLabel, long sessionId) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++        buffer.append(computeSessionUrl(action, version, login, password, sessionId));
++        buffer.append(SEP3);
++        buffer.append(PROJECT);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(projectLabel));
++        buffer.append(SEP3);
++        buffer.append(BRANCH);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(branchLabel));
++        return buffer.toString();
++    }
++
++    public static String computeUrl(String action, String version, String login, byte[] password) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(computeUrl(action, version));
++        buffer.append(SEP3);
++        buffer.append(LOGIN);
++        buffer.append(SEP2);
++        if (login != null) {
++            buffer.append(urlEncode(login));
++        }
++        buffer.append(SEP3);
++        buffer.append(PASSWD);
++        buffer.append(SEP2);
++        if (password != null) {
++            buffer.append(urlEncode(EncryptionHelper.encode64(password)));
++        }
++
++        return buffer.toString();
++    }
++
++    public static String computeUrl(String action, String version, String login, byte[] password, String projectLabel,
++            String branchLabel) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++        buffer.append(computeUrl(action, version, login, password));
++        buffer.append(SEP3);
++        buffer.append(PROJECT);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(projectLabel));
++        buffer.append(SEP3);
++        buffer.append(BRANCH);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(branchLabel));
++        return buffer.toString();
++    }
++
++    public static String computeDroolsUrl(String login, String idSession) {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append("login"); //$NON-NLS-1$
++        buffer.append(SEP2);
++        buffer.append(login);
++        buffer.append(SEP3);
++        buffer.append("idSession"); //$NON-NLS-1$
++        buffer.append(SEP2);
++        buffer.append(idSession);
++
++        return buffer.toString();
++    }
++
++    public static String computeUrl(String login, byte[] password) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append("login"); //$NON-NLS-1$
++        buffer.append(SEP2);
++        if (login != null) {
++            buffer.append(urlEncode(login));
++        }
++        buffer.append(SEP3);
++        buffer.append("password"); //$NON-NLS-1$
++        buffer.append(SEP2);
++        if (password != null) {
++            buffer.append(urlEncode(EncryptionHelper.encode64(password)));
++        }
++
++        return buffer.toString();
++    }
++
++    private static String computeUrl(String action, String version) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(SERVLET_LOCATION);
++        buffer.append(SEP1);
++        buffer.append(ACTION);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(action));
++        buffer.append(SEP3);
++        buffer.append(VERSION);
++        buffer.append(SEP2);
++        buffer.append(urlEncode(version));
++
++        return buffer.toString();
++    }
++
++    private static String urlEncode(String url) throws PersistenceException {
++        try {
++            return URLEncoder.encode(url, UTF8);
++        } catch (UnsupportedEncodingException e) {
++            throw new PersistenceException(e);
++        }
++    }
++
++    public static String getContent(String adminUrl, String urlString) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++        try {
++            URL url = new URL(adminUrl + urlString);
++            BufferedReader in = null;
++            if (adminUrl.startsWith("https://")) { //$NON-NLS-1$
++                final SSLSocketFactory socketFactory = getSSLContext().getSocketFactory();
++                HttpsURLConnection httpsCon = (HttpsURLConnection) url.openConnection();
++                httpsCon.setSSLSocketFactory(socketFactory);
++                httpsCon.setHostnameVerifier(new HostnameVerifier() {
++
++                    @Override
++                    public boolean verify(String arg0, SSLSession arg1) {
++                        return true;
++                    }
++                });
++                httpsCon.connect();
++                in = new BufferedReader(new InputStreamReader(httpsCon.getInputStream()));
++            } else {
++                in = new BufferedReader(new InputStreamReader(url.openStream()));
++            }
++
++            String inputLine;
++            while ((inputLine = in.readLine()) != null) {
++                buffer.append(inputLine);
++            }
++
++            in.close();
++        } catch (Exception e) {
++            throw new PersistenceException(Messages.getString("ServletUtil_unableAccessUrl") + adminUrl); //$NON-NLS-1$
++        }
++
++        return buffer.toString();
++    }
++
++    /**
++     * DOC ycbai Comment method "getContentWithPost".
++     * 
++     * @param adminUrl
++     * @param urlString
++     * @return
++     * @throws PersistenceException
++     */
++    public static String getContentWithPost(String adminUrl, String urlString) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        String servletStr = urlString;
++        String urlParameters = null;
++        if (urlString != null && urlString.indexOf(SEP1) != -1) {
++            servletStr = urlString.substring(0, urlString.indexOf(SEP1));
++            urlParameters = urlString.substring(urlString.indexOf(SEP1) + 1);
++        }
++        try {
++            URL url = new URL(adminUrl + servletStr);
++            HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
++            if (adminUrl.startsWith("https://")) { //$NON-NLS-1$
++                final SSLSocketFactory socketFactory = getSSLContext().getSocketFactory();
++                HttpsURLConnection httpsConn = (HttpsURLConnection) urlConn;
++                httpsConn.setSSLSocketFactory(socketFactory);
++                httpsConn.setHostnameVerifier(new HostnameVerifier() {
++
++                    @Override
++                    public boolean verify(String arg0, SSLSession arg1) {
++                        return true;
++                    }
++                });
++            }
++            urlConn.setRequestMethod("POST"); //$NON-NLS-1$
++            urlConn.setDoOutput(true);
++            urlConn.setDoInput(true);
++            urlConn.setUseCaches(false);
++            urlConn.setAllowUserInteraction(false);
++
++            if (urlParameters != null) {
++                DataOutputStream wr = new DataOutputStream(urlConn.getOutputStream());
++                wr.writeBytes(urlParameters);
++                wr.flush();
++                wr.close();
++            }
++
++            BufferedReader bfreader = new BufferedReader(new InputStreamReader(urlConn.getInputStream()));
++            String line = ""; //$NON-NLS-1$
++            while ((line = bfreader.readLine()) != null) {
++                buffer.append(line);
++            }
++            bfreader.close();
++        } catch (Exception e) {
++            throw new PersistenceException(Messages.getString("ServletUtil_unableAccessUrl") + adminUrl); //$NON-NLS-1$
++        }
++
++        return buffer.toString();
++    }
++
++    private static SSLContext getSSLContext() {
++        if (sslcontext == null) {
++            try {
++                String keystorePath = System.getProperty(TAC_SSL_CLIENT_KEY);
++                String trustStorePath = System.getProperty(TAC_SSL_CLIENT_TRUST_KEY);
++                String keystorePass = System.getProperty(TAC_SSL_KEYSTORE_PASS);
++                String truststorePass = System.getProperty(TAC_SSL_TRUSTSTORE_PASS);
++                if (keystorePath == null) {
++                    // if user does not set the keystore path in the .ini,we need to look for the keystore file under
++                    // the root dir of product
++                    String userDir = Platform.getInstallLocation().getURL().getPath();
++                    File keystorePathFile = new File(userDir + TAC_SSL_KEYSTORE);
++                    if (keystorePathFile.exists()) {
++                        keystorePath = keystorePathFile.getAbsolutePath();
++                    }
++                }
++                if (trustStorePath == null) {
++                    String userDir = Platform.getInstallLocation().getURL().getPath();
++                    File trustStorePathFile = new File(userDir + TAC_SSL_TRUSTSTORE);
++                    if (trustStorePathFile.exists()) {
++                        trustStorePath = trustStorePathFile.getAbsolutePath();
++                    }
++                }
++                if (keystorePass == null) {
++                    // if user does not set the password in the talend.ini,we only can make it empty by
++                    // default,but not sure the ssl can connect
++                    keystorePass = ""; //$NON-NLS-1$
++                }
++                if (truststorePass == null) {
++                    // if user does not set the password in the talend.ini,we only can make it empty by
++                    // default,but not sure the ssl can connect
++                    truststorePass = ""; //$NON-NLS-1$
++                }
++
++                sslcontext = SSLContext.getInstance("SSL"); //$NON-NLS-1$
++                KeyManager[] keystoreManagers = null;
++                if (keystorePath != null) {
++                    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509"); //$NON-NLS-1$
++                    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
++                    ks.load(new FileInputStream(keystorePath), keystorePass.toCharArray());
++                    kmf.init(ks, keystorePass.toCharArray());
++                    keystoreManagers = kmf.getKeyManagers();
++                }
++
++                TrustManager[] truststoreManagers = null;
++                if (trustStorePath != null) {
++                    TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509"); //$NON-NLS-1$
++                    KeyStore tks = KeyStore.getInstance(KeyStore.getDefaultType());
++                    tks.load(new FileInputStream(trustStorePath), truststorePass.toCharArray());
++                    tmf.init(tks);
++                    truststoreManagers = tmf.getTrustManagers();
++                } else {
++                    truststoreManagers = new TrustManager[] { new TrustAnyTrustManager() };
++                }
++
++                sslcontext.init(keystoreManagers, truststoreManagers, null);
++            } catch (NoSuchAlgorithmException e) {
++                ExceptionHandler.process(e);
++            } catch (KeyManagementException e) {
++                ExceptionHandler.process(e);
++            } catch (Exception e) {
++                ExceptionHandler.process(e);
++            }
++        }
++        return sslcontext;
++    }
++
++    // accept all certificate
++    private static class TrustAnyTrustManager implements X509TrustManager {
++
++        @Override
++        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
++        }
++
++        @Override
++        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
++        }
++
++        @Override
++        public X509Certificate[] getAcceptedIssuers() {
++            return new X509Certificate[] {};
++        }
++    }
++
++    public static void handleError(String content) throws PersistenceException {
++        if (content.startsWith(ERROR)) {
++            String errorMessage = content.substring(ERROR.length());
++            throw new PersistenceException(errorMessage);
++        }
++    }
++
++    public static void handleLoginError(String content) throws LoginException {
++        if (content.startsWith(LOGIN_ERROR)) {
++            String errorMessage = content.substring(LOGIN_ERROR.length());
++            throw new LoginException(errorMessage);
++        }
++    }
++
++    public static String handleResponse(String content) {
++        if (content.startsWith(RESPONSE)) {
++            return content.substring(RESPONSE.length());
++        }
++        return content;
++    }
++
++    public static String serializeObjects(Collection<EObject> objects) throws IOException {
++        XMIResourceImpl resource = createResource();
++        resource.getContents().addAll(objects);
++        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
++        resource.save(outputStream, Collections.EMPTY_MAP);
++        return EncryptionHelper.encode64(outputStream.toByteArray());
++    }
++
++    public static EList<EObject> deserializeObjects(String xmi) throws IOException {
++        byte[] decode = EncryptionHelper.decode64(xmi);
++        XMIResourceImpl resource = createResource();
++        ByteArrayInputStream inputStream = new ByteArrayInputStream(decode);
++        resource.load(inputStream, Collections.EMPTY_MAP);
++        return resource.getContents();
++    }
++
++    public static JSONObject deserializeJsonObject(String xmi) throws JSONException {
++        // byte[] decode = EncryptionHelper.decode64(xmi);
++        return new JSONObject(new String(xmi));
++    }
++
++    private static XMIResourceImpl createResource() {
++        return new XMIResourceImpl() {
++
++            @Override
++            protected boolean useUUIDs() {
++                return true;
++            }
++        };
++    }
++
++    private static final String META_SERVLET = "/metaServlet"; //$NON-NLS-1$
++
++    private static final String META_ACTION = "actionName"; //$NON-NLS-1$
++
++    private static final String META_AUTH_USER = "authUser"; //$NON-NLS-1$
++
++    private static final String META_AUTH_PASS = "authPass"; //$NON-NLS-1$
++
++    private static final String META_PROJECT_NAME = "projectName"; //$NON-NLS-1$
++
++    private static final String META_PROJECT_DESC = "projectDescription"; //$NON-NLS-1$
++
++    private static final String META_PROJECT_LANGUAGE = "projectLanguage"; //$NON-NLS-1$
++
++    private static final String META_PROJECT_AUTHOR_LOGIN = "projectAuthorLogin"; //$NON-NLS-1$
++
++    // private static final String META_PROJECT_SVN_URL = "projectSvnLocation";
++    //
++    // private static final String META_PROJECT_SVN_LOGIN = "projectSvnLogin";
++    //
++    // private static final String META_PROJECT_SVN_PASSWORD = "projectSvnPassword";
++
++    private static final String META_PROJECT_TYPE = "projects"; //$NON-NLS-1$
++
++    private static final String META_USER_LOGIN = "userLogin"; //$NON-NLS-1$
++
++    private static final String META_USER_PASSWORD = "userPassword"; //$NON-NLS-1$
++
++    private static final String META_USER_FIRSTNAME = "userFirstName"; //$NON-NLS-1$
++
++    private static final String META_USER_LASTNAME = "userLastName"; //$NON-NLS-1$
++
++    // bug 19913
++    private static final String META_SVN_Folder_Creation = "forceSvnFolderCreation"; //$NON-NLS-1$
++
++    private static final String ADD_TECHNICAL_NAME = "addTechNameAtURL"; //$NON-NLS-1$
++
++    private static final String META_ITEM_IDS = "itemIds"; //$NON-NLS-1$
++
++    private static final String META_ITEM_LABEL = "itemLabel"; //$NON-NLS-1$
++
++    private static final String META_ITEM_TYPE = "itemType"; //$NON-NLS-1$
++
++    private static final String META_BRANCH = "branch"; //$NON-NLS-1$
++
++    private static final String META_LOCKS = "locks"; //$NON-NLS-1$
++
++    private static final String APPLICATION_NAME = "applicationName"; //$NON-NLS-1$
++
++    // feature TDI-16917
++    private static final String META_TASK_NAME = "taskName"; //$NON-NLS-1$
++
++    private static final String META_JOB_NAME = "jobName"; //$NON-NLS-1$
++
++    private static final String META_ACTIVE = "active"; //$NON-NLS-1$
++
++    private static final String META_DESC = "description"; //$NON-NLS-1$
++
++    private static final String META_APPLY_CONTEXT_TO_CHILDREN = "applyContextToChildren"; //$NON-NLS-1$
++
++    private static final String META_PROJET_NAME = "projectName"; //$NON-NLS-1$
++
++    private static final String META_CONTEXT_NAME = "contextName"; //$NON-NLS-1$
++
++    private static final String META_JOB_VERSION = "jobVersion"; //$NON-NLS-1$
++
++    private static final String META_REGENERATE = "regenerateJobOnChange"; //$NON-NLS-1$
++
++    private static final String META_EXECUTION_SERVER = "executionServerName"; //$NON-NLS-1$
++
++    private static final String META_STATIC_ENABLE = "execStatisticsEnabled"; //$NON-NLS-1$
++
++    private static final String META_ADD_CODE_STATIC_ENABLE = "addStatisticsCodeEnabled"; //$NON-NLS-1$
++
++    private static final String META_UNKNOEWN_STATE_JOB = "onUnknownStateJob"; //$NON-NLS-1$
++
++    private static final String META_CREATE_TAG_SOURCE = "source"; //$NON-NLS-1$
++
++    private static final String META_CREATE_TAG_TARGET = "target"; //$NON-NLS-1$
++
++    // private static final String META_USER_SVN_LOGIN = "userSvnLogin";
++    //
++    // private static final String META_USER_SVN_PASSWORD = "userSvnPassword";
++
++    protected static String computeMetaUrl(JSONObject jsonObject) throws PersistenceException {
++        StringBuffer buffer = new StringBuffer();
++
++        buffer.append(META_SERVLET);
++        buffer.append(SEP1);
++
++        try {
++            buffer.append(CryptoHelper.encode64(jsonObject.toString().getBytes(UTF8)));
++        } catch (UnsupportedEncodingException e) {
++            throw new PersistenceException(e);
++        }
++
++        return buffer.toString();
++    }
++
++    protected static JSONObject computeMetaUrl(String action, String version, String login, String password)
++            throws PersistenceException {
++
++        JSONObject jsonObject = new JSONObject();
++        try {
++            jsonObject.put(META_ACTION, action);
++            // jsonObject.put(VERSION, version);
++            jsonObject.put(META_USER_LOGIN, login);
++
++            if (login != null) {
++                jsonObject.put(META_AUTH_USER, login);
++            }
++            if (password != null) {
++                jsonObject.put(META_AUTH_PASS, password);
++            }
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        }
++        return jsonObject;
++    }
++
++    protected static JSONObject computeTagUrl(String action, String user, String pass, String source, String target)
++            throws PersistenceException {
++
++        JSONObject jsonObject = new JSONObject();
++        try {
++            Project currentProject = ProjectManager.getInstance().getCurrentProject();
++            jsonObject.put(META_ACTION, action);
++
++            if (currentProject != null) {
++                if (currentProject.getLabel() != null) {
++                    jsonObject.put(META_PROJECT_NAME, currentProject.getLabel());
++                }
++            }
++            if (user != null) {
++                jsonObject.put(META_AUTH_USER, user);
++            }
++            if (pass != null) {
++                jsonObject.put(META_AUTH_PASS, pass);
++            }
++            if (source != null) {
++                jsonObject.put(META_CREATE_TAG_SOURCE, source);
++            }
++            if (target != null) {
++                jsonObject.put(META_CREATE_TAG_TARGET, target);
++            }
++
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        }
++        return jsonObject;
++    }
++
++    public static String computeEnableSandboxProjectUrl(String action, String version, String login, String password)
++            throws PersistenceException {
++        JSONObject jsonObject = ServletUtil.computeMetaUrl(action, version, login, password);
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    /**
++     * 
++     * ggu Comment method "computeCreateSandboxProjectUrl".
++     * 
++     * in fact, the login and password are ingored for TAC in some condition.
++     */
++    public static String computeCreateSandboxProjectUrl(String version, String login, String password, Project newProject)
++            throws PersistenceException {
++
++        JSONObject jsonObject = computeMetaUrl(Action.createSandboxProject.toString(), version, login, password);
++
++        try {
++            if (newProject != null) {
++                if (newProject.getLabel() != null) {
++                    jsonObject.put(META_PROJECT_NAME, newProject.getLabel());
++                }
++
++                if (newProject.getLanguage() != null) {
++                    jsonObject.put(META_PROJECT_LANGUAGE, newProject.getLanguage().getName());
++                }
++
++                if (newProject.getDescription() != null) {
++                    jsonObject.put(META_PROJECT_DESC, newProject.getDescription());
++                }
++                // String type = System.getProperty("talend.branding.type");
++                // if (type == null || type.equals("")) {
++                // type = "DI";
++                // }
++                // jsonObject.put(META_PROJECT_TYPE, type);
++                // if (projectSvnUrl != null) { // project must be existed
++                // jsonObject.put(META_PROJECT_SVN_URL, projectSvnUrl);
++                //
++                // if (projectSvnLogin != null) {// projectSvnUrl must be existed
++                // jsonObject.put(META_PROJECT_SVN_LOGIN, projectSvnLogin);
++                //
++                // if (projectSvnPass != null) {// projectSvnLogin must be existed
++                // jsonObject.put(META_PROJECT_SVN_PASSWORD, projectSvnPass);
++                // }
++                // }
++                // }
++                User author = newProject.getAuthor();
++                if (author != null && newProject.getAuthor().getLogin() != null) {
++                    jsonObject.put(META_USER_LOGIN, newProject.getAuthor().getLogin());
++
++                    if (author.getPassword() != null) {
++                        jsonObject.put(META_USER_PASSWORD, new String(author.getPassword(), "UTF8")); //$NON-NLS-1$
++                    }
++                    if (author.getFirstName() != null) {
++                        jsonObject.put(META_USER_FIRSTNAME, author.getFirstName());
++                    }
++
++                    if (author.getLastName() != null) {
++                        jsonObject.put(META_USER_LASTNAME, author.getLastName());
++                    }
++
++                    // if (userSvnLogin != null && !"".equals(userSvnLogin)) {
++                    // jsonObject.put(META_USER_SVN_LOGIN, userSvnLogin);
++                    //
++                    // if (userSvnPass != null && !"".equals(userSvnPass))
++                    // jsonObject.put(META_USER_SVN_PASSWORD, userSvnPass);
++                    // }
++
++                }
++            }
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        } catch (UnsupportedEncodingException e) {
++            throw new PersistenceException(e);
++        }
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    /**
++     * DOC ycbai Comment method "computeLockUrl".
++     * 
++     * @param version
++     * @param branch
++     * @param item
++     * @return
++     * @throws PersistenceException
++     */
++    public static String computeLockUrl(Action action, final User user, final String password, String version, String branch,
++            Item item) throws PersistenceException {
++        org.talend.core.model.properties.Project project = ProxyRepositoryFactory.getInstance().getProject(item);
++        Project generalProject = new Project(project);
++        JSONObject jsonObject = null;
++        try {
++            jsonObject = computeMetaUrl(action.toString(), version, user.getLogin(), password);
++            jsonObject.put(META_BRANCH, branch);
++            jsonObject.put(APPLICATION_NAME, "studio"); //$NON-NLS-1$
++            jsonObject.put(META_PROJECT_NAME, generalProject.getLabel());
++            switch (action) {
++            case addLocks:
++                JSONArray detailPara = new JSONArray();
++                jsonObject.put(META_ACTION, action);
++                JSONObject innerPara = new JSONObject();
++                innerPara.put(META_ITEM_ID, item.getProperty().getId());
++                innerPara.put(META_ITEM_LABEL, item.getProperty().getLabel());
++                innerPara.put(META_ITEM_TYPE, ERepositoryObjectType.getItemType(item).getKey());
++                detailPara.put(innerPara);
++                jsonObject.put(META_ACTION_LOCK, detailPara);
++                break;
++            case removeLocks:
++                jsonObject.put(META_ACTION, action);
++                JSONArray detailRemoveLocks = new JSONArray();
++                JSONObject innerRemoveLocksPara = new JSONObject();
++                innerRemoveLocksPara.put(META_ITEM_ID, item.getProperty().getId());
++                innerRemoveLocksPara.put(META_ITEM_LABEL, item.getProperty().getLabel());
++                innerRemoveLocksPara.put(META_ITEM_TYPE, ERepositoryObjectType.getItemType(item).getKey());
++                detailRemoveLocks.put(innerRemoveLocksPara);
++                jsonObject.put(META_ACTION_LOCK, detailRemoveLocks);
++                break;
++            case isLocked:
++                jsonObject.put(META_ITEM_IDS, new String[] { item.getProperty().getId() });
++                break;
++            case listLocks:
++                // nothing, all parameters are set as global already
++            }
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        }
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeCreateProjectUrl(String version, Project newProject) throws PersistenceException {
++        JSONObject jsonObject = new JSONObject();
++        try {
++            jsonObject.put(META_ACTION, Action.createProject.toString());
++            // jsonObject.put(VERSION, version);
++
++            if (newProject != null) {
++                User author = newProject.getAuthor();
++                if (author != null) {
++                    if (author.getLogin() != null) {
++                        jsonObject.put(META_PROJECT_AUTHOR_LOGIN, author.getLogin());
++                        jsonObject.put(META_AUTH_USER, author.getLogin());
++                        /*
++                         * bug 0019913,need to create project using technical name under the root repository and also
++                         * the structure for the created project(trunk,branch,tags)
++                         */
++                        jsonObject.put(META_SVN_Folder_Creation, true);
++                        jsonObject.put(ADD_TECHNICAL_NAME, true);
++                        if (author.getPassword() != null) {
++                            jsonObject.put(META_AUTH_PASS, new String(author.getPassword(), "UTF8")); //$NON-NLS-1$
++                        }
++                    }
++                }
++                if (newProject.getLabel() != null) {
++                    jsonObject.put(META_PROJECT_NAME, newProject.getLabel());
++                }
++
++                if (newProject.getLanguage() != null) {
++                    jsonObject.put(META_PROJECT_LANGUAGE, newProject.getLanguage().getName());
++                }
++
++                if (newProject.getDescription() != null) {
++                    jsonObject.put(META_PROJECT_DESC, newProject.getDescription());
++                }
++            }
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        } catch (UnsupportedEncodingException e) {
++            throw new PersistenceException(e);
++        }
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeCreateTaskUrl(User user, String password, String taskName, boolean active, String description,
++            String branchName, String jobName, String jobVersion, String jobContext, boolean applyContextToChildren,
++            boolean regenerateJobOnChange, String executionServer, boolean statistic, String unaviableJobServer,
++            boolean addStatisCodeEnable, String onUnknownStateJob) throws PersistenceException {
++        JSONObject jsonObject = new JSONObject();
++        try {
++            jsonObject.put(META_ACTION, Action.createTask.toString());
++            if (user != null) {
++                jsonObject.put(META_AUTH_USER, user.getLogin());
++
++                jsonObject.put(META_AUTH_PASS, password);
++                if (taskName != null) {
++                    jsonObject.put(META_TASK_NAME, taskName);
++                }
++                if (jobName != null) {
++                    jsonObject.put(META_JOB_NAME, jobName);
++                }
++                Project currentProject = ProjectManager.getInstance().getCurrentProject();
++                if (currentProject != null) {
++                    if (currentProject.getLabel() != null) {
++                        jsonObject.put(META_PROJECT_NAME, currentProject.getLabel());
++                    }
++
++                    if (currentProject.getLanguage() != null) {
++                        jsonObject.put(META_PROJECT_LANGUAGE, currentProject.getLanguage().getName());
++                    }
++
++                    if (currentProject.getDescription() != null) {
++                        jsonObject.put(META_PROJECT_DESC, currentProject.getDescription());
++                    }
++                }
++                jsonObject.put(META_PROJECT_NAME, ProjectManager.getInstance().getCurrentProject().getLabel());
++                jsonObject.put(META_BRANCH, branchName == null ? "" : branchName); //$NON-NLS-1$
++                jsonObject.put(META_ACTIVE, active);
++
++                jsonObject.put(META_APPLY_CONTEXT_TO_CHILDREN, applyContextToChildren);
++                jsonObject.put(META_DESC, description == null ? "" : description); //$NON-NLS-1$
++                jsonObject.put(META_CONTEXT_NAME, jobContext == null ? "" : jobContext); //$NON-NLS-1$
++                jsonObject.put(META_JOB_VERSION, jobVersion == null ? "" : jobVersion); //$NON-NLS-1$
++
++                jsonObject.put(META_REGENERATE, regenerateJobOnChange);
++                jsonObject.put(META_EXECUTION_SERVER, executionServer == null ? "" : executionServer); //$NON-NLS-1$
++                jsonObject.put(META_STATIC_ENABLE, statistic);
++                jsonObject.put(META_ADD_CODE_STATIC_ENABLE, addStatisCodeEnable);
++                jsonObject.put(META_UNKNOEWN_STATE_JOB, onUnknownStateJob == null ? "" : onUnknownStateJob); //$NON-NLS-1$
++
++            }
++
++        } catch (JSONException e) {
++            throw new PersistenceException(e);
++        }
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeArchivaUrl(Action action, final User user, final String password, String version)
++            throws PersistenceException {
++        JSONObject jsonObject = computeMetaUrl(action.toString(), version, user.getLogin(), password);
++        // userLogin is no use for get properties of archiva
++        jsonObject.remove(META_USER_LOGIN);
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeUrlForGetLicense(String action, String version, String login, String password)
++            throws PersistenceException {
++        JSONObject jsonObject = computeMetaUrl(action.toString(), version, login, password);
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeCreateTagUrl(Action action, String user, String pass, String source, String target)
++            throws PersistenceException {
++        JSONObject jsonObject = computeTagUrl(action.toString(), user, pass, source, target);
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++
++    public static String computeUrlForgetLibLocation(Action action, String login, String password, String version)
++            throws PersistenceException {
++        JSONObject jsonObject = computeMetaUrl(action.toString(), version, login, password);
++        return ServletUtil.computeMetaUrl(jsonObject);
++    }
++}

@@ -84,6 +84,9 @@ org.talend.rcp-feature
 org.talend.rcp.nl
 org.talend.registration
 org.talend.registration.nl
+org.talend.repository.localprovider
+org.talend.repository.localprovider.nl
+org.talend.repository.localprovider.test
 org.talend.repository.mdm
 org.talend.repository.mdm.nl
 org.talend.repository.metadata

@@ -31,16 +31,21 @@ please be sure to follow the full Atlassian tuto including the clean phase
 ###Preparing the migration data
 The main script takes a folder path as an input to know what to migrate and where to migrate it. this folder should look like this.
 
+```
+#!
+
     .
-    ├── branches
-    │   ├── branch-5_4                 (name of any branch we want to keep)
-    │   │   ├── tdq2tdq-studio-ee.txt  (data file)
-    │   ├── master                     (this branch must exists)
-    │   │   ├── tdq2tdq-studio-ee.txt
-    │   │   ├── tem2tmdm-studio-ee.txt
-    │   │   ├── tem2tmdm-studio-se.txt
-    ├── migration_ant.properties        (properties for the main migration script)
-    ├── refactor_ant.xml                (optional ant script for refactor)
+    |-- branches
+    |   |-- branch-5_4                 (name of any branch we want to keep)
+    |   |   |-- tdq2tdq-studio-ee.txt  (data file)
+    |   |-- master                     (this branch must exists)
+    |   |   |-- tdq2tdq-studio-ee.txt
+    |   |   |-- tem2tmdm-studio-ee.txt
+    |   |   |-- tem2tmdm-studio-se.txt
+    |-- migration_ant.properties        (properties for the main migration script)
+    |-- refactor_ant.xml                (optional ant script for refactor)
+
+```
  
 1. The folder *branches* must contain at least the *master* folder representing the master branch and any other folder will represent other branches that we wishes to keep in git.
 
@@ -61,13 +66,30 @@ here is an example
 
 
 ###Launching the migration
+for BitBucket
+
+```
+#!
+
     cd talend-svn-git-migration
-    ant -Dmigration.data.folder.path=you_migration_data_folder -Dremote.git.username=you_user_name -Dremote.git.password=your_password -lib ant-contrib-1.0b3.jar  -listener net.sf.antcontrib.perf.AntPerformanceListener
+    ant -Dmigration.data.folder.path=your_migration_data_folder -Dremote.git.username=your_user_name -Dremote.git.password=your_password -lib ant-contrib-1.0b3.jar  | tee you_migration_data_folder/migration.log
+```
 
-* you\_migration\_data\_folder : the folder that contain all the migration data files (see the above chapter for content)
-* you\_user\_name : is the user name used in bitbucket to create remote repositories (you can simply adapt the script to use Github if you wish)
+for Github
+
+```
+#!
+
+    cd talend-svn-git-migration
+    ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=your_authorisation_token -Dmigration.data.folder.path=your_migration_data_folder -lib ant-contrib-1.0b3.jar  | tee your_migration_data_folder/migration.log
+
+```
+
+
+* your\_migration\_data\_folder : the folder that contain all the migration data files (see the above chapter for content)
+* your\_user\_name : is the user name used in bitbucket to create remote repositories (you can simply adapt the script to use Github if you wish)
 * your\_password : the password used to create the remote repository.
-
+* your\_authorisation\_token : authorisation key generated on github to access the github APIs
 
 ###What does the script
 * Fetches the latest commit from the remote svn server.

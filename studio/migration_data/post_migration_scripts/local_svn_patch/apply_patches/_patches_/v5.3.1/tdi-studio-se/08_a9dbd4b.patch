@@ -1,0 +1,22 @@
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java b/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
+index de81980..1aea8ea 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
+@@ -375,7 +375,7 @@ public class RepositoryReviewDialog extends Dialog {
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "finshed add Filters"); //$NON-NLS-1$
+ 
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "set input"); //$NON-NLS-1$ 
+-        repositoryTreeViewer.expandAll();
++        repositoryTreeViewer.expandToLevel(2);
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "expandAll"); //$NON-NLS-1$
+ 
+         // see feature 0003664: tRunJob: When opening the tree dialog to select the job target, it could be useful to
+@@ -610,7 +610,7 @@ class ViewerTextFilter extends ViewerFilter {
+  */
+ class DatabaseTypeFilter extends ViewerFilter {
+ 
+-    private String[] filterItems;
++    private final String[] filterItems;
+ 
+     public DatabaseTypeFilter(String[] filterItems) {
+         this.filterItems = filterItems;

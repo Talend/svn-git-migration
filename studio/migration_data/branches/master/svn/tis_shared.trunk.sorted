@@ -47,6 +47,7 @@ org.talend.core.tis-feature/
 org.talend.core.tis.nl/
 org.talend.dataservice.commandline/
 org.talend.demo.bigdata.ee/
+org.talend.demo.bigdata.ee.nl/
 org.talend.designer.brms/
 org.talend.designer.brms.nl/
 org.talend.designer.cdc/
@@ -74,6 +75,7 @@ org.talend.designer.jobtemplate/
 org.talend.designer.jobtemplate.nl/
 org.talend.designer.jobtemplate.test/
 org.talend.designer.mapreduce/
+org.talend.designer.mapreduce.nl/
 org.talend.designer.mapreduce.test/
 org.talend.designer.publish/
 org.talend.designer.runprocess.debug/
@@ -81,6 +83,7 @@ org.talend.designer.runprocess.remote/
 org.talend.designer.runprocess.remote-feature/
 org.talend.designer.runprocess.remote.nl/
 org.talend.designer.tdqmatching/
+org.talend.designer.tdqmatching.nl/
 org.talend.desinger.routines.tisprovider/
 org.talend.esbenterprise-feature/
 org.talend.esbenterprise.nodi-feature/
@@ -95,6 +98,7 @@ org.talend.libraries.camel.alldeps/
 org.talend.libraries.drools/
 org.talend.libraries.esb.ext/
 org.talend.libraries.jbpm/
+org.talend.libraries.jdbc.saphana/
 org.talend.libraries.jdom/
 org.talend.libraries.jdtcompiler/
 org.talend.libraries.jibx/
@@ -217,6 +221,7 @@ org.talend.repository.oozie.nl/
 org.talend.repository.refproject/
 org.talend.repository.remoteprovider/
 org.talend.repository.remoteprovider-feature/
+org.talend.repository.remoteprovider.nl/
 org.talend.repository.remoteprovider.test/
 org.talend.repository.rules/
 org.talend.repository.sapwizard/
@@ -228,7 +233,9 @@ org.talend.repository.svnprovider.nl/
 org.talend.repository.svnprovider.test/
 org.talend.repository.view.svn/
 org.talend.resources.export.job/
+org.talend.resources.export.job.nl/
 org.talend.resources.export.route/
+org.talend.resources.export.route.nl/
 org.talend.slf4j-feature/
 org.talend.studio.workflow.workspace/
 org.talend.teneo.model/

@@ -1,0 +1,1882 @@
+diff --git a/org.talend.core/src/main/java/org/talend/core/tis/ICoreTisService.java b/org.talend.core/src/main/java/org/talend/core/tis/ICoreTisService.java
+index 2142307..a1fd08f 100755
+--- a/org.talend.core/src/main/java/org/talend/core/tis/ICoreTisService.java
++++ b/org.talend.core/src/main/java/org/talend/core/tis/ICoreTisService.java
+@@ -18,6 +18,7 @@ import org.eclipse.emf.common.util.URI;
+ import org.osgi.service.prefs.BackingStoreException;
+ import org.talend.commons.exception.LoginException;
+ import org.talend.commons.exception.PersistenceException;
++import org.talend.commons.exception.SystemException;
+ import org.talend.core.IService;
+ import org.talend.core.model.general.Project;
+ import org.talend.core.model.properties.User;
+@@ -37,7 +38,7 @@ public interface ICoreTisService extends IService {
+     public List<IUpdateSiteBean> getPatchesInstalled() throws BackingStoreException;
+ 
+     public List<IUpdateSiteBean> getUpdateSitesToBeInstall(String username, String password, String archivaServicesURL,
+-            List<String> repositories) throws BackingStoreException;
++            List<String> repositories) throws BackingStoreException, SystemException;
+ 
+     public void downLoadAndInstallUpdateSites(String archivaServerURL, String username, String password,
+             List<IUpdateSiteBean> toBeInstalled, List<String> repositories) throws Exception;
+diff --git a/org.talend.libraries.apache.cxf/META-INF/MANIFEST.MF b/org.talend.libraries.apache.cxf/META-INF/MANIFEST.MF
+index a717dea..a2abdc8 100755
+--- a/org.talend.libraries.apache.cxf/META-INF/MANIFEST.MF
++++ b/org.talend.libraries.apache.cxf/META-INF/MANIFEST.MF
+@@ -1,705 +1,869 @@
+-Manifest-Version: 1.0
+-Bundle-ManifestVersion: 2
+-Bundle-Name: Cxf
+-Bundle-SymbolicName: org.talend.libraries.apache.cxf;singleton:=true
+-Bundle-Version: 1.0.0.qualifier
+-Bundle-ActivationPolicy: lazy
+-Bundle-ClassPath: .,
+- lib/cxf-api-2.7.5.jar,
+- lib/cxf-rt-bindings-xml-2.7.5.jar,
+- lib/cxf-rt-core-2.7.5.jar,
+- lib/cxf-rt-frontend-jaxrs-2.7.5.jar,
+- lib/cxf-rt-transports-http-2.7.5.jar,
+- lib/javax.ws.rs-api-2.0-m10.jar,
+- lib/neethi-3.0.1.jar
+-Export-Package: javax.ws.rs,
+- javax.ws.rs.client,
+- javax.ws.rs.container,
+- javax.ws.rs.core,
+- javax.ws.rs.ext,
+- org.apache.cxf;uses:="org.apache.cxf.common.i18n,org.apache.cxf.interceptor",
+- org.apache.cxf.annotations,
+- org.apache.cxf.attachment;
+-  uses:="javax.activation,
+-   new new org.apache.cxf.attachment,
+-   javax.mail.internet,
+-   org.apache.cxf.io,
+-   org.apache.cxf.message,
+-   new org.apache.cxf.attachment",
+- org.apache.cxf.binding;
+-  uses:="javax.wsdl.extensions,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.message,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor,
+-   javax.wsdl",
+- org.apache.cxf.binding.xml;
+-  uses:="org.apache.cxf,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.common.i18n,
+-   org.apache.cxf.tools.validator,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.message,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.binding.xml.interceptor;uses:="org.apache.cxf.message,org.apache.cxf.interceptor",
+- org.apache.cxf.binding.xml.wsdl11;uses:="org.apache.cxf.wsdl,javax.wsdl.extensions,org.apache.cxf",
+- org.apache.cxf.bindings.xformat;uses:="org.apache.cxf.wsdl,javax.xml.bind,javax.xml.namespace",
+- org.apache.cxf.bus;
+-  uses:="org.apache.cxf.configuration,
+-   org.apache.cxf,
+-   javax.management,
+-   org.apache.cxf.management,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.bus.blueprint;
+-  uses:="org.apache.aries.blueprint,
+-   org.apache.cxf.configuration,
+-   org.osgi.service.blueprint.reflect,
+-   org.apache.cxf.bus.extension,
+-   org.apache.cxf.configuration.blueprint,
+-   org.osgi.framework,
+-   org.osgi.service.blueprint.container,
+-   org.apache.aries.blueprint.mutable,
+-   org.w3c.dom",
+- org.apache.cxf.bus.extension;
+-  uses:="org.apache.cxf.configuration,
+-   org.apache.cxf.bus,
+-   org.apache.cxf,
+-   org.apache.cxf.resource,
+-   org.apache.cxf.common.i18n",
+- org.apache.cxf.bus.managers;
+-  uses:="org.apache.cxf,
+-   org.apache.cxf.ws.addressing,
+-   javax.management,
+-   org.apache.cxf.configuration.spring,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.management,
+-   javax.xml.namespace,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.headers,
+-   org.apache.cxf.workqueue,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.buslifecycle,
+-   org.apache.cxf.extension",
+- org.apache.cxf.bus.osgi;
+-  uses:="org.apache.cxf.workqueue,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf,
+-   org.osgi.util.tracker,
+-   org.apache.cxf.bus.extension,
+-   org.osgi.framework,
+-   org.osgi.service.cm,
+-   org.apache.cxf.buslifecycle",
+- org.apache.cxf.bus.resource;uses:="org.apache.cxf,org.apache.cxf.resource,org.apache.cxf.extension",
+- org.apache.cxf.bus.spring;
+-  uses:="org.springframework.context.support,
+-   org.springframework.beans.factory.config,
+-   org.apache.cxf.resource,
+-   org.apache.cxf.configuration.spring,
+-   org.xml.sax,
+-   org.springframework.beans.factory.support,
+-   org.springframework.core,
+-   org.apache.cxf.configuration,
+-   org.springframework.beans.factory,
+-   org.apache.cxf.interceptor,
+-   org.apache.cxf.bus.extension,
+-   org.apache.cxf,
+-   org.springframework.core.io,
+-   org.springframework.context,
+-   org.springframework.beans.factory.xml,
+-   javax.xml.parsers,
+-   org.springframework.core.io.support,
+-   org.w3c.dom,
+-   org.apache.cxf.bus,
+-   org.apache.cxf.buslifecycle",
+- org.apache.cxf.buslifecycle;uses:="org.apache.cxf",
+- org.apache.cxf.catalog;
+-  uses:="org.apache.ws.commons.schema.resolver,
+-   javax.wsdl.xml,
+-   org.apache.cxf,
+-   org.apache.xml.resolver.tools,
+-   org.apache.xml.resolver,
+-   org.xml.sax",
+- org.apache.cxf.common;uses:="javax.xml.namespace",
+- org.apache.cxf.common.annotation,
+- org.apache.cxf.common.classloader;uses:="javax.xml.namespace",
+- org.apache.cxf.common.commands;uses:="org.apache.cxf.common.i18n",
+- org.apache.cxf.common.i18n,
+- org.apache.cxf.common.injection;uses:="javax.annotation,org.apache.cxf.resource,org.apache.cxf.common.annotation",
+- org.apache.cxf.common.jaxb;
+-  uses:="new org.apache.cxf.common.jaxb,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   org.xml.sax,
+-   javax.xml.bind.attachment,
+-   javax.xml.stream,
+-   javax.xml.transform,
+-   com.sun.xml.bind.marshaller,
+-   javax.xml.transform.stream,
+-   javax.xml.bind",
+- org.apache.cxf.common.logging;uses:="org.apache.log4j",
+- org.apache.cxf.common.security;uses:="org.apache.cxf.security",
+- org.apache.cxf.common.util;
+-  uses:="net.sf.cglib.proxy,
+-   javax.tools,
+-   javax.xml.namespace,
+-   org.apache.cxf.common.i18n",
+- org.apache.cxf.common.xmlschema;
+-  uses:="org.apache.ws.commons.schema,
+-   org.apache.ws.commons.schema.resolver,
+-   org.apache.ws.commons.schema.extensions,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   org.w3c.dom.ls,
+-   org.apache.ws.commons.schema.utils,
+-   org.apache.cxf.common.i18n",
+- org.apache.cxf.configuration;uses:="org.apache.cxf.common.i18n",
+- org.apache.cxf.configuration.blueprint;
+-  uses:="org.apache.aries.blueprint,
+-   org.osgi.service.blueprint.reflect,
+-   org.osgi.service.blueprint.container,
+-   org.apache.aries.blueprint.mutable,
+-   org.w3c.dom,
+-   javax.xml.namespace",
+- org.apache.cxf.configuration.jsse;uses:="org.apache.cxf.configuration.security,javax.net.ssl",
+- org.apache.cxf.configuration.security;uses:="javax.xml.bind",
+- org.apache.cxf.configuration.spring;
+-  uses:="org.springframework.context,
+-   org.springframework.beans.factory.xml,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   org.springframework.beans.factory.wiring,
+-   org.springframework.beans.factory.support,
+-   org.apache.cxf.configuration,
+-   javax.xml.bind,
+-   org.springframework.beans.factory,
+-   org.apache.cxf.extension",
+- org.apache.cxf.continuations;uses:="org.apache.cxf.message",
+- org.apache.cxf.databinding;
+-  uses:="org.apache.ws.commons.schema,
+-   org.apache.cxf.common.xmlschema,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   javax.xml.validation,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   javax.xml.namespace",
+- org.apache.cxf.databinding.source;
+-  uses:="org.apache.cxf.staxutils,
+-   org.apache.cxf.service,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.databinding,
+-   javax.xml.transform.dom,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   javax.activation,
+-   javax.xml.stream,
+-   javax.xml.validation",
+- org.apache.cxf.databinding.source.mime;
+-  uses:="org.apache.ws.commons.schema,
+-   org.apache.ws.commons.schema.extensions,
+-   org.w3c.dom,
+-   javax.xml.namespace",
+- org.apache.cxf.databinding.stax;
+-  uses:="org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   javax.xml.stream,
+-   javax.xml.validation,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.endpoint;
+-  uses:="org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.ws.addressing,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.service.model,
+-   javax.management,
+-   org.apache.cxf.management,
+-   org.apache.cxf.message,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.phase,
+-   javax.xml.namespace,
+-   new org.apache.cxf.endpoint,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf.common.i18n,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.extension,
+- org.apache.cxf.feature;
+-  uses:="org.apache.cxf.annotations,
+-   org.apache.cxf,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.feature.transform;
+-  uses:="org.apache.cxf.staxutils,
+-   org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.io,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   org.apache.cxf.phase,
+-   javax.xml.stream,
+-   javax.xml.transform,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.feature.validation;
+-  uses:="org.apache.cxf.annotations,
+-   org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.endpoint",
+- org.apache.cxf.headers;uses:="org.apache.cxf.databinding,org.apache.cxf.interceptor,javax.xml.namespace",
+- org.apache.cxf.helpers;
+-  uses:="org.apache.cxf.annotations,
+-   javax.xml.parsers,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   javax.wsdl,
+-   org.xml.sax,
+-   javax.xml.namespace,
+-   javax.xml.transform,
+-   javax.xml.transform.stream",
+- org.apache.cxf.interceptor;
+-  uses:="org.apache.cxf.staxutils,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.io,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.service.invoker,
+-   javax.xml.stream,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.common.i18n,
+-   org.apache.cxf.endpoint",
+- org.apache.cxf.interceptor.security;
+-  uses:="javax.security.auth.callback,
+-   javax.security.auth.login,
+-   org.apache.cxf.security,
+-   org.apache.cxf.service.model,
+-   javax.security.auth,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.common.security",
+- org.apache.cxf.interceptor.transform;uses:="javax.xml.stream,org.apache.cxf.message,org.apache.cxf.phase",
+- org.apache.cxf.internal;uses:="org.apache.aries.blueprint,org.osgi.service.blueprint.reflect,org.w3c.dom",
+- org.apache.cxf.io;
+-  uses:="javax.xml.stream,
+-   org.apache.cxf.helpers,
+-   org.apache.cxf.service.model,
+-   javax.crypto",
+- org.apache.cxf.jaxrs;
+-  uses:="org.apache.cxf.service.factory,
+-   org.apache.cxf.jaxrs.ext,
+-   org.apache.cxf.jaxrs.provider,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   org.apache.cxf.service.invoker,
+-   org.apache.cxf.jaxrs.lifecycle,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf.jaxrs.model,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.blueprint;
+-  uses:="org.apache.aries.blueprint,
+-   org.apache.cxf.jaxrs.lifecycle,
+-   org.osgi.service.blueprint.reflect,
+-   org.apache.cxf.configuration.blueprint,
+-   org.osgi.service.blueprint.container,
+-   org.apache.aries.blueprint.mutable,
+-   org.w3c.dom,
+-   org.apache.cxf.message",
+- org.apache.cxf.jaxrs.client;
+-  uses:="org.apache.cxf.transport.http,
+-   javax.ws.rs,
+-   org.apache.cxf,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.jaxrs.ext.form,
+-   org.apache.cxf.jaxrs,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.jaxrs.model,
+-   javax.ws.rs.client,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.client.spec;
+-  uses:="org.apache.cxf.jaxrs.impl,
+-   javax.ws.rs.client,
+-   org.apache.cxf.message,
+-   org.apache.cxf.interceptor,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.ext;
+-  uses:="javax.servlet,
+-   org.apache.cxf.jaxrs.model,
+-   javax.ws.rs.ext,
+-   org.apache.cxf.message,
+-   javax.servlet.http,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.ext.form;uses:="javax.ws.rs.core",
+- org.apache.cxf.jaxrs.ext.multipart;
+-  uses:="javax.activation,
+-   javax.ws.rs.ext,
+-   org.apache.cxf.message,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.ext.xml,
+- org.apache.cxf.jaxrs.impl;
+-  uses:="javax.ws.rs,
+-   javax.ws.rs.container,
+-   javax.ws.rs.ext,
+-   org.apache.cxf.message,
+-   javax.servlet,
+-   org.apache.cxf.jaxrs.model,
+-   org.apache.cxf.continuations,
+-   javax.servlet.http,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.impl.tl;
+-  uses:="org.apache.cxf.jaxrs.ext,
+-   javax.ws.rs.ext,
+-   javax.servlet,
+-   javax.servlet.descriptor,
+-   javax.ws.rs.core,
+-   javax.servlet.http",
+- org.apache.cxf.jaxrs.interceptor;uses:="org.apache.cxf.message,org.apache.cxf.phase,org.apache.cxf.interceptor",
+- org.apache.cxf.jaxrs.lifecycle;uses:="org.apache.cxf.message",
+- org.apache.cxf.jaxrs.model;
+-  uses:="org.apache.cxf.jaxrs.impl.tl,
+-   javax.ws.rs,
+-   org.apache.cxf.jaxrs.lifecycle,
+-   org.apache.cxf,
+-   org.apache.cxf.message,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.model.wadl;
+-  uses:="org.apache.cxf.jaxrs.ext,
+-   org.apache.cxf.message,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   org.apache.cxf.common.jaxb,
+-   org.apache.cxf.common.xmlschema,
+-   org.apache.cxf.jaxrs.model,
+-   javax.xml.bind,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.provider;
+-  uses:="org.apache.cxf.staxutils,
+-   org.apache.cxf.jaxrs.ext,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   javax.servlet,
+-   javax.xml.stream,
+-   org.apache.cxf.jaxrs.model,
+-   javax.ws.rs.core,
+-   org.apache.cxf.jaxrs.client,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   javax.xml.bind.annotation.adapters,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.jaxrs.impl,
+-   javax.ws.rs.ext,
+-   javax.activation,
+-   javax.xml.bind.attachment,
+-   javax.xml.transform,
+-   org.apache.cxf.jaxrs.utils.schemas,
+-   javax.xml.validation,
+-   javax.xml.bind,
+-   javax.servlet.http",
+- org.apache.cxf.jaxrs.security;
+-  uses:="javax.security.auth.callback,
+-   org.apache.cxf.jaxrs.ext,
+-   org.apache.cxf.interceptor.security,
+-   javax.security.auth.login,
+-   javax.security.auth,
+-   org.ietf.jgss,
+-   org.apache.cxf.message,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.configuration.security,
+-   org.apache.cxf.jaxrs.model,
+-   org.apache.cxf.transport.http.auth,
+-   org.apache.cxf.common.security,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.servlet;uses:="javax.servlet,org.apache.cxf.transport.servlet,org.apache.cxf.jaxrs",
+- org.apache.cxf.jaxrs.spring;
+-  uses:="org.apache.cxf.jaxrs.client,
+-   org.springframework.beans.factory.support,
+-   org.apache.cxf.jaxrs.lifecycle,
+-   org.springframework.context,
+-   org.springframework.beans.factory.xml,
+-   org.apache.cxf.configuration.spring,
+-   org.apache.cxf.message,
+-   org.apache.cxf.jaxrs,
+-   org.w3c.dom",
+- org.apache.cxf.jaxrs.utils;
+-  uses:="org.apache.cxf.jaxrs.impl.tl,
+-   javax.ws.rs,
+-   org.apache.cxf.jaxrs.provider,
+-   org.apache.cxf.jaxrs.ext.multipart,
+-   org.apache.cxf,
+-   javax.xml.bind.annotation.adapters,
+-   javax.ws.rs.ext,
+-   org.apache.cxf.jaxrs,
+-   org.w3c.dom,
+-   org.apache.cxf.jaxrs.ext.form,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   org.apache.cxf.jaxrs.model,
+-   javax.xml.bind,
+-   javax.servlet.http,
+-   javax.ws.rs.core",
+- org.apache.cxf.jaxrs.utils.multipart;uses:="org.apache.cxf.jaxrs.ext,org.apache.cxf.jaxrs.ext.multipart,javax.ws.rs.core",
+- org.apache.cxf.jaxrs.utils.schemas;
+-  uses:="org.w3c.dom.ls,
+-   org.apache.cxf.catalog,
+-   org.apache.cxf,
+-   javax.xml.validation",
+- org.apache.cxf.logging;uses:="org.apache.cxf.message",
+- org.apache.cxf.management;uses:="javax.management",
+- org.apache.cxf.management.annotation,
+- org.apache.cxf.message;
+-  uses:="javax.activation,
+-   org.apache.cxf.service,
+-   org.apache.cxf,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.phase;uses:="org.apache.cxf.transport,org.apache.cxf.message,org.apache.cxf.interceptor",
+- org.apache.cxf.policy;
+-  uses:="org.apache.cxf.service.model,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.message,
+-   javax.xml.namespace",
+- org.apache.cxf.resource;uses:="org.xml.sax",
+- org.apache.cxf.security;uses:="javax.security.auth",
+- org.apache.cxf.security.claims.authorization,
+- org.apache.cxf.security.transport;uses:="javax.net.ssl",
+- org.apache.cxf.service;
+-  uses:="org.apache.cxf.service.invoker,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.interceptor,
+-   javax.xml.namespace",
+- org.apache.cxf.service.factory;
+-  uses:="org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.databinding,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   org.apache.cxf.service.invoker,
+-   org.apache.cxf.common.i18n,
+-   org.apache.cxf.endpoint",
+- org.apache.cxf.service.invoker;
+-  uses:="org.springframework.context,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.message,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.service.model;
+-  uses:="org.apache.ws.commons.schema,
+-   org.apache.cxf.common.xmlschema,
+-   org.apache.cxf.service,
+-   org.apache.cxf.ws.addressing,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   javax.xml.namespace",
+- org.apache.cxf.staxutils;
+-  uses:="javax.xml.stream,
+-   org.xml.sax.ext,
+-   javax.xml.transform,
+-   javax.xml.parsers,
+-   javax.xml.transform.sax,
+-   javax.xml.stream.events,
+-   org.w3c.dom,
+-   org.xml.sax,
+-   javax.xml.namespace",
+- org.apache.cxf.staxutils.transform;uses:="javax.xml.stream,org.apache.cxf.staxutils,javax.xml.namespace",
+- org.apache.cxf.test;
+-  uses:="org.springframework.context.support,
+-   org.apache.cxf,
+-   org.springframework.context,
+-   org.springframework.beans.factory.xml,
+-   org.junit,
+-   org.apache.cxf.message,
+-   org.w3c.dom,
+-   javax.wsdl,
+-   javax.xml.namespace,
+-   javax.xml.xpath,
+-   javax.xml.stream,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.endpoint",
+- org.apache.cxf.transport;
+-  uses:="org.apache.cxf,
+-   org.apache.cxf.ws.addressing,
+-   org.apache.cxf.resource,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.message,
+-   org.apache.cxf.binding,
+-   org.apache.cxf.phase,
+-   org.xml.sax,
+-   javax.xml.namespace,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf.endpoint",
+- org.apache.cxf.transport.common.gzip;
+-  uses:="org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.io,
+-   org.apache.cxf.message,
+-   org.apache.cxf.interceptor,
+-   org.apache.cxf.phase",
+- org.apache.cxf.transport.http;
+-  uses:="org.apache.cxf.wsdl,
+-   org.apache.cxf.ws.addressing,
+-   org.apache.cxf.message,
+-   javax.xml.namespace,
+-   org.apache.cxf.transport.https,
+-   javax.servlet,
+-   org.apache.cxf.configuration,
+-   org.apache.cxf.transports.http.configuration,
+-   org.apache.cxf.transport,
+-   org.apache.cxf.service,
+-   org.apache.cxf,
+-   org.apache.cxf.configuration.jsse,
+-   org.apache.cxf.io,
+-   org.apache.cxf.security,
+-   org.apache.cxf.service.model,
+-   org.apache.cxf.configuration.security,
+-   org.apache.cxf.wsdl11,
+-   org.apache.cxf.transport.http.auth,
+-   org.apache.cxf.continuations,
+-   javax.servlet.http",
+- org.apache.cxf.transport.http.auth;
+-  uses:="javax.security.auth.callback,
+-   org.apache.cxf.configuration.security,
+-   javax.security.auth.login,
+-   org.apache.cxf.message",
+- org.apache.cxf.transport.http.blueprint;
+-  uses:="org.apache.aries.blueprint,
+-   org.osgi.service.blueprint.reflect,
+-   org.apache.cxf.configuration.blueprint,
+-   org.apache.aries.blueprint.mutable,
+-   org.w3c.dom",
+- org.apache.cxf.transport.http.osgi;
+-  uses:="org.apache.cxf.transport.http,
+-   org.osgi.util.tracker,
+-   org.osgi.framework,
+-   org.osgi.service.cm",
+- org.apache.cxf.transport.http.policy;uses:="org.apache.cxf.ws.policy,org.apache.neethi,org.apache.cxf.ws.policy.builder.jaxb",
+- org.apache.cxf.transport.http.policy.impl;
+-  uses:="org.apache.cxf.policy,
+-   org.apache.cxf.transports.http.configuration,
+-   org.apache.cxf.message,
+-   javax.xml.namespace",
+- org.apache.cxf.transport.http.spring;
+-  uses:="org.springframework.beans.factory.support,
+-   org.springframework.beans.factory.xml,
+-   org.apache.cxf.configuration.spring,
+-   org.w3c.dom",
+- org.apache.cxf.transport.https;
+-  uses:="org.apache.cxf.transport.http,
+-   org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.configuration.jsse,
+-   org.apache.cxf.message,
+-   org.apache.cxf.phase,
+-   org.apache.cxf.configuration.security,
+-   org.apache.cxf.common.util,
+-   javax.net.ssl,
+-   org.apache.cxf.endpoint,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.transport.servlet;
+-  uses:="org.apache.cxf.transport.http,
+-   org.springframework.context.support,
+-   org.apache.cxf,
+-   org.springframework.context,
+-   org.apache.cxf.transports.http,
+-   org.apache.cxf.resource,
+-   org.apache.cxf.service.model,
+-   org.springframework.context.event,
+-   javax.servlet,
+-   org.apache.cxf.transport,
+-   javax.servlet.http",
+- org.apache.cxf.transport.servlet.servicelist;
+-  uses:="javax.servlet,
+-   org.apache.cxf.transport.http,
+-   org.apache.cxf,
+-   org.apache.cxf.transport,
+-   javax.servlet.http",
+- org.apache.cxf.transports.http;uses:="org.apache.cxf.service.model",
+- org.apache.cxf.transports.http.configuration;uses:="org.apache.cxf.wsdl,javax.xml.bind",
+- org.apache.cxf.transports.http.internal;uses:="org.apache.cxf,org.apache.cxf.transports.http",
+- org.apache.cxf.version,
+- org.apache.cxf.workqueue,
+- org.apache.cxf.ws.addressing;
+-  uses:="org.apache.cxf.ws.addressing.v200403,
+-   org.apache.cxf.ws.addressing.v200408,
+-   org.apache.cxf.feature,
+-   org.apache.cxf,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   org.apache.cxf.message,
+-   org.apache.cxf.phase,
+-   javax.xml.namespace,
+-   org.apache.cxf.transport,
+-   javax.xml.bind,
+-   new org.apache.cxf.ws.addressing,
+-   org.apache.cxf.interceptor",
+- org.apache.cxf.ws.addressing.v200403;uses:="javax.xml.bind,javax.xml.namespace",
+- org.apache.cxf.ws.addressing.v200408;uses:="javax.xml.bind,javax.xml.namespace",
+- org.apache.cxf.ws.addressing.wsdl;uses:="org.apache.cxf.wsdl,javax.xml.bind,javax.xml.namespace",
+- org.apache.cxf.wsdl;
+-  uses:="javax.wsdl.factory,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.ws.addressing,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   javax.xml.namespace,
+-   javax.wsdl,
+-   javax.xml.stream,
+-   javax.xml.stream.util,
+-   javax.xml.transform,
+-   javax.wsdl.extensions,
+-   javax.xml.validation,
+-   org.apache.cxf.common.i18n,
+-   javax.xml.bind",
+- org.apache.cxf.wsdl.http;uses:="org.apache.cxf.wsdl,javax.xml.bind",
+- org.apache.cxf.wsdl11;
+-  uses:="org.apache.cxf.wsdl,
+-   javax.wsdl.factory,
+-   org.apache.cxf.service.factory,
+-   javax.wsdl.extensions.soap,
+-   org.apache.cxf,
+-   org.apache.cxf.service,
+-   org.apache.cxf.service.model,
+-   org.w3c.dom,
+-   org.apache.cxf.binding,
+-   org.xml.sax,
+-   javax.xml.namespace,
+-   javax.wsdl,
+-   org.apache.cxf.common.xmlschema,
+-   javax.wsdl.xml,
+-   javax.wsdl.extensions,
+-   org.apache.cxf.common.i18n"
+-Require-Bundle: javax.wsdl;bundle-version="1.6.2"
++Manifest-Version: 1.0
++Bundle-ManifestVersion: 2
++Bundle-Name: Cxf
++Bundle-SymbolicName: org.talend.libraries.apache.cxf;singleton:=true
++Bundle-Version: 1.0.0.qualifier
++Bundle-ActivationPolicy: lazy
++Bundle-ClassPath: .,
++ lib/javax.ws.rs-api-2.0-m10.jar,
++ lib/neethi-3.0.1.jar,
++ lib/cxf-api-2.7.7.jar,
++ lib/cxf-rt-bindings-xml-2.7.7.jar,
++ lib/cxf-rt-core-2.7.7.jar,
++ lib/cxf-rt-frontend-jaxrs-2.7.7.jar,
++ lib/cxf-rt-transports-http-2.7.7.jar,
++ lib/stax-api-1.0.1.jar,
++ lib/stax2-api-3.1.1.jar,
++ lib/woodstox-core-asl-4.2.0.jar
++Export-Package: javax.ws.rs;version="2.0.0.m10",
++ javax.ws.rs.client;version="2.0.0.m10",
++ javax.ws.rs.container;version="2.0.0.m10",
++ javax.ws.rs.core;version="2.0.0.m10",
++ javax.ws.rs.ext;version="2.0.0.m10",
++ org.apache.cxf;uses:="org.apache.cxf.common.i18n,org.apache.cxf.interceptor",
++ org.apache.cxf.annotations,
++ org.apache.cxf.attachment;
++  uses:="javax.activation,
++   new new org.apache.cxf.attachment,
++   javax.mail.internet,
++   org.apache.cxf.io,
++   org.apache.cxf.message,
++   new org.apache.cxf.attachment",
++ org.apache.cxf.binding;
++  uses:="javax.wsdl.extensions,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.service.model,
++   org.apache.cxf.transport,
++   org.apache.cxf.message,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor,
++   javax.wsdl",
++ org.apache.cxf.binding.xml;
++  uses:="org.apache.cxf,
++   org.apache.cxf.service.model,
++   org.apache.cxf.common.i18n,
++   org.apache.cxf.tools.validator,
++   org.apache.cxf.binding,
++   org.apache.cxf.message,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.binding.xml.interceptor;uses:="org.apache.cxf.message,org.apache.cxf.interceptor",
++ org.apache.cxf.binding.xml.wsdl11;uses:="org.apache.cxf.wsdl,javax.wsdl.extensions,org.apache.cxf",
++ org.apache.cxf.bindings.xformat;uses:="org.apache.cxf.wsdl,javax.xml.bind,javax.xml.namespace",
++ org.apache.cxf.bus;
++  uses:="org.apache.cxf.configuration,
++   org.apache.cxf,
++   javax.management,
++   org.apache.cxf.management,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.bus.blueprint;
++  uses:="org.apache.aries.blueprint,
++   org.apache.cxf.configuration,
++   org.osgi.service.blueprint.reflect,
++   org.apache.cxf.bus.extension,
++   org.apache.cxf.configuration.blueprint,
++   org.osgi.framework,
++   org.osgi.service.blueprint.container,
++   org.apache.aries.blueprint.mutable,
++   org.w3c.dom",
++ org.apache.cxf.bus.extension;
++  uses:="org.apache.cxf.configuration,
++   org.apache.cxf.bus,
++   org.apache.cxf,
++   org.apache.cxf.resource,
++   org.apache.cxf.common.i18n",
++ org.apache.cxf.bus.managers;
++  uses:="org.apache.cxf,
++   org.apache.cxf.ws.addressing,
++   javax.management,
++   org.apache.cxf.configuration.spring,
++   org.apache.cxf.binding,
++   org.apache.cxf.management,
++   javax.xml.namespace,
++   org.apache.cxf.phase,
++   org.apache.cxf.headers,
++   org.apache.cxf.workqueue,
++   org.apache.cxf.configuration,
++   org.apache.cxf.transport,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.buslifecycle,
++   org.apache.cxf.extension",
++ org.apache.cxf.bus.osgi;
++  uses:="org.apache.cxf.workqueue,
++   org.apache.cxf.configuration,
++   org.apache.cxf,
++   org.osgi.util.tracker,
++   org.apache.cxf.bus.extension,
++   org.osgi.framework,
++   org.osgi.service.cm,
++   org.apache.cxf.buslifecycle",
++ org.apache.cxf.bus.resource;uses:="org.apache.cxf,org.apache.cxf.resource,org.apache.cxf.extension",
++ org.apache.cxf.bus.spring;
++  uses:="org.springframework.context.support,
++   org.springframework.beans.factory.config,
++   org.apache.cxf.resource,
++   org.apache.cxf.configuration.spring,
++   org.xml.sax,
++   org.springframework.beans.factory.support,
++   org.springframework.core,
++   org.apache.cxf.configuration,
++   org.springframework.beans.factory,
++   org.apache.cxf.interceptor,
++   org.apache.cxf.bus.extension,
++   org.apache.cxf,
++   org.springframework.core.io,
++   org.springframework.context,
++   org.springframework.beans.factory.xml,
++   javax.xml.parsers,
++   org.springframework.core.io.support,
++   org.w3c.dom,
++   org.apache.cxf.bus,
++   org.apache.cxf.buslifecycle",
++ org.apache.cxf.buslifecycle;uses:="org.apache.cxf",
++ org.apache.cxf.catalog;
++  uses:="org.apache.ws.commons.schema.resolver,
++   javax.wsdl.xml,
++   org.apache.cxf,
++   org.apache.xml.resolver.tools,
++   org.apache.xml.resolver,
++   org.xml.sax",
++ org.apache.cxf.common;uses:="javax.xml.namespace",
++ org.apache.cxf.common.annotation,
++ org.apache.cxf.common.classloader;uses:="javax.xml.namespace",
++ org.apache.cxf.common.commands;uses:="org.apache.cxf.common.i18n",
++ org.apache.cxf.common.i18n,
++ org.apache.cxf.common.injection;uses:="javax.annotation,org.apache.cxf.resource,org.apache.cxf.common.annotation",
++ org.apache.cxf.common.jaxb;
++  uses:="new org.apache.cxf.common.jaxb,
++   org.w3c.dom,
++   javax.xml.namespace,
++   org.xml.sax,
++   javax.xml.bind.attachment,
++   javax.xml.stream,
++   javax.xml.transform,
++   com.sun.xml.bind.marshaller,
++   javax.xml.transform.stream,
++   javax.xml.bind",
++ org.apache.cxf.common.logging;uses:="org.apache.log4j",
++ org.apache.cxf.common.security;uses:="org.apache.cxf.security",
++ org.apache.cxf.common.util;
++  uses:="net.sf.cglib.proxy,
++   javax.tools,
++   javax.xml.namespace,
++   org.apache.cxf.common.i18n",
++ org.apache.cxf.common.xmlschema;
++  uses:="org.apache.ws.commons.schema,
++   org.apache.ws.commons.schema.resolver,
++   org.apache.ws.commons.schema.extensions,
++   org.w3c.dom,
++   javax.xml.namespace,
++   org.w3c.dom.ls,
++   org.apache.ws.commons.schema.utils,
++   org.apache.cxf.common.i18n",
++ org.apache.cxf.configuration;uses:="org.apache.cxf.common.i18n",
++ org.apache.cxf.configuration.blueprint;
++  uses:="org.apache.aries.blueprint,
++   org.osgi.service.blueprint.reflect,
++   org.osgi.service.blueprint.container,
++   org.apache.aries.blueprint.mutable,
++   org.w3c.dom,
++   javax.xml.namespace",
++ org.apache.cxf.configuration.jsse;uses:="org.apache.cxf.configuration.security,javax.net.ssl",
++ org.apache.cxf.configuration.security;uses:="javax.xml.bind",
++ org.apache.cxf.configuration.spring;
++  uses:="org.springframework.context,
++   org.springframework.beans.factory.xml,
++   org.w3c.dom,
++   javax.xml.namespace,
++   org.springframework.beans.factory.wiring,
++   org.springframework.beans.factory.support,
++   org.apache.cxf.configuration,
++   javax.xml.bind,
++   org.springframework.beans.factory,
++   org.apache.cxf.extension",
++ org.apache.cxf.continuations;uses:="org.apache.cxf.message",
++ org.apache.cxf.databinding;
++  uses:="org.apache.ws.commons.schema,
++   org.apache.cxf.common.xmlschema,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   javax.xml.validation,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   javax.xml.namespace",
++ org.apache.cxf.databinding.source;
++  uses:="org.apache.cxf.staxutils,
++   org.apache.cxf.service,
++   org.apache.cxf.service.model,
++   org.apache.cxf.databinding,
++   javax.xml.transform.dom,
++   org.w3c.dom,
++   javax.xml.namespace,
++   javax.activation,
++   javax.xml.stream,
++   javax.xml.validation",
++ org.apache.cxf.databinding.source.mime;
++  uses:="org.apache.ws.commons.schema,
++   org.apache.ws.commons.schema.extensions,
++   org.w3c.dom,
++   javax.xml.namespace",
++ org.apache.cxf.databinding.stax;
++  uses:="org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.service.model,
++   org.apache.cxf.databinding,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   javax.xml.stream,
++   javax.xml.validation,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.endpoint;
++  uses:="org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.ws.addressing,
++   org.apache.cxf.databinding,
++   org.apache.cxf.service.model,
++   javax.management,
++   org.apache.cxf.management,
++   org.apache.cxf.message,
++   org.apache.cxf.binding,
++   org.apache.cxf.phase,
++   javax.xml.namespace,
++   new org.apache.cxf.endpoint,
++   org.apache.cxf.configuration,
++   org.apache.cxf.common.i18n,
++   org.apache.cxf.transport,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.extension,
++ org.apache.cxf.feature;
++  uses:="org.apache.cxf.annotations,
++   org.apache.cxf,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.feature.transform;
++  uses:="org.apache.cxf.staxutils,
++   org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.io,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   org.apache.cxf.phase,
++   javax.xml.stream,
++   javax.xml.transform,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.feature.validation;
++  uses:="org.apache.cxf.annotations,
++   org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.service.model,
++   org.apache.cxf.endpoint",
++ org.apache.cxf.headers;uses:="org.apache.cxf.databinding,org.apache.cxf.interceptor,javax.xml.namespace",
++ org.apache.cxf.helpers;
++  uses:="org.apache.cxf.annotations,
++   javax.xml.parsers,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   javax.wsdl,
++   org.xml.sax,
++   javax.xml.namespace,
++   javax.xml.transform,
++   javax.xml.transform.stream",
++ org.apache.cxf.interceptor;
++  uses:="org.apache.cxf.staxutils,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.io,
++   org.apache.cxf.databinding,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   org.apache.cxf.phase,
++   org.apache.cxf.service.invoker,
++   javax.xml.stream,
++   org.apache.cxf.transport,
++   org.apache.cxf.common.i18n,
++   org.apache.cxf.endpoint",
++ org.apache.cxf.interceptor.security;
++  uses:="javax.security.auth.callback,
++   javax.security.auth.login,
++   org.apache.cxf.security,
++   org.apache.cxf.service.model,
++   javax.security.auth,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   org.apache.cxf.phase,
++   org.apache.cxf.common.security",
++ org.apache.cxf.interceptor.transform;uses:="javax.xml.stream,org.apache.cxf.message,org.apache.cxf.phase",
++ org.apache.cxf.internal;uses:="org.apache.aries.blueprint,org.osgi.service.blueprint.reflect,org.w3c.dom",
++ org.apache.cxf.io;
++  uses:="javax.xml.stream,
++   org.apache.cxf.helpers,
++   org.apache.cxf.service.model,
++   javax.crypto",
++ org.apache.cxf.jaxrs;
++  uses:="org.apache.cxf.service.factory,
++   org.apache.cxf.jaxrs.ext,
++   org.apache.cxf.jaxrs.provider,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.service.model,
++   org.apache.cxf.databinding,
++   org.apache.cxf.binding,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   org.apache.cxf.service.invoker,
++   org.apache.cxf.jaxrs.lifecycle,
++   org.apache.cxf.configuration,
++   org.apache.cxf.jaxrs.model,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.blueprint;
++  uses:="org.apache.aries.blueprint,
++   org.apache.cxf.jaxrs.lifecycle,
++   org.osgi.service.blueprint.reflect,
++   org.apache.cxf.configuration.blueprint,
++   org.osgi.service.blueprint.container,
++   org.apache.aries.blueprint.mutable,
++   org.w3c.dom,
++   org.apache.cxf.message",
++ org.apache.cxf.jaxrs.client;
++  uses:="org.apache.cxf.transport.http,
++   javax.ws.rs,
++   org.apache.cxf,
++   org.apache.cxf.service.model,
++   org.apache.cxf.jaxrs.ext.form,
++   org.apache.cxf.jaxrs,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   org.apache.cxf.phase,
++   org.apache.cxf.jaxrs.model,
++   javax.ws.rs.client,
++   org.apache.cxf.transport,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.client.spec;
++  uses:="org.apache.cxf.jaxrs.impl,
++   javax.ws.rs.client,
++   org.apache.cxf.message,
++   org.apache.cxf.interceptor,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.ext;
++  uses:="javax.servlet,
++   org.apache.cxf.jaxrs.model,
++   javax.ws.rs.ext,
++   org.apache.cxf.message,
++   javax.servlet.http,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.ext.form;uses:="javax.ws.rs.core",
++ org.apache.cxf.jaxrs.ext.multipart;
++  uses:="javax.activation,
++   javax.ws.rs.ext,
++   org.apache.cxf.message,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.ext.xml,
++ org.apache.cxf.jaxrs.impl;
++  uses:="javax.ws.rs,
++   javax.ws.rs.container,
++   javax.ws.rs.ext,
++   org.apache.cxf.message,
++   javax.servlet,
++   org.apache.cxf.jaxrs.model,
++   org.apache.cxf.continuations,
++   javax.servlet.http,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.impl.tl;
++  uses:="org.apache.cxf.jaxrs.ext,
++   javax.ws.rs.ext,
++   javax.servlet,
++   javax.servlet.descriptor,
++   javax.ws.rs.core,
++   javax.servlet.http",
++ org.apache.cxf.jaxrs.interceptor;uses:="org.apache.cxf.message,org.apache.cxf.phase,org.apache.cxf.interceptor",
++ org.apache.cxf.jaxrs.lifecycle;uses:="org.apache.cxf.message",
++ org.apache.cxf.jaxrs.model;
++  uses:="org.apache.cxf.jaxrs.impl.tl,
++   javax.ws.rs,
++   org.apache.cxf.jaxrs.lifecycle,
++   org.apache.cxf,
++   org.apache.cxf.message,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.model.wadl;
++  uses:="org.apache.cxf.jaxrs.ext,
++   org.apache.cxf.message,
++   org.w3c.dom,
++   javax.xml.namespace,
++   org.apache.cxf.common.jaxb,
++   org.apache.cxf.common.xmlschema,
++   org.apache.cxf.jaxrs.model,
++   javax.xml.bind,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.provider;
++  uses:="org.apache.cxf.staxutils,
++   org.apache.cxf.jaxrs.ext,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   javax.servlet,
++   javax.xml.stream,
++   org.apache.cxf.jaxrs.model,
++   javax.ws.rs.core,
++   org.apache.cxf.jaxrs.client,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   javax.xml.bind.annotation.adapters,
++   org.apache.cxf.databinding,
++   org.apache.cxf.jaxrs.impl,
++   javax.ws.rs.ext,
++   javax.activation,
++   javax.xml.bind.attachment,
++   javax.xml.transform,
++   org.apache.cxf.jaxrs.utils.schemas,
++   javax.xml.validation,
++   javax.xml.bind,
++   javax.servlet.http",
++ org.apache.cxf.jaxrs.security;
++  uses:="javax.security.auth.callback,
++   org.apache.cxf.jaxrs.ext,
++   org.apache.cxf.interceptor.security,
++   javax.security.auth.login,
++   javax.security.auth,
++   org.ietf.jgss,
++   org.apache.cxf.message,
++   org.apache.cxf.phase,
++   org.apache.cxf.configuration.security,
++   org.apache.cxf.jaxrs.model,
++   org.apache.cxf.transport.http.auth,
++   org.apache.cxf.common.security,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.servlet;uses:="javax.servlet,org.apache.cxf.transport.servlet,org.apache.cxf.jaxrs",
++ org.apache.cxf.jaxrs.spring;
++  uses:="org.apache.cxf.jaxrs.client,
++   org.springframework.beans.factory.support,
++   org.apache.cxf.jaxrs.lifecycle,
++   org.springframework.context,
++   org.springframework.beans.factory.xml,
++   org.apache.cxf.configuration.spring,
++   org.apache.cxf.message,
++   org.apache.cxf.jaxrs,
++   org.w3c.dom",
++ org.apache.cxf.jaxrs.utils;
++  uses:="org.apache.cxf.jaxrs.impl.tl,
++   javax.ws.rs,
++   org.apache.cxf.jaxrs.provider,
++   org.apache.cxf.jaxrs.ext.multipart,
++   org.apache.cxf,
++   javax.xml.bind.annotation.adapters,
++   javax.ws.rs.ext,
++   org.apache.cxf.jaxrs,
++   org.w3c.dom,
++   org.apache.cxf.jaxrs.ext.form,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   org.apache.cxf.jaxrs.model,
++   javax.xml.bind,
++   javax.servlet.http,
++   javax.ws.rs.core",
++ org.apache.cxf.jaxrs.utils.multipart;uses:="org.apache.cxf.jaxrs.ext,org.apache.cxf.jaxrs.ext.multipart,javax.ws.rs.core",
++ org.apache.cxf.jaxrs.utils.schemas;
++  uses:="org.w3c.dom.ls,
++   org.apache.cxf.catalog,
++   org.apache.cxf,
++   javax.xml.validation",
++ org.apache.cxf.logging;uses:="org.apache.cxf.message",
++ org.apache.cxf.management;uses:="javax.management",
++ org.apache.cxf.management.annotation,
++ org.apache.cxf.message;
++  uses:="javax.activation,
++   org.apache.cxf.service,
++   org.apache.cxf,
++   org.apache.cxf.service.model,
++   org.apache.cxf.transport,
++   org.apache.cxf.binding,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.phase;uses:="org.apache.cxf.transport,org.apache.cxf.message,org.apache.cxf.interceptor",
++ org.apache.cxf.policy;
++  uses:="org.apache.cxf.service.model,
++   org.apache.cxf.transport,
++   org.apache.cxf.message,
++   javax.xml.namespace",
++ org.apache.cxf.resource;uses:="org.xml.sax",
++ org.apache.cxf.security;uses:="javax.security.auth",
++ org.apache.cxf.security.claims.authorization,
++ org.apache.cxf.security.transport;uses:="javax.net.ssl",
++ org.apache.cxf.service;
++  uses:="org.apache.cxf.service.invoker,
++   org.apache.cxf.configuration,
++   org.apache.cxf,
++   org.apache.cxf.databinding,
++   org.apache.cxf.service.model,
++   org.apache.cxf.interceptor,
++   javax.xml.namespace",
++ org.apache.cxf.service.factory;
++  uses:="org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.databinding,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   javax.xml.namespace,
++   org.apache.cxf.service.invoker,
++   org.apache.cxf.common.i18n,
++   org.apache.cxf.endpoint",
++ org.apache.cxf.service.invoker;
++  uses:="org.springframework.context,
++   org.apache.cxf.service.model,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.message,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.service.model;
++  uses:="org.apache.ws.commons.schema,
++   org.apache.cxf.common.xmlschema,
++   org.apache.cxf.service,
++   org.apache.cxf.ws.addressing,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   javax.xml.namespace",
++ org.apache.cxf.staxutils;
++  uses:="javax.xml.stream,
++   org.xml.sax.ext,
++   javax.xml.transform,
++   javax.xml.parsers,
++   javax.xml.transform.sax,
++   javax.xml.stream.events,
++   org.w3c.dom,
++   org.xml.sax,
++   javax.xml.namespace",
++ org.apache.cxf.staxutils.transform;uses:="javax.xml.stream,org.apache.cxf.staxutils,javax.xml.namespace",
++ org.apache.cxf.test;
++  uses:="org.springframework.context.support,
++   org.apache.cxf,
++   org.springframework.context,
++   org.springframework.beans.factory.xml,
++   org.junit,
++   org.apache.cxf.message,
++   org.w3c.dom,
++   javax.wsdl,
++   javax.xml.namespace,
++   javax.xml.xpath,
++   javax.xml.stream,
++   org.apache.cxf.transport,
++   org.apache.cxf.endpoint",
++ org.apache.cxf.transport;
++  uses:="org.apache.cxf,
++   org.apache.cxf.ws.addressing,
++   org.apache.cxf.resource,
++   org.apache.cxf.service.model,
++   org.apache.cxf.message,
++   org.apache.cxf.binding,
++   org.apache.cxf.phase,
++   org.xml.sax,
++   javax.xml.namespace,
++   org.apache.cxf.configuration,
++   org.apache.cxf.endpoint",
++ org.apache.cxf.transport.common.gzip;
++  uses:="org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.io,
++   org.apache.cxf.message,
++   org.apache.cxf.interceptor,
++   org.apache.cxf.phase",
++ org.apache.cxf.transport.http;
++  uses:="org.apache.cxf.wsdl,
++   org.apache.cxf.ws.addressing,
++   org.apache.cxf.message,
++   javax.xml.namespace,
++   org.apache.cxf.transport.https,
++   javax.servlet,
++   org.apache.cxf.configuration,
++   org.apache.cxf.transports.http.configuration,
++   org.apache.cxf.transport,
++   org.apache.cxf.service,
++   org.apache.cxf,
++   org.apache.cxf.configuration.jsse,
++   org.apache.cxf.io,
++   org.apache.cxf.security,
++   org.apache.cxf.service.model,
++   org.apache.cxf.configuration.security,
++   org.apache.cxf.wsdl11,
++   org.apache.cxf.transport.http.auth,
++   org.apache.cxf.continuations,
++   javax.servlet.http",
++ org.apache.cxf.transport.http.auth;
++  uses:="javax.security.auth.callback,
++   org.apache.cxf.configuration.security,
++   javax.security.auth.login,
++   org.apache.cxf.message",
++ org.apache.cxf.transport.http.blueprint;
++  uses:="org.apache.aries.blueprint,
++   org.osgi.service.blueprint.reflect,
++   org.apache.cxf.configuration.blueprint,
++   org.apache.aries.blueprint.mutable,
++   org.w3c.dom",
++ org.apache.cxf.transport.http.osgi;
++  uses:="org.apache.cxf.transport.http,
++   org.osgi.util.tracker,
++   org.osgi.framework,
++   org.osgi.service.cm",
++ org.apache.cxf.transport.http.policy;uses:="org.apache.cxf.ws.policy,org.apache.neethi,org.apache.cxf.ws.policy.builder.jaxb",
++ org.apache.cxf.transport.http.policy.impl;
++  uses:="org.apache.cxf.policy,
++   org.apache.cxf.transports.http.configuration,
++   org.apache.cxf.message,
++   javax.xml.namespace",
++ org.apache.cxf.transport.http.spring;
++  uses:="org.springframework.beans.factory.support,
++   org.springframework.beans.factory.xml,
++   org.apache.cxf.configuration.spring,
++   org.w3c.dom",
++ org.apache.cxf.transport.https;
++  uses:="org.apache.cxf.transport.http,
++   org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.configuration.jsse,
++   org.apache.cxf.message,
++   org.apache.cxf.phase,
++   org.apache.cxf.configuration.security,
++   org.apache.cxf.common.util,
++   javax.net.ssl,
++   org.apache.cxf.endpoint,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.transport.servlet;
++  uses:="org.apache.cxf.transport.http,
++   org.springframework.context.support,
++   org.apache.cxf,
++   org.springframework.context,
++   org.apache.cxf.transports.http,
++   org.apache.cxf.resource,
++   org.apache.cxf.service.model,
++   org.springframework.context.event,
++   javax.servlet,
++   org.apache.cxf.transport,
++   javax.servlet.http",
++ org.apache.cxf.transport.servlet.servicelist;
++  uses:="javax.servlet,
++   org.apache.cxf.transport.http,
++   org.apache.cxf,
++   org.apache.cxf.transport,
++   javax.servlet.http",
++ org.apache.cxf.transports.http;uses:="org.apache.cxf.service.model",
++ org.apache.cxf.transports.http.configuration;uses:="org.apache.cxf.wsdl,javax.xml.bind",
++ org.apache.cxf.transports.http.internal;uses:="org.apache.cxf,org.apache.cxf.transports.http",
++ org.apache.cxf.version,
++ org.apache.cxf.workqueue,
++ org.apache.cxf.ws.addressing;
++  uses:="org.apache.cxf.ws.addressing.v200403,
++   org.apache.cxf.ws.addressing.v200408,
++   org.apache.cxf.feature,
++   org.apache.cxf,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   org.apache.cxf.message,
++   org.apache.cxf.phase,
++   javax.xml.namespace,
++   org.apache.cxf.transport,
++   javax.xml.bind,
++   new org.apache.cxf.ws.addressing,
++   org.apache.cxf.interceptor",
++ org.apache.cxf.ws.addressing.v200403;uses:="javax.xml.bind,javax.xml.namespace",
++ org.apache.cxf.ws.addressing.v200408;uses:="javax.xml.bind,javax.xml.namespace",
++ org.apache.cxf.ws.addressing.wsdl;uses:="org.apache.cxf.wsdl,javax.xml.bind,javax.xml.namespace",
++ org.apache.cxf.wsdl;
++  uses:="javax.wsdl.factory,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.ws.addressing,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   javax.xml.namespace,
++   javax.wsdl,
++   javax.xml.stream,
++   javax.xml.stream.util,
++   javax.xml.transform,
++   javax.wsdl.extensions,
++   javax.xml.validation,
++   org.apache.cxf.common.i18n,
++   javax.xml.bind",
++ org.apache.cxf.wsdl.http;uses:="org.apache.cxf.wsdl,javax.xml.bind",
++ org.apache.cxf.wsdl11;
++  uses:="org.apache.cxf.wsdl,
++   javax.wsdl.factory,
++   org.apache.cxf.service.factory,
++   javax.wsdl.extensions.soap,
++   org.apache.cxf,
++   org.apache.cxf.service,
++   org.apache.cxf.service.model,
++   org.w3c.dom,
++   org.apache.cxf.binding,
++   org.xml.sax,
++   javax.xml.namespace,
++   javax.wsdl,
++   org.apache.cxf.common.xmlschema,
++   javax.wsdl.xml,
++   javax.wsdl.extensions,
++   org.apache.cxf.common.i18n"
++Import-Package: bsh;resolution:=optional,com.ibm.wsdl.util.xml;resolut
++ ion:=optional,com.jamonapi;resolution:=optional,com.sun.msv.grammar;r
++ esolution:=optional,com.sun.msv.grammar.trex;resolution:=optional,com
++ .sun.msv.grammar.xmlschema;resolution:=optional,com.sun.msv.reader;re
++ solution:=optional,com.sun.msv.reader.trex.ng;resolution:=optional,co
++ m.sun.msv.reader.util;resolution:=optional,com.sun.msv.reader.xmlsche
++ ma;resolution:=optional,com.sun.msv.util;resolution:=optional,com.sun
++ .msv.verifier;resolution:=optional,com.sun.msv.verifier.regexp;resolu
++ tion:=optional,com.sun.msv.verifier.regexp.xmlschema;resolution:=opti
++ onal,com.sun.net.httpserver;resolution:=optional,com.sun.tools.xjc.re
++ ader.internalizer;resolution:=optional,com.sun.xml.fastinfoset.sax;re
++ solution:=optional,com.sun.xml.fastinfoset.stax;resolution:=optional,
++ edu.emory.mathcs.backport.java.util.concurrent;resolution:=optional,g
++ roovy.lang;resolution:=optional,javax.activation;resolution:=optional
++ ,javax.annotation;resolution:=optional,javax.crypto;resolution:=optio
++ nal,javax.crypto.spec;resolution:=optional,javax.ejb;resolution:=opti
++ onal,javax.el;resolution:=optional,javax.imageio;resolution:=optional
++ ,javax.imageio.stream;resolution:=optional,javax.inject;resolution:=o
++ ptional,javax.interceptor;resolution:=optional,javax.jms;resolution:=
++ optional,javax.jws;resolution:=optional,javax.jws.soap;resolution:=op
++ tional,javax.management;resolution:=optional,javax.management.modelmb
++ ean;resolution:=optional,javax.management.openmbean;resolution:=optio
++ nal,javax.management.remote;resolution:=optional,javax.naming;resolut
++ ion:=optional,javax.net;resolution:=optional,javax.net.ssl;resolution
++ :=optional,javax.persistence.spi;resolution:=optional,javax.rmi;resol
++ ution:=optional,javax.security.auth;resolution:=optional,javax.securi
++ ty.auth.callback;resolution:=optional,javax.security.auth.kerberos;re
++ solution:=optional,javax.security.auth.login;resolution:=optional,jav
++ ax.security.auth.x500;resolution:=optional,javax.security.cert;resolu
++ tion:=optional,javax.sql;resolution:=optional,javax.tools;resolution:
++ =optional,javax.transaction;resolution:=optional,javax.transaction.xa
++ ;resolution:=optional,javax.validation;resolution:=optional,javax.val
++ idation.bootstrap;resolution:=optional,javax.validation.metadata;reso
++ lution:=optional,javax.validation.spi;resolution:=optional,javax.wsdl
++ ;resolution:=optional,javax.wsdl.extensions;resolution:=optional,java
++ x.wsdl.extensions.http;resolution:=optional,javax.wsdl.extensions.mim
++ e;resolution:=optional,javax.wsdl.extensions.schema;resolution:=optio
++ nal,javax.wsdl.extensions.soap;resolution:=optional,javax.wsdl.extens
++ ions.soap12;resolution:=optional,javax.wsdl.factory;resolution:=optio
++ nal,javax.wsdl.xml;resolution:=optional,javax.xml.bind;resolution:=op
++ tional,javax.xml.bind.annotation;resolution:=optional,javax.xml.bind.
++ annotation.adapters;resolution:=optional,javax.xml.bind.attachment;re
++ solution:=optional,javax.xml.bind.helpers;resolution:=optional,javax.
++ xml.bind.util;resolution:=optional,javax.xml.datatype;resolution:=opt
++ ional,javax.xml.namespace;resolution:=optional,javax.xml.parsers;reso
++ lution:=optional,javax.xml.soap;resolution:=optional,javax.xml.stream
++ ;resolution:=optional,javax.xml.stream.events;resolution:=optional,ja
++ vax.xml.stream.util;resolution:=optional,javax.xml.transform;resoluti
++ on:=optional,javax.xml.transform.dom;resolution:=optional,javax.xml.t
++ ransform.sax;resolution:=optional,javax.xml.transform.stax;resolution
++ :=optional,javax.xml.transform.stream;resolution:=optional,javax.xml.
++ validation;resolution:=optional,javax.xml.ws;resolution:=optional,jav
++ ax.xml.ws.handler;resolution:=optional,javax.xml.ws.handler.soap;reso
++ lution:=optional,javax.xml.ws.http;resolution:=optional,javax.xml.ws.
++ soap;resolution:=optional,javax.xml.ws.spi;resolution:=optional,javax
++ .xml.ws.spi.http;resolution:=optional,javax.xml.ws.wsaddressing;resol
++ ution:=optional,javax.xml.xpath;resolution:=optional,jline;resolution
++ :=optional,junit.framework;resolution:=optional,net.jcip.annotations;
++ resolution:=optional,net.sf.cglib.asm;resolution:=optional,net.sf.cgl
++ ib.core;resolution:=optional,net.sf.cglib.proxy;resolution:=optional,
++ net.sf.cglib.transform.impl;resolution:=optional,org.apache.abdera;re
++ solution:=optional,org.apache.abdera.factory;resolution:=optional,org
++ .apache.abdera.model;resolution:=optional,org.apache.abdera.parser;re
++ solution:=optional,org.apache.abdera.writer;resolution:=optional,org.
++ apache.aries.blueprint;resolution:=optional,org.apache.aries.blueprin
++ t.mutable;resolution:=optional,org.apache.axiom.om;resolution:=option
++ al,org.apache.commons.httpclient;resolution:=optional,org.apache.comm
++ ons.httpclient.auth;resolution:=optional,org.apache.commons.httpclien
++ t.methods;resolution:=optional,org.apache.commons.httpclient.params;r
++ esolution:=optional,org.apache.commons.httpclient.protocol;resolution
++ :=optional,org.apache.commons.httpclient.util;resolution:=optional,or
++ g.apache.commons.jxpath;resolution:=optional,org.apache.commons.lang;
++ resolution:=optional;version="[2.6,3)",org.apache.commons.lang.builde
++ r;resolution:=optional;version="[2.6,3)",org.apache.commons.logging;r
++ esolution:=optional,org.apache.commons.pool;resolution:=optional,org.
++ apache.commons.pool.impl;resolution:=optional,org.apache.commons.ssl;
++ resolution:=optional,org.apache.cxf;resolution:=optional;version="[2.
++ 7,3)",org.apache.cxf.aegis;resolution:=optional,org.apache.cxf.aegis.
++ type;resolution:=optional,org.apache.cxf.binding;resolution:=optional
++ ;version="[2.7,3)",org.apache.cxf.binding.soap.model;resolution:=opti
++ onal;version="[2.7,3)",org.apache.cxf.buslifecycle;resolution:=option
++ al;version="[2.7,3)",org.apache.cxf.clustering;resolution:=optional;v
++ ersion="[2.7,3)",org.apache.cxf.configuration.security;resolution:=op
++ tional;version="[2.7,3)",org.apache.cxf.endpoint;resolution:=optional
++ ;version="[2.7,3)",org.apache.cxf.extension;resolution:=optional;vers
++ ion="[2.7,3)",org.apache.cxf.feature;resolution:=optional;version="[2
++ .7,3)",org.apache.cxf.headers;resolution:=optional;version="[2.7,3)",
++ org.apache.cxf.helpers;resolution:=optional;version="[2.7,3)",org.apa
++ che.cxf.io;resolution:=optional;version="[2.7,3)",org.apache.cxf.jaxr
++ s.client;resolution:=optional;version="[2.7,3)",org.apache.cxf.messag
++ e;resolution:=optional;version="[2.7,3)",org.apache.cxf.phase;resolut
++ ion:=optional;version="[2.7,3)",org.apache.cxf.security;resolution:=o
++ ptional;version="[2.7,3)",org.apache.cxf.service;resolution:=optional
++ ;version="[2.7,3)",org.apache.cxf.tools.common;resolution:=optional,o
++ rg.apache.cxf.tools.validator;resolution:=optional,org.apache.cxf.tra
++ nsport;resolution:=optional;version="[2.7,3)",org.apache.cxf.ws.addre
++ ssing;resolution:=optional;version="[2.7,3)",org.apache.cxf.ws.addres
++ sing.impl;resolution:=optional;version="[2.7,3)",org.apache.cxf.ws.ad
++ dressing.soap;resolution:=optional;version="[2.7,3)",org.apache.cxf.w
++ s.mex;resolution:=optional,org.apache.cxf.ws.mex.model._2004_09;resol
++ ution:=optional,org.apache.geronimo.osgi.registry.api;resolution:=opt
++ ional,org.apache.log4j;resolution:=optional;version="[1.2,2)",org.apa
++ che.log4j.jmx;resolution:=optional;version="[1.2,2)",org.apache.log4j
++ .spi;resolution:=optional;version="[1.2,2)",org.apache.log4j.xml;reso
++ lution:=optional;version="[1.2,2)",org.apache.mina.core.buffer;resolu
++ tion:=optional,org.apache.mina.core.filterchain;resolution:=optional,
++ org.apache.mina.core.future;resolution:=optional,org.apache.mina.core
++ .service;resolution:=optional,org.apache.mina.core.session;resolution
++ :=optional,org.apache.mina.filter.codec;resolution:=optional,org.apac
++ he.mina.filter.logging;resolution:=optional,org.apache.mina.transport
++ .socket.nio;resolution:=optional,org.apache.velocity;resolution:=opti
++ onal,org.apache.velocity.app;resolution:=optional,org.apache.velocity
++ .context;resolution:=optional,org.apache.xml.dtm;resolution:=optional
++ ,org.apache.xml.resolver;resolution:=optional,org.apache.xml.resolver
++ .helpers;resolution:=optional,org.apache.xml.resolver.tools;resolutio
++ n:=optional,org.apache.xml.utils;resolution:=optional,org.apache.xmlb
++ eans;resolution:=optional,org.apache.xpath;resolution:=optional,org.a
++ pache.xpath.compiler;resolution:=optional,org.apache.xpath.functions;
++ resolution:=optional,org.apache.xpath.objects;resolution:=optional,or
++ g.aspectj.bridge;resolution:=optional,org.aspectj.lang;resolution:=op
++ tional,org.aspectj.lang.annotation;resolution:=optional,org.aspectj.l
++ ang.reflect;resolution:=optional,org.aspectj.runtime.internal;resolut
++ ion:=optional,org.aspectj.util;resolution:=optional,org.aspectj.weave
++ r;resolution:=optional,org.aspectj.weaver.ast;resolution:=optional,or
++ g.aspectj.weaver.bcel;resolution:=optional,org.aspectj.weaver.interna
++ l.tools;resolution:=optional,org.aspectj.weaver.loadtime;resolution:=
++ optional,org.aspectj.weaver.patterns;resolution:=optional,org.aspectj
++ .weaver.reflect;resolution:=optional,org.aspectj.weaver.tools;resolut
++ ion:=optional,org.bouncycastle.asn1;resolution:=optional,org.bouncyca
++ stle.asn1.x509;resolution:=optional,org.bouncycastle.util.encoders;re
++ solution:=optional,org.bouncycastle.x509.extension;resolution:=option
++ al,org.codehaus.groovy.control;resolution:=optional,org.dom4j;resolut
++ ion:=optional,org.dom4j.io;resolution:=optional,org.eclipse.jetty.jmx
++ ;resolution:=optional,org.hibernate;resolution:=optional,org.hibernat
++ e.cache;resolution:=optional,org.hibernate.cache.access;resolution:=o
++ ptional,org.hibernate.cfg;resolution:=optional,org.hibernate.impl;res
++ olution:=optional,org.hibernate.stat;resolution:=optional,org.hiberna
++ te.transaction;resolution:=optional,org.hibernate.validator.messagein
++ terpolation;resolution:=optional,org.hibernate.validator.resourceload
++ ing;resolution:=optional,org.ietf.jgss;resolution:=optional,org.jruby
++ ;resolution:=optional,org.jruby.ast;resolution:=optional,org.jruby.ex
++ ceptions;resolution:=optional,org.jruby.javasupport;resolution:=optio
++ nal,org.jruby.runtime;resolution:=optional,org.jruby.runtime.builtin;
++ resolution:=optional,org.junit;resolution:=optional,org.jvnet.fastinf
++ oset;resolution:=optional,org.jvnet.staxex;resolution:=optional,org.m
++ ortbay.log;resolution:=optional,org.mortbay.util.ajax;resolution:=opt
++ ional,org.omg.CORBA;resolution:=optional,org.osgi.framework;resolutio
++ n:=optional,org.osgi.service.blueprint.container;resolution:=optional
++ ,org.osgi.service.blueprint.reflect;resolution:=optional,org.osgi.ser
++ vice.cm;resolution:=optional,org.osgi.service.log;resolution:=optiona
++ l,org.osgi.util.tracker;resolution:=optional,org.owasp.esapi;resoluti
++ on:=optional,org.relaxng.datatype;resolution:=optional,org.springfram
++ ework.instrument;resolution:=optional,org.springframework.web.context
++ ;resolution:=optional,org.springframework.web.context.support;resolut
++ ion:=optional,org.springframework.web.servlet;resolution:=optional,or
++ g.springframework.web.servlet.handler;resolution:=optional,org.spring
++ framework.web.servlet.mvc;resolution:=optional,org.w3c.dom;resolution
++ :=optional,org.w3c.dom.bootstrap;resolution:=optional,org.w3c.dom.ls;
++ resolution:=optional,org.xml.sax;resolution:=optional,org.xml.sax.ext
++ ;resolution:=optional,org.xml.sax.helpers;resolution:=optional,sun.mi
++ sc;resolution:=optional
++Require-Bundle: javax.wsdl;bundle-version="1.6.2"
+diff --git a/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar b/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar
+new file mode 100644
+index 0000000..d9a1665
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/stax-api-1.0.1.jar differ
+diff --git a/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar b/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar
+new file mode 100644
+index 0000000..63a8a06
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/stax2-api-3.1.1.jar differ
+diff --git a/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar b/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar
+new file mode 100644
+index 0000000..8ca96d5
+Binary files /dev/null and b/org.talend.libraries.apache.cxf/lib/woodstox-core-asl-4.2.0.jar differ
+diff --git a/org.talend.repository/src/main/java/messages.properties b/org.talend.repository/src/main/java/messages.properties
+index 8251c9e..61f79a0 100755
+--- a/org.talend.repository/src/main/java/messages.properties
++++ b/org.talend.repository/src/main/java/messages.properties
+@@ -495,6 +495,10 @@ LoginComposite.buttons.changeButton=Change
+ LoginComposite.label.workspace=Workspace
+ LoginComposite.NewCreate=Create...
+ LoginComposite.NewImport=Import...
++LoginComposite.updateArchiva=Update is required,please click the button to update.
++LoginComposite.archivaFailed=Update site does not work.
++LoginComposite.archivaFinish=Update finished,need to restart.
++LoginComposite.archivaJarLost=The javax.ws.rs-api-2.0-m10.jar is required to use the Update Site functionality.
+ TOSLoginComposite.welcomeTitle=Welcome to {0}.Please select an existing \nproject to start work,or create a new one.
+ TOSLoginComposite.projectLabel=Project:
+ TOSLoginComposite.openButton=Open
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/ui/login/LoginComposite.java b/org.talend.repository/src/main/java/org/talend/repository/ui/login/LoginComposite.java
+index b485d98..36294c8 100755
+--- a/org.talend.repository/src/main/java/org/talend/repository/ui/login/LoginComposite.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/ui/login/LoginComposite.java
+@@ -30,6 +30,7 @@ import org.eclipse.core.runtime.Platform;
+ import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+ import org.eclipse.core.runtime.jobs.Job;
+ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
++import org.eclipse.jface.dialogs.IDialogConstants;
+ import org.eclipse.jface.dialogs.MessageDialog;
+ import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+ import org.eclipse.jface.operation.IRunnableWithProgress;
+@@ -80,6 +81,7 @@ import org.osgi.service.prefs.BackingStoreException;
+ import org.talend.commons.exception.BusinessException;
+ import org.talend.commons.exception.LoginException;
+ import org.talend.commons.exception.PersistenceException;
++import org.talend.commons.exception.SystemException;
+ import org.talend.commons.exception.WarningException;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+ import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
+@@ -295,6 +297,8 @@ public class LoginComposite extends Composite {
+ 
+     private static Logger log = Logger.getLogger(LoginComposite.class);
+ 
++    private String archivaErrorMsg = "";
++
+     /**
+      * Constructs a new LoginComposite.
+      * 
+@@ -374,6 +378,40 @@ public class LoginComposite extends Composite {
+         }
+     }
+ 
++    private void updateArchivaErrorButton() {
++        iconLabel.setImage(LOGIN_WARNING_IMAGE);
++        onIconLabel.setImage(LOGIN_WARNING_IMAGE);
++        colorComposite.setBackground(YELLOW_COLOR);
++        onIconLabel.setBackground(colorComposite.getBackground());
++        statusLabel.setText(Messages.getString("LoginComposite.archivaFailed")); //$NON-NLS-1$ //, the third party jar is required,please install it.
++        statusLabel.setBackground(YELLOW_COLOR);
++        statusLabel.setForeground(WHITE_COLOR);
++        Font font = new Font(null, LoginComposite.FONT_ARIAL, 9, SWT.BOLD);// Arial courier
++        statusLabel.setFont(font);
++        openProjectBtn.setEnabled(true);
++        updateBtn.setVisible(true);
++        updateBtn.setEnabled(true);
++        updateBtn.setText("Details");
++    }
++
++    /**
++     * Getter for archivaErrorMsg.
++     * 
++     * @return the archivaErrorMsg
++     */
++    public String getArchivaErrorMsg() {
++        return this.archivaErrorMsg;
++    }
++
++    /**
++     * Sets the archivaErrorMsg.
++     * 
++     * @param archivaErrorMsg the archivaErrorMsg to set
++     */
++    public void setArchivaErrorMsg(String archivaErrorMsg) {
++        this.archivaErrorMsg = archivaErrorMsg;
++    }
++
+     private void initConnection() {
+         if (storedConnections == null || storedConnections.size() == 0) {
+             getConnection();
+@@ -1061,7 +1099,6 @@ public class LoginComposite extends Composite {
+         updateBtnformData.right = new FormAttachment(restartBut, -5);
+         updateBtnformData.bottom = new FormAttachment(100, 0);
+         updateBtn.setLayoutData(updateBtnformData);// new GridData(GridData.FILL_HORIZONTAL)
+-
+     }
+ 
+     private void createTisRepositoryArea(Composite parent) {
+@@ -1714,36 +1751,57 @@ public class LoginComposite extends Composite {
+             public void widgetSelected(SelectionEvent e) {
+                 // install and update all patches;
+                 try {
+-                    ICoreTisService tisService = (ICoreTisService) GlobalServiceRegister.getDefault().getService(
+-                            ICoreTisService.class);
+-                    afterUpdate = false;
+-                    if (tisService != null) {
+-                        JSONObject archivaProperties = getArchivaServicesProperties(getAdminURL());
+-                        String archivaServicesURL = archivaProperties.getString(ARCHIVA_SERVICES_URL_KEY)
+-                                + ARCHIVA_SERVICES_SEGMENT;
+-                        String repository = archivaProperties.getString(ARCHIVA_REPOSITORY_KEY);
+-                        String username = archivaProperties.getString(ARCHIVA_USER);
+-                        String password = archivaProperties.getString(ARCHIVA_USER_PWD);
+-                        List<String> repositories = new ArrayList<String>();
+-                        // if no repository return,just use a empty repositories array
+-                        if (repository != null) {
+-                            repositories.add(repository);
++                    if (updateBtn.getText().equals("update")) {
++                        ICoreTisService tisService = (ICoreTisService) GlobalServiceRegister.getDefault().getService(
++                                ICoreTisService.class);
++                        afterUpdate = false;
++                        if (tisService != null) {
++                            JSONObject archivaProperties = getArchivaServicesProperties(getAdminURL());
++                            String archivaServicesURL = archivaProperties.getString(ARCHIVA_SERVICES_URL_KEY)
++                                    + ARCHIVA_SERVICES_SEGMENT;
++                            String repository = archivaProperties.getString(ARCHIVA_REPOSITORY_KEY);
++                            String username = archivaProperties.getString(ARCHIVA_USER);
++                            String password = archivaProperties.getString(ARCHIVA_USER_PWD);
++                            List<String> repositories = new ArrayList<String>();
++                            // if no repository return,just use a empty repositories array
++                            if (repository != null) {
++                                repositories.add(repository);
++                            }
++                            tisService.downLoadAndInstallUpdateSites(archivaServicesURL, username, password, updateSiteToInstall,
++                                    repositories);
++                            afterUpdate = true;
++                            tisService.setNeedResartAfterUpdate(afterUpdate);
++                            updateSiteToInstall.clear();
+                         }
+-                        tisService.downLoadAndInstallUpdateSites(archivaServicesURL, username, password, updateSiteToInstall,
+-                                repositories);
+-                        afterUpdate = true;
+-                        tisService.setNeedResartAfterUpdate(afterUpdate);
+-                        updateSiteToInstall.clear();
++                        // need to relauch the studio automaticlly after updating
++                        isRestart = true;
++                        perReader.saveLastConnectionBean(getConnection());
++                        dialog.okPressed();
++                    } else {
++                        String[] buttons = new String[] { IDialogConstants.OK_LABEL };
++                        String message = Messages.getString("LoginComposite.archivaJarLost");
++                        ArchivaErrorDialog archivaDialog = new ArchivaErrorDialog(getShell(), "Warning", null, message,
++                                MessageDialog.WARNING, buttons, 0);
++                        archivaDialog.open();
+                     }
+-                    // need to relauch the studio automaticlly after updating
+-                    isRestart = true;
+-                    perReader.saveLastConnectionBean(getConnection());
+-                    dialog.okPressed();
+                 } catch (Exception e1) {
+                     ExceptionHandler.process(e1);
+                 }
+             }
+         });
++        // archivaErrorButton.addSelectionListener(new SelectionAdapter() {
++        //
++        // @Override
++        // public void widgetSelected(SelectionEvent e) {
++        // String[] buttons = new String[] { IDialogConstants.OK_LABEL };
++        // String message = "The javax.ws.rs-api-2.0-m10.jar is required to use the Update Site functionality.";
++        // ArchivaErrorDialog archivaDialog = new ArchivaErrorDialog(getShell(), "Warning", LOGIN_CORRECT_IMAGE,
++        // message,
++        // HORIZONTAL_SPACE, buttons, HORIZONTAL_FOUR_SPACE);
++        //
++        // archivaDialog.open();
++        // }
++        // });
+     }
+ 
+     private void validateUpdate() throws JSONException {
+@@ -1785,7 +1843,7 @@ public class LoginComposite extends Composite {
+                         onIconLabel.setImage(LOGIN_CRITICAL_IMAGE);
+                         colorComposite.setBackground(RED_COLOR);
+                         onIconLabel.setBackground(colorComposite.getBackground());
+-                        statusLabel.setText("Update finished,need to restart"); //$NON-NLS-1$
++                        statusLabel.setText(Messages.getString("LoginComposite.archivaFinish")); //$NON-NLS-1$
+                         statusLabel.setBackground(RED_COLOR);
+                         statusLabel.setForeground(WHITE_COLOR);
+                         Font font = new Font(null, LoginComposite.FONT_ARIAL, 9, SWT.BOLD);// Arial courier
+@@ -1800,7 +1858,7 @@ public class LoginComposite extends Composite {
+                         onIconLabel.setImage(LOGIN_CRITICAL_IMAGE);
+                         colorComposite.setBackground(RED_COLOR);
+                         onIconLabel.setBackground(colorComposite.getBackground());
+-                        statusLabel.setText("Update is required,please click the button to update"); //$NON-NLS-1$
++                        statusLabel.setText(Messages.getString("LoginComposite.updateArchiva")); //$NON-NLS-1$
+                         statusLabel.setBackground(RED_COLOR);
+                         statusLabel.setForeground(WHITE_COLOR);
+                         Font font = new Font(null, LoginComposite.FONT_ARIAL, 9, SWT.BOLD);// Arial courier
+@@ -1808,18 +1866,21 @@ public class LoginComposite extends Composite {
+                         openProjectBtn.setEnabled(!needUpdate);
+                         updateBtn.setVisible(needUpdate);
+                         updateBtn.setEnabled(needUpdate);
++                        updateBtn.setText("update");
+                     }
+                 }
+             } else {
+                 updateBtn.setVisible(false);
+                 updateBtn.setEnabled(false);
++
+             }
+         } catch (PersistenceException e) {
+             ExceptionHandler.process(e);
+         } catch (LoginException e) {
+             ExceptionHandler.process(e);
++        } catch (SystemException e) {
++            updateArchivaErrorButton();
+         }
+-
+     }
+ 
+     private String getAdminURL() {
+@@ -1847,7 +1908,8 @@ public class LoginComposite extends Composite {
+     }
+ 
+     // method need update is used to control the status of updateBtn
+-    private boolean needUpdate(String username, String password, String archivaURL, List<String> repositories) {
++    private boolean needUpdate(String username, String password, String archivaURL, List<String> repositories)
++            throws SystemException {
+ 
+         ICoreTisService tisService = (ICoreTisService) GlobalServiceRegister.getDefault().getService(ICoreTisService.class);
+         if (tisService != null) {
+@@ -2703,4 +2765,44 @@ public class LoginComposite extends Composite {
+         }
+         return fontsize;
+     }
++
++    private static class ArchivaErrorDialog extends MessageDialog {
++
++        public ArchivaErrorDialog(Shell parentShell, String dialogTitle, Image dialogTitleImage, String dialogMessage,
++                int dialogImageType, String[] dialogButtonLabels, int defaultIndex) {
++            super(parentShell, dialogTitle, dialogTitleImage, dialogMessage, dialogImageType, dialogButtonLabels, defaultIndex);
++        }
++
++        @Override
++        protected Composite createCustomArea(Composite parent) {
++            Composite helpComposite = new Composite(parent, SWT.NONE);
++            GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
++            gridData.minimumHeight = 45;
++            helpComposite.setLayoutData(gridData);
++            GC gc = new GC(helpComposite);
++            String linkLabel = "How to install a jar"; //$NON-NLS-1$
++            Point linkSize = gc.stringExtent(linkLabel);
++            Font font = new Font(null, LoginComposite.FONT_ARIAL, 9, SWT.NORMAL);
++            Hyperlink link = new Hyperlink(helpComposite, SWT.NONE);
++            link.setText(linkLabel);
++            link.setSize(linkSize.x + 15, 30);
++            link.setBackground(helpComposite.getBackground());
++            link.setUnderlined(true);
++            link.setFont(font);
++
++            GridData gridData1 = new GridData(SWT.FILL, SWT.CENTER, true, false);
++            gridData1.widthHint = this.getMinimumMessageWidth();
++            link.setLayoutData(gridData1);
++            gc.dispose();
++            link.addHyperlinkListener(new HyperlinkAdapter() {
++
++                @Override
++                public void linkActivated(HyperlinkEvent e) {
++                    String url = "https://help.talend.com/pages/viewpage.action?pageId=14230347";
++                    TalendBrowserLaunchHelper.openURL(url);
++                }
++            });
++            return helpComposite;
++        }
++    }
+ }

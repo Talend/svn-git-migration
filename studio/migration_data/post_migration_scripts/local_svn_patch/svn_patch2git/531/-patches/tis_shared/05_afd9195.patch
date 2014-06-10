@@ -1,0 +1,12 @@
+diff --git a/org.talend.repository.hl7/src/main/java/org/talend/repository/hl7/ui/wizard/HL7OutputStep2Form.java b/org.talend.repository.hl7/src/main/java/org/talend/repository/hl7/ui/wizard/HL7OutputStep2Form.java
+index 2f7a50a..1fe2173 100644
+--- a/org.talend.repository.hl7/src/main/java/org/talend/repository/hl7/ui/wizard/HL7OutputStep2Form.java
++++ b/org.talend.repository.hl7/src/main/java/org/talend/repository/hl7/ui/wizard/HL7OutputStep2Form.java
+@@ -1370,6 +1370,7 @@ public class HL7OutputStep2Form extends AbstractHL7StepForm {
+ 
+         for (Message message : messageList) {
+             schemaList.addAll(parse.getFirstLevelChild(message));
++            getConnection().setVersion(parse.getVersion());
+         }
+         if (schemaList.size() <= 0) {
+             if (ConnectionHelper.getTables(getConnection()).size() <= 0) {

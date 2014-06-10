@@ -1,0 +1,857 @@
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
+index b9c5659..886ea1a 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/ColumnAnalysisSqlExecutor.java
+@@ -355,15 +355,18 @@ public class ColumnAnalysisSqlExecutor extends ColumnAnalysisExecutor {
+                         // ~12675
+                     }
+                     final EList<CharactersMapping> charactersMapping = indicatorDefinition.getCharactersMapping();
+-                    colName = dbms().getPatternFinderFunction(colName, charactersMapping);
+-                    if (colName == null) {
++                    String colNameWithFunction = dbms().getPatternFinderFunction(colName, charactersMapping);
++                    if (colNameWithFunction == null) {
+                         // no replacement found, try the default one
+-                        colName = dbms().getPatternFinderDefaultFunction(colName);
+-                        if (colName == null) {
++                        colNameWithFunction = dbms().getPatternFinderDefaultFunction(colName);
++                        if (colNameWithFunction == null) {
+                             return traceError(Messages.getString(
+                                     "ColumnAnalysisSqlExecutor.NOREPLACEMENTFOUNDFORDBTYPE", language, indicator.getName()));//$NON-NLS-1$
+                         }
+                     }
++                    // MOD for TDQ-8600 If the thread can come here mean that tempColName is not null so give the value
++                    // to colName
++                    colName = colNameWithFunction;
+                     // ~
+                 } else if (indicatorEclass.equals(IndicatorsPackage.eINSTANCE.getSoundexFreqIndicator())
+                         || indicatorEclass.equals(IndicatorsPackage.eINSTANCE.getSoundexLowFreqIndicator())) {
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
+index a15cb65..fc34fcc 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/BenfordLawFrequencyExplorer.java
+@@ -14,9 +14,6 @@ package org.talend.dq.analysis.explore;
+ 
+ import org.talend.core.model.metadata.builder.database.dburl.SupportDBUrlType;
+ 
+-
+-
+-
+ /**
+  * return the where clause for benford law indicator, but for different DB type, the clause is different.
+  */
+@@ -24,7 +21,7 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+ 
+     @Override
+     protected String getInstantiatedClause() {
+-        if (entity.getKey().toString().equals("invalid")) {//$NON-NLS-1$ //$NON-NLS-2$
++        if (entity.getKey().toString().equals("invalid")) {//$NON-NLS-1$ 
+             return getInvalidClause();
+         }
+         Object value = "'" + entity.getKey() + "%'"; //$NON-NLS-1$ //$NON-NLS-2$
+@@ -62,6 +59,8 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+             return columnName + " is null or LEFT(" + columnName + ",1) not" + dbmsLanguage.like() + "'%[0-9]%'";//$NON-NLS-1$ //$NON-NLS-2$
+         } else if (isInformix()) {
+             return columnName + " is null or SUBSTR(" + columnName + ",0,1) not in ('0','1','2','3','4','5','6','7','8','9')";//$NON-NLS-1$ //$NON-NLS-2$
++        } else if (isNetezza()) {
++            return columnName + " is null or Substring(" + columnName + ",1,1) not in ('0','1','2','3','4','5','6','7','8','9')";//$NON-NLS-1$ //$NON-NLS-2$ 
+         }
+ 
+         return columnName + " is null or " + columnName + value;
+@@ -80,6 +79,18 @@ public class BenfordLawFrequencyExplorer extends FrequencyStatisticsExplorer {
+     }
+ 
+     /**
++     * DOC yyin Comment method "isInformix".
++     * 
++     * @return
++     */
++    private boolean isNetezza() {
++        if (dbmsLanguage.getDbmsName().startsWith(SupportDBUrlType.NETEZZADEFAULTURL.getLanguage())) {
++            return true;
++        }
++        return false;
++    }
++
++    /**
+      * DOC yyin Comment method "isSqlServer".
+      * 
+      * @return
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
+index 77ec4f9..96bc815 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/analysis/explore/SoundexFrequencyExplorer.java
+@@ -24,9 +24,7 @@ import orgomg.cwm.objectmodel.core.Expression;
+  */
+ public class SoundexFrequencyExplorer extends FrequencyStatisticsExplorer {
+ 
+-    private static final String REGEX = "SELECT.*\\s*MAX\\((.*)\\)\\s*, SOUNDEX\\(.*\\)\\s*, COUNT\\(\\*\\)\\s*(AS|as)?\\s*\\w*\\s*, COUNT\\(DISTINCT .*\\)\\s*(AS|as)?\\s*\\w*\\s* FROM"; //$NON-NLS-1$
+-
+-    private static final String SOUNDEX_PREFIX = "SOUNDEX";//$NON-NLS-1$
++    private static final String REGEX = "SELECT.*\\s*MAX\\((.*)\\)\\s*, (SOUNDEX|NYSIIS)\\(.*\\)\\s*, COUNT\\(\\*\\)\\s*(AS|as)?\\s*\\w*\\s*, COUNT\\(DISTINCT .*\\)\\s*(AS|as)?\\s*\\w*\\s* FROM"; //$NON-NLS-1$ 
+ 
+     @Override
+     protected String getFreqRowsStatement() {
+@@ -64,8 +62,9 @@ public class SoundexFrequencyExplorer extends FrequencyStatisticsExplorer {
+         // ~11005
+ 
+         // MOD mzhao bug 9740 2009-11-10
+-        String clause = entity.isLabelNull() || function == null ? columnName + dbmsLanguage.isNull() : SOUNDEX_PREFIX + "("//$NON-NLS-1$ 
+-                + function + ")" + dbmsLanguage.equal() + SOUNDEX_PREFIX + "('" + entity.getKey() + "')"; //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
++        String clause = entity.isLabelNull() || function == null ? columnName + dbmsLanguage.isNull() : dbmsLanguage
++                .getSoundexPrefix() + "("//$NON-NLS-1$  
++                + function + ")" + dbmsLanguage.equal() + dbmsLanguage.getSoundexPrefix() + "('" + entity.getKey() + "')"; //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$         return clause;
+         return clause;
+     }
+ 
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
+index c93c364..70ce3a7 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguage.java
+@@ -136,6 +136,8 @@ public class DbmsLanguage {
+ 
+     private String functionName = ""; //$NON-NLS-1$ 
+ 
++    private final String SOUNDEX_PREFIX = "SOUNDEX";//$NON-NLS-1$ 
++
+     /**
+      * DbmsLanguage constructor for generic ANSI SQL (independent of any DBMS).
+      */
+@@ -185,6 +187,10 @@ public class DbmsLanguage {
+         return quotedSqlIdentifier;
+     }
+ 
++    public String getSoundexPrefix() {
++        return this.SOUNDEX_PREFIX;
++    }
++
+     public String and() {
+         return surroundWithSpaces(SqlPredicate.AND.getLiteral());
+     }
+@@ -384,21 +390,54 @@ public class DbmsLanguage {
+      * @return an SQL expression which can be used as pattern finder or null
+      */
+     public String getPatternFinderFunction(String colName, EList<CharactersMapping> charactersMapping) {
+-        String resultingExpressionWithDefaultLang = null;
+-        for (CharactersMapping charactersMap : charactersMapping) {
++        CharactersMapping charactersMap = adaptCharactersMapping(charactersMapping);
++
++        if (charactersMap == null) {
++            return null;
++        }
++        return this.getPatternFinderFunction(colName, charactersMap.getCharactersToReplace(),
++                charactersMap.getReplacementCharacters());
++    }
++
++    /**
++     * 
++     * Get CharactersMapping from charactersMappingList, if not found, use the default "SQL" CharactersMapping.
++     * 
++     * @param charactersMappingList all of charactersMapping
++     * @return if there is CharactersMapping return it else if there is default "SQL" CharactersMapping else return
++     * null.
++     */
++    private CharactersMapping adaptCharactersMapping(EList<CharactersMapping> charactersMappingList) {
++        CharactersMapping defaultCharactersMapping = null;
++        for (CharactersMapping charactersMap : charactersMappingList) {
+             if (this.is(charactersMap.getLanguage())) {
+-                final String charactersToReplace = charactersMap.getCharactersToReplace();
+-                final String replacementCharacters = charactersMap.getReplacementCharacters();
+-                if (StringUtils.isEmpty(charactersToReplace) || StringUtils.isEmpty(replacementCharacters)
+-                        || charactersToReplace.length() != replacementCharacters.length()) {
+-                    // go to next character mapping
++                if (validCharactersMapping(charactersMap)) {
++                    return charactersMap;
++                } else {
++                    // current CharactersMapping is invalid so needn't care about default language case
+                     continue;
+                 }
+-                return this.getPatternFinderFunction(colName, charactersToReplace, replacementCharacters);
++
++            } else if (defaultCharactersMapping == null && DbmsLanguageFactory.isAllDatabaseType(charactersMap.getLanguage())) {
++                if (validCharactersMapping(charactersMap)) {
++                    defaultCharactersMapping = charactersMap;
++                }
++
++                // else go to next character mapping
+             }
+ 
+         }
+-        return resultingExpressionWithDefaultLang;
++        return defaultCharactersMapping;
++    }
++
++    private boolean validCharactersMapping(CharactersMapping charactersMap) {
++        final String charactersToReplace = charactersMap.getCharactersToReplace();
++        final String replacementCharacters = charactersMap.getReplacementCharacters();
++        if (!StringUtils.isEmpty(charactersToReplace) && !StringUtils.isEmpty(replacementCharacters)
++                && charactersToReplace.length() == replacementCharacters.length()) {
++            return true;
++        }
++        return false;
+     }
+ 
+     /**
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
+index ec0f465..45fdbd4 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/DbmsLanguageFactory.java
+@@ -145,6 +145,8 @@ public final class DbmsLanguageFactory {
+             dbmsLanguage = new InfomixDbmsLanguage(dbmsSubtype, dbVersion);
+         } else if (isHive(dbmsSubtype)) {
+             dbmsLanguage = new HiveDbmsLanguage(dbmsSubtype, dbVersion);
++        } else if (isNetezza(dbmsSubtype)) {
++            dbmsLanguage = new NetezzaDbmsLanguage(dbmsSubtype, dbVersion);
+         } else {
+             dbmsLanguage = new DbmsLanguage(dbmsSubtype, dbVersion);
+         }
+@@ -266,6 +268,16 @@ public final class DbmsLanguageFactory {
+         return compareDbmsLanguage(DbmsLanguage.HIVE, dbms);
+     }
+ 
++    /**
++     * judge whether the dmbs is Netezza
++     * 
++     * @param dbmsSubtype
++     * @return
++     */
++    private static boolean isNetezza(String dbms) {
++        return compareDbmsLanguage(DbmsLanguage.NETEZZA, dbms);
++    }
++
+     // ~11005
+ 
+     public static boolean isAllDatabaseType(String dbms) {
+@@ -304,6 +316,10 @@ public final class DbmsLanguageFactory {
+             return StringUtils.upperCase(lang1).startsWith(StringUtils.upperCase(lang2))
+                     || StringUtils.upperCase(lang2).startsWith(StringUtils.upperCase(lang1));
+         }
++        // MOD 2014-02-10 for TDQ-8600 Column Analysis fails with Netezza
++        if (StringUtils.contains(lang1, DbmsLanguage.NETEZZA) && StringUtils.contains(lang2, DbmsLanguage.NETEZZA)) {
++            return true;
++        }
+         return StringUtils.equalsIgnoreCase(lang1, lang2);
+     }
+ 
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
+index 8edd659..abd89ce 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/dbms/NetezzaDbmsLanguage.java
+@@ -26,6 +26,8 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     private static final String MYSQL_IDENTIFIER_QUOTE = "`"; //$NON-NLS-1$
+ 
++    private final String NYSIIS_PREFIX = "NYSIIS";//$NON-NLS-1$ 
++
+     /**
+      * DOC klliu NetezzaDbmsLanguage constructor comment.
+      */
+@@ -50,7 +52,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     public String getPatternFinderDefaultFunction(String expression) {
+-        return StringUtils.repeat("REPLACE(", 59) + expression //$NON-NLS-1$
++        return StringUtils.repeat("TRANSLATE(", 59) + expression //$NON-NLS-1$
+                 + ",'B','A'),'C','A'),'D','A'),'E','A'),'F','A'),'G','A'),'H','A')" //$NON-NLS-1$
+                 + ",'I','A'),'J','A'),'K','A'),'L','A'),'M','A'),'N','A'),'O','A')" //$NON-NLS-1$
+                 + ",'P','A'),'Q','A'),'R','A'),'S','A'),'T','A'),'U','A'),'V','A')" //$NON-NLS-1$
+@@ -63,13 +65,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+ 
+     @Override
+     protected String getPatternFinderFunction(String expression, String charsToReplace, String replacementChars) {
+-        assert charsToReplace != null && replacementChars != null && charsToReplace.length() == replacementChars.length();
+-        for (int i = 0; i < charsToReplace.length(); i++) {
+-            final char charToReplace = charsToReplace.charAt(i);
+-            final char replacement = replacementChars.charAt(i);
+-            expression = replaceOneChar(expression, charToReplace, replacement);
+-        }
+-        return expression;
++        return translateUsingPattern(expression, charsToReplace, replacementChars);
+     }
+ 
+     /*
+@@ -79,7 +75,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     public String replaceNullsWithString(String colName, String replacement) {
+-        return " IFNULL(" + colName + "," + replacement + ")"; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
++        return " ISNULL(" + colName + "," + replacement + ")"; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+     }
+ 
+     /*
+@@ -100,7 +96,7 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+      */
+     @Override
+     protected String extract(DateGrain dateGrain, String colName) {
+-        return dateGrain.getName() + surroundWith('(', colName, ')');
++        return "DATE_PART" + surroundWith('(', surroundWith('\'', dateGrain.getLiteral(), '\'') + "," + colName, ')'); //$NON-NLS-1$ //$NON-NLS-2$ 
+     }
+ 
+     /*
+@@ -156,6 +152,16 @@ public class NetezzaDbmsLanguage extends DbmsLanguage {
+     /*
+      * (non-Javadoc)
+      * 
++     * @see org.talend.dq.dbms.DbmsLanguage#getSoundexPrefix()
++     */
++    @Override
++    public String getSoundexPrefix() {
++        return NYSIIS_PREFIX;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
+      * @see org.talend.cwm.management.api.DbmsLanguage#getSelectRemarkOnTable(java.lang.String)
+      */
+     @Override
+diff --git a/org.talend.dataprofiler.core/indicators/Fraud Detection/Benford Law Frequency.definition b/org.talend.dataprofiler.core/indicators/Fraud Detection/Benford Law Frequency.definition
+new file mode 100644
+index 0000000..a5c6322
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Fraud Detection/Benford Law Frequency.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_yRkFIezIEeG0fbygDv6UrQ" name="Benford Law Frequency" label="Benford Law Frequency">
++  <taggedValue xmi:id="_LR9AcOzJEeG0fbygDv6UrQ" tag="Description" value="Benford's law is used by accountants to detect possible instances of fraud based on the distribution of digits in numbers."/>
++  <taggedValue xmi:id="_Oi7B8OzJEeG0fbygDv6UrQ" tag="Purpose" value="evaluate the possible instances of fraud"/>
++  <categories href="../../../.Talend.definition#_2aGLUOzJEeG0fbygDv6UrQ"/>
++  <sqlGenericExpression xmi:id="_rRrscOzJEeG0fbygDv6UrQ" body="SELECT cast(LEFT(&lt;%=__COLUMN_NAMES__%>,1) as char), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY LEFT(&lt;%=__COLUMN_NAMES__%>,1) order by LEFT(&lt;%=__COLUMN_NAMES__%>,1)" language="SQL"/>
++  <sqlGenericExpression xmi:id="_B1YQ8OzMEeG0fbygDv6UrQ" body="SELECT cast(SUBSTR(&lt;%=__COLUMN_NAMES__%>,0,1) as char), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SUBSTR(&lt;%=__COLUMN_NAMES__%>,0,1) order by SUBSTR(&lt;%=__COLUMN_NAMES__%>,0,1)" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_b8GEYPMdEeGbk9N0267sfg" body="SELECT SUBSTRING(cast(&lt;%=__COLUMN_NAMES__%> as char) FROM 1 FOR 2), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SUBSTRING(cast(&lt;%=__COLUMN_NAMES__%> as char) FROM 1 FOR 2) order by SUBSTRING(cast(&lt;%=__COLUMN_NAMES__%> as char) FROM 1 FOR 2)" language="Teradata"/>
++  <sqlGenericExpression xmi:id="_fduYEPMdEeGbk9N0267sfg" body="SELECT SUBSTR(cast(&lt;%=__COLUMN_NAMES__%> as char),1,2), COUNT(*)  FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SUBSTR(cast(&lt;%=__COLUMN_NAMES__%> as char),1,2) order by SUBSTR(cast(&lt;%=__COLUMN_NAMES__%> as char),1,2)" language="PostgreSQL"/>
++  <sqlGenericExpression xmi:id="_f74TsPMdEeGbk9N0267sfg" body="SELECT cast(SUBSTR(&lt;%=__COLUMN_NAMES__%>,0,1) as char), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 1 order by 1" language="Informix"/>
++  <sqlGenericExpression xmi:id="_gXeqkPMdEeGbk9N0267sfg" body="SELECT SUBSTRING(CONVERT(char(15),&lt;%=__COLUMN_NAMES__%>),1,1), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SUBSTRING(CONVERT(char(15),&lt;%=__COLUMN_NAMES__%>),1,1) order by SUBSTRING(CONVERT(char(15),&lt;%=__COLUMN_NAMES__%>),1,1)" language="Adaptive Server Enterprise | Sybase Adaptive Server IQ"/>
++  <sqlGenericExpression xmi:id="_rRrscOzJEeG0fbygDv7UrQ" body="SELECT substr(&lt;%=__COLUMN_NAMES__%>,1,1), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY substr(&lt;%=__COLUMN_NAMES__%>,1,1)" language="Hive"/>
++  <sqlGenericExpression xmi:id="_Mfi2sZOvEeO0QqLsthPghw" body="SELECT cast(SUBSTR(&lt;%=__COLUMN_NAMES__%>,1,1) as char), COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 1 order by 1" language="Netezza"/> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Frequency Table.definition b/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Frequency Table.definition
+new file mode 100644
+index 0000000..d085462
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Frequency Table.definition	
+@@ -0,0 +1,27 @@
++﻿<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_kQzTsJR-Ed2XO-JvLwVAwg" name="Pattern Frequency Table" label="Pattern Frequency Table">
++  <taggedValue xmi:id="_-Zty0YqnEd-SocVM_rHvUg" tag="Description" value="counts the number of records for each distinct pattern"/>
++  <taggedValue xmi:id="_-Zty0oqnEd-SocVM_rHvUg" tag="Purpose" value="evaluates the most frequent patterns"/>
++  <categories href="../../../.Talend.definition#_0n3BsJR-Ed2XO-JvLwVAwg"/>
++  <sqlGenericExpression xmi:id="_VdpY9Jh3EeOxrL_8IsMe5A" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="SQL"/> 
++  <sqlGenericExpression xmi:id="_-Zty04qnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="MySQL"/>
++  <sqlGenericExpression xmi:id="_-Zty1IqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c DESC" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-Zty1YqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="PostgreSQL"/>
++  <sqlGenericExpression xmi:id="_-Zty1oqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c DESC" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-Zty14qnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%> , COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-Zty2IqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="Informix"/>
++  <sqlGenericExpression xmi:id="_KgWcAJ4FEd-gdoA4cs-6kg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c DESC" language="AS/400"/>
++  <sqlGenericExpression xmi:id="_kA11YE_MEeKv2IJ41ZWUFQ" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c DESC" language="Teradata" />
++  <sqlGenericExpression xmi:id="_vI_2pZOyEeOujvooylLxyQ" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c DESC" language="Netezza" /> 
++  <charactersMapping xmi:id="_4TVleph3EeOxrL_8IsMe5A" language="SQL" charactersToReplace="abcdefghijklmnopqrstuvwxyzÃ§Ã¢ÃªÃ®ÃŽÃ»Ã©ÃšÃ¹Ã¯Ã¶ÃŒABCDEFGHIJKLMNOPQRSTUVWXYZÃÃÃÃÃÃÃÃÃÃÃÃ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-Zty2YqnEd-SocVM_rHvUg" name="Characters mapping on MySQL" language="MySQL" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZuZ4IqnEd-SocVM_rHvUg" name="Characters mapping on Oracle" language="Oracle" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZuZ4YqnEd-SocVM_rHvUg" name="Characters mapping on PostgreSQL" language="PostgreSQL" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZuZ4oqnEd-SocVM_rHvUg" name="Characters mapping on Microsoft SQL Server" language="Microsoft SQL Server" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZuZ44qnEd-SocVM_rHvUg" name="Characters mapping on DB2" language="DB2" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_av3XkJ4FEd-gdoA4cs-6kg" name="Characters mapping on AS/400" language="AS/400" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZuZ5IqnEd-SocVM_rHvUg" name="Characters mapping on Informix" language="Informix" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_KAMW_2_MEeKv2IJ41ZWUFQ" name="Characters mapping on Teradata" language="Teradata" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++
++<charactersMapping xmi:id="_vJAdsJOyEeOujvooylLxyQ" language="Netezza" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Low Frequency Table.definition b/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Low Frequency Table.definition
+new file mode 100644
+index 0000000..1cfa1a9
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Pattern Finder/Pattern Low Frequency Table.definition	
+@@ -0,0 +1,24 @@
++﻿<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_OCTbwJR_Ed2XO-JvLwVAwg" name="Pattern Low Frequency Table" label="Pattern Low Frequency Table">
++  <taggedValue xmi:id="_-ZyEQYqnEd-SocVM_rHvUg" tag="Description" value="counts the number of patterns for each distinct pattern"/>
++  <taggedValue xmi:id="_-ZyEQoqnEd-SocVM_rHvUg" tag="Purpose" value="evaluates the less frequent patterns"/>
++  <categories href="../../../.Talend.definition#_0n3BsJR-Ed2XO-JvLwVAwg"/>
++  <sqlGenericExpression xmi:id="_-ZyEQ4qnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="MySQL"/>
++  <sqlGenericExpression xmi:id="_-ZyERIqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c ASC" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-ZyrUIqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="PostgreSQL"/>
++  <sqlGenericExpression xmi:id="_-ZyrUYqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c ASC" language="DB2"/>
++  <sqlGenericExpression xmi:id="_xa5TIJ4HEd-gdoA4cs-6kg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__COLUMN_NAMES__%> ORDER BY c ASC" language="AS/400"/>
++  <sqlGenericExpression xmi:id="_-ZyrUoqnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-ZyrU4qnEd-SocVM_rHvUg" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="Informix"/>
++  <sqlGenericExpression xmi:id="_sn8CgU_WEeKqC6ZsUWhp4g" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="Teradata" />
++ <sqlGenericExpression xmi:id="_pBdQpJOyEeOujvooylLxyQ" body="SELECT &lt;%=__COLUMN_NAMES__%>, COUNT(*) c FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY &lt;%=__GROUP_BY_ALIAS__%> ORDER BY c ASC" language="Netezza" /> 
++  <charactersMapping xmi:id="_-ZyrVIqnEd-SocVM_rHvUg" name="Characters mapping on MySQL" language="MySQL" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZyrVYqnEd-SocVM_rHvUg" name="Characters mapping on Oracle" language="Oracle" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZyrVoqnEd-SocVM_rHvUg" name="Characters mapping on PostgreSQL" language="PostgreSQL" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZyrV4qnEd-SocVM_rHvUg" name="Characters mapping on Informix" language="Informix" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZyrWIqnEd-SocVM_rHvUg" name="Characters mapping on Microsoft SQL Server" language="Microsoft SQL Server" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_-ZyrWYqnEd-SocVM_rHvUg" name="Characters mapping on DB2" language="DB2" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_1lPMoJ4HEd-gdoA4cs-6kg" name="Characters mapping on AS/400" language="AS/400" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++  <charactersMapping xmi:id="_sn8Cik_WEeKqC6ZsUWhp4g" name="Characters mapping on Teradata" language="Teradata" charactersToReplace="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++   <charactersMapping xmi:id="_pBdQqpOyEeOujvooylLxyQ" language="Netezza" charactersToReplace="abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789" replacementCharacters="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999"/>
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Soundex/Soundex Frequency Table.definition b/org.talend.dataprofiler.core/indicators/Soundex/Soundex Frequency Table.definition
+index d044ea8..45bb800 100644
+--- a/org.talend.dataprofiler.core/indicators/Soundex/Soundex Frequency Table.definition	
++++ b/org.talend.dataprofiler.core/indicators/Soundex/Soundex Frequency Table.definition	
+@@ -11,4 +11,5 @@
+   <sqlGenericExpression xmi:id="_-af1-IqnEd-SocVM_rHvUg" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SOUNDEX(&lt;%=__COLUMN_NAMES__%>) ORDER BY d DESC,c DESC" language="Microsoft SQL Server"/>
+   <sqlGenericExpression xmi:id="_-af1-YqnEd-SocVM_rHvUg" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>) , COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 2 ORDER BY d DESC,c DESC" language="Informix"/>
+   <sqlGenericExpression xmi:id="_XEOp0LC9Ed-oeogcfzPnMw" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>) , COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 2 ORDER BY d DESC,c DESC" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_xUBWBZOtEeO0QqLsthPghw" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), NYSIIS(&lt;%=__COLUMN_NAMES__%>) , COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 2 ORDER BY d DESC,c DESC" language="Netezza" /> 
+ </dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Soundex/Soundex Low Frequency Table.definition b/org.talend.dataprofiler.core/indicators/Soundex/Soundex Low Frequency Table.definition
+index ab188c4..8c5bfc8 100644
+--- a/org.talend.dataprofiler.core/indicators/Soundex/Soundex Low Frequency Table.definition	
++++ b/org.talend.dataprofiler.core/indicators/Soundex/Soundex Low Frequency Table.definition	
+@@ -11,4 +11,5 @@
+   <sqlGenericExpression xmi:id="_-ajgWIqnEd-SocVM_rHvUg" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY SOUNDEX(&lt;%=__COLUMN_NAMES__%>) ORDER BY d,c ASC" language="Microsoft SQL Server"/>
+   <sqlGenericExpression xmi:id="_-ajgWYqnEd-SocVM_rHvUg" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>), COUNT(*) AS c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) AS d FROM &lt;%=__TABLE_NAME__%> AS t &lt;%=__WHERE_CLAUSE__%> GROUP BY SOUNDEX(&lt;%=__COLUMN_NAMES__%>) ORDER BY d,c ASC" language="Informix"/>
+   <sqlGenericExpression xmi:id="_jW3gILC9Ed-oeogcfzPnMw" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), SOUNDEX(&lt;%=__COLUMN_NAMES__%>) , COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY 2 ORDER BY d,c ASC" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_N5lrc5OyEeOujvooylLxyQ" body="SELECT MAX(&lt;%=__COLUMN_NAMES__%>), NYSIIS(&lt;%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT &lt;%=__COLUMN_NAMES__%>) d FROM &lt;%=__TABLE_NAME__%> t &lt;%=__WHERE_CLAUSE__%> GROUP BY NYSIIS(&lt;%=__COLUMN_NAMES__%>) ORDER BY d,c ASC" language="Netezza"/> 
+ </dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Blank and Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Blank and Null.definition
+new file mode 100644
+index 0000000..cceb190
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Blank and Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="__TbUIJSOEd-TE5ti6XNR2Q" name="Average Length With Blank and Null" label="Average Length With Blank and Null">
++  <taggedValue xmi:id="__TbUIZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the average length of the field, counting blank and null data as zero lenght values."/>
++  <taggedValue xmi:id="__TbUIpSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the average length of the textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="__TbUJJSOEd-TE5ti6XNR2Q" body="SELECT SUM(CHAR_LENGTH(CASE WHEN   CHAR_LENGTH( TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'')) ) =0  THEN '' ELSE  IFNULL(&lt;%=__COLUMN_NAMES__%>,'') END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="__TbUJZSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN  CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  IS NOT NULL AND  LENGTH( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END ) ) IS NULL  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="__TbUJpSOEd-TE5ti6XNR2Q" body="SELECT SUM(LEN(CASE WHEN  LEN( LTRIM(RTRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END )) )=0  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="__TbUJ5SOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN   LENGTH( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END ) ) =0  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="__TbUKJSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN   LENGTH( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END ) ) =0  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="__TbUKQSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN   LENGTH( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END ) ) =0  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_ZMH5UfC7EeGgeNoy8x7q7Q" body="SELECT SUM(LENGTH(CASE WHEN   LENGTH( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END ) ) =0  THEN '' ELSE   CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END  END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Hive"/>
++<sqlGenericExpression xmi:id="_BMsFmJOzEeOujvooylLxyQ" body="SELECT SUM(CHAR_LENGTH(CASE WHEN   CHAR_LENGTH( TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'')) ) =0  THEN '' ELSE  ISNULL(&lt;%=__COLUMN_NAMES__%>,'') END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Null.definition
+new file mode 100644
+index 0000000..ce08fb8
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length With Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="__vI_wJSOEd-TE5ti6XNR2Q" name="Average Length With Null" label="Average Length With Null">
++  <taggedValue xmi:id="__vI_wZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the average length of the field, counting null data as zero length values."/>
++  <taggedValue xmi:id="__vI_wpSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the average length of the textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="__vI_xJSOEd-TE5ti6XNR2Q" body="SELECT SUM(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="__vI_xZSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="__vI_xpSOEd-TE5ti6XNR2Q" body="SELECT SUM(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="__vI_x5SOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="__vI_yJSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="__vI_yQSOEd-TE5ti6XNR2Q" body="SELECT SUM(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_9j1SMPC7EeGgeNoy8x7q7Q" body="SELECT SUM(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive"/>
++<sqlGenericExpression xmi:id="_JBQOF5OzEeOujvooylLxyQ" body="SELECT SUM(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))), COUNT(*) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length.definition
+new file mode 100644
+index 0000000..d8fbb34
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Average Length.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_ccIR4BF2Ed2PKb6nEJEvhw" name="Average Length" label="Average Length">
++  <taggedValue xmi:id="_-Vwf4YqnEd-SocVM_rHvUg" tag="Description" value="computes the average length of the field. Does not take into account the null values when computing the average."/>
++  <taggedValue xmi:id="_-Vwf4oqnEd-SocVM_rHvUg" tag="Purpose" value="evaluates the average length of the textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_-Vwf44qnEd-SocVM_rHvUg" body="SELECT SUM(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_-Vwf5IqnEd-SocVM_rHvUg" body="SELECT SUM(LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-Vwf5YqnEd-SocVM_rHvUg" body="SELECT SUM(LEN(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-Vwf5oqnEd-SocVM_rHvUg" body="SELECT SUM(LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-Vwf54qnEd-SocVM_rHvUg" body="SELECT SUM(LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_-Vwf55qnEd-SocVM_rHvUg" body="SELECT SUM(LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_DRNEsPC8EeGgeNoy8x7q7Q" body="SELECT SUM(LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive"/>
++<sqlGenericExpression xmi:id="_Yuix5JOpEeO0QqLsthPghw" body="SELECT SUM(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)), COUNT(&lt;%=__COLUMN_NAMES__%>) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Blank and Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Blank and Null.definition
+new file mode 100644
+index 0000000..9be3c4d
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Blank and Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_-hzp8JSOEd-TE5ti6XNR2Q" name="Maximal Length With Blank and Null" label="Maximal Length With Blank and Null">
++  <taggedValue xmi:id="_-hzp8ZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the maximal length of a text field, counting null and blank data as zero length values."/>
++  <taggedValue xmi:id="_-hzp8pSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the length of the longest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_-hzp9JSOEd-TE5ti6XNR2Q" body="SELECT MAX(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_-hzp9ZSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH('XX' || CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-hzp9pSOEd-TE5ti6XNR2Q" body="SELECT MAX(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-hzp95SOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-hzp-JSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_-hzp-QSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_O2GEMPC8EeGgeNoy8x7q7Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Hive"/>
++  <sqlGenericExpression xmi:id="_X0Kox5OzEeOujvooylLxyQ" body="SELECT MAX(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Null.definition
+new file mode 100644
+index 0000000..921c060
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length With Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_-_UFUJSOEd-TE5ti6XNR2Q" name="Maximal Length With Null" label="Maximal Length With Null">
++  <taggedValue xmi:id="_-_UFUZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the maximal length of a text field, counting null data as zero length values."/>
++  <taggedValue xmi:id="_-_UFUpSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the length of the longest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_-_UFVJSOEd-TE5ti6XNR2Q" body="SELECT MAX(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_-_UFVZSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH('XX' || CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-_UFVpSOEd-TE5ti6XNR2Q" body="SELECT MAX(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-_UFV5SOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-_UFWJSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_-_UFWQSOEd-TE5ti6XNR2Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_cLoh8PC8EeGgeNoy8x7q7Q" body="SELECT MAX(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive" version=""/>
++  <sqlGenericExpression xmi:id="_fEmJdpOzEeOujvooylLxyQ" body="SELECT MAX(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length.definition
+new file mode 100644
+index 0000000..1b7d627
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Maximal Length.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_ccHq1RF2Ed2PKb6nEJEvhw" name="Maximal Length" label="Maximal Length">
++  <taggedValue xmi:id="_-VrnYYqnEd-SocVM_rHvUg" tag="Description" value="computes the maximal length of a text field."/>
++  <taggedValue xmi:id="_-VrnYoqnEd-SocVM_rHvUg" tag="Purpose" value="evaluates the length of the longest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_-VrnY4qnEd-SocVM_rHvUg" body="SELECT MAX(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_-VrnZIqnEd-SocVM_rHvUg" body="SELECT MAX(LENGTH('XX' || &lt;%=__COLUMN_NAMES__%>)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-VrnZYqnEd-SocVM_rHvUg" body="SELECT MAX(LEN(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-VrnZoqnEd-SocVM_rHvUg" body="SELECT MAX(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-VrnZ4qnEd-SocVM_rHvUg" body="SELECT MAX(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_-VrnZ5qnEd-SocVM_rHvUg" body="SELECT MAX(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_mFOdQPC8EeGgeNoy8x7q7Q" body="SELECT MAX(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive" modificationDate=""/>
++  <sqlGenericExpression xmi:id="_PtLThpOzEeOujvooylLxyQ" body="SELECT MAX(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Blank and Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Blank and Null.definition
+new file mode 100644
+index 0000000..6e8e17b
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Blank and Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_9HDjMJSOEd-TE5ti6XNR2Q" name="Minimal Length With Blank and Null" label="Minimal Length With Blank and Null">
++  <taggedValue xmi:id="_9HDjMZSOEd-TE5ti6XNR2Q" tag="Description" value="computes the minimal length of a text field, counting blank and null as zero length values."/>
++  <taggedValue xmi:id="_9HDjMpSOEd-TE5ti6XNR2Q" tag="Purpose" value="evaluates the length of the smallest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_9HDjNJSOEd-TE5ti6XNR2Q" body="SELECT MIN(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_9HDjNZSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH('XX' || CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_9HDjNpSOEd-TE5ti6XNR2Q" body="SELECT MIN(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_9HDjN5SOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_9HDjOJSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_9HDjPJSOEd-TE5ti6XNR2Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_3iN4kPC8EeGgeNoy8x7q7Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Hive"/>
++      <sqlGenericExpression xmi:id="_w0FC8JOzEeOujvooylLxyQ" body="SELECT MIN(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> &lt;%=__WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Null.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Null.definition
+new file mode 100644
+index 0000000..faeade3
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length With Null.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_a4KsoI1qEd-xwI2imLgHRA" name="Minimal Length With Null" label="Minimal Length With Null">
++  <taggedValue xmi:id="_a4KsoY1qEd-xwI2imLgHRA" tag="Description" value="computes the minimal length of a text field, counting null as zero length values."/>
++  <taggedValue xmi:id="_a4Ksoo1qEd-xwI2imLgHRA" tag="Purpose" value="evaluates the length of the smallest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_a4KspI1qEd-xwI2imLgHRA" body="SELECT MIN(CHAR_LENGTH(IFNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_a4KspY1qEd-xwI2imLgHRA" body="SELECT MIN(LENGTH('XX' || CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_a4Kspo1qEd-xwI2imLgHRA" body="SELECT MIN(LEN(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_a4Ksp41qEd-xwI2imLgHRA" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_a4KsqI1qEd-xwI2imLgHRA" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_a4KsqQ1qEd-xwI2imLgHRA" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_F_I1IPC9EeGgeNoy8x7q7Q" body="SELECT MIN(LENGTH(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN '' ELSE &lt;%=__COLUMN_NAMES__%> END)) FROM &lt;%=__TABLE_NAME__%> WHERE ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive"/>
++      <sqlGenericExpression xmi:id="_21WB1ZOzEeOujvooylLxyQ" body="SELECT MIN(CHAR_LENGTH(ISNULL(&lt;%=__COLUMN_NAMES__%>,''))) FROM &lt;%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" />
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length.definition b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length.definition
+new file mode 100644
+index 0000000..632cde2
+--- /dev/null
++++ b/org.talend.dataprofiler.core/indicators/Text Statistics/Minimal Length.definition	
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<dataquality.indicators.definition:IndicatorDefinition xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:dataquality.indicators.definition="http://dataquality.indicators.definition" xmi:id="_ccHq1BF2Ed2PKb6nEJEvhw" name="Minimal Length" label="Minimal Length">
++  <taggedValue xmi:id="_-VcW0YqnEd-SocVM_rHvUg" tag="Description" value="computes the minimal length of a text field. Does not take into account the null values when computing the minimal length."/>
++  <taggedValue xmi:id="_-VcW0oqnEd-SocVM_rHvUg" tag="Purpose" value="evaluates the length of the smallest textual record"/>
++  <categories href="../../../.Talend.definition#_ccKHERF2Ed2PKb6nEJEvhw"/>
++  <sqlGenericExpression xmi:id="_-VcW04qnEd-SocVM_rHvUg" body="SELECT MIN(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(IFNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQL"/>
++  <sqlGenericExpression xmi:id="_-VcW1IqnEd-SocVM_rHvUg" body="SELECT MIN(LENGTH('XX' || &lt;%=__COLUMN_NAMES__%>)) - LENGTH('XX') FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(NVL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) IS NOT NULL) &lt;%=__AND_WHERE_CLAUSE__%>" language="Oracle"/>
++  <sqlGenericExpression xmi:id="_-VcW1YqnEd-SocVM_rHvUg" body="SELECT MIN(LEN(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (LTRIM(RTRIM(CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END)) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Microsoft SQL Server"/>
++  <sqlGenericExpression xmi:id="_-VcW1oqnEd-SocVM_rHvUg" body="SELECT MIN(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="DB2"/>
++  <sqlGenericExpression xmi:id="_-VcW14qnEd-SocVM_rHvUg" body="SELECT MIN(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Ingres"/>
++  <sqlGenericExpression xmi:id="_-VcW15qnEd-SocVM_rHvUg" body="SELECT MIN(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="SQLite"/>
++  <sqlGenericExpression xmi:id="_NHQuYPC9EeGgeNoy8x7q7Q" body="SELECT MIN(LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND ( TRIM( CASE WHEN &lt;%=__COLUMN_NAMES__%> IS NULL  THEN 'NULL TALEND' ELSE &lt;%=__COLUMN_NAMES__%> END )  &lt;>  '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Hive"/>
++  <sqlGenericExpression xmi:id="_oi1lg5OzEeOujvooylLxyQ" body="SELECT MIN(CHAR_LENGTH(&lt;%=__COLUMN_NAMES__%>)) FROM &lt;%=__TABLE_NAME__%> WHERE (&lt;%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(&lt;%=__COLUMN_NAMES__%>,'NULL TALEND')) &lt;> '' ) &lt;%=__AND_WHERE_CLAUSE__%>" language="Netezza" /> 
++</dataquality.indicators.definition:IndicatorDefinition>
+diff --git a/org.talend.dataprofiler.core/plugin.xml b/org.talend.dataprofiler.core/plugin.xml
+index 4d2e288..778d231 100644
+--- a/org.talend.dataprofiler.core/plugin.xml
++++ b/org.talend.dataprofiler.core/plugin.xml
+@@ -1581,7 +1581,13 @@
+            id="org.talend.dataprofiler.core.migration.impl.UpdateMeanAggrDefinitionTask"
+            name="Update Mean AggrDefinition Task"
+            version="5.3.1">
+-     </workspacetask>  
++    </workspacetask> 
++     <workspacetask 
++           class="org.talend.dataprofiler.core.migration.impl.AddNetezzaExpressionInIndicatorsTask" 
++           id="org.talend.dataprofiler.core.migration.impl.AddNetezzaExpressionInIndicatorsTask" 
++           name="Add the expressions for Netezza db in related indicators" 
++           version="5.3.1"> 
++      </workspacetask>  
+      
+   </extension>
+   <extension
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/migration/impl/AddNetezzaExpressionInIndicatorsTask.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/migration/impl/AddNetezzaExpressionInIndicatorsTask.java
+new file mode 100644
+index 0000000..17ceb00
+--- /dev/null
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/migration/impl/AddNetezzaExpressionInIndicatorsTask.java
+@@ -0,0 +1,179 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2014 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.dataprofiler.core.migration.impl;
++
++import java.util.Date;
++
++import org.apache.commons.lang.StringUtils;
++import org.talend.core.model.metadata.builder.database.dburl.SupportDBUrlType;
++import org.talend.dataprofiler.core.migration.AbstractWorksapceUpdateTask;
++import org.talend.dataprofiler.core.migration.helper.IndicatorDefinitionFileHelper;
++import org.talend.dataquality.indicators.definition.IndicatorDefinition;
++import org.talend.dq.indicators.definitions.DefinitionHandler;
++
++/**
++ * created by yyin on 2014-2-18 : add the sql expressions for the database:Netezza, in the system indicators of: some
++ * Text indicators, pattern Finder, Soundex, and Benford indicator; and add the default one in pattern finder and
++ * soundex who does not have the default one before
++ * 
++ */
++public class AddNetezzaExpressionInIndicatorsTask extends AbstractWorksapceUpdateTask {
++
++    private static final String AVERAGE_LENGTH = "Average Length"; //$NON-NLS-1$
++
++    // related sql expression
++    private final String AVERAGE_LENGTH_SQL = "SELECT SUM(CHAR_LENGTH(<%=__COLUMN_NAMES__%>)), COUNT(<%=__COLUMN_NAMES__%>) FROM <%=__TABLE_NAME__%> WHERE (<%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String AVERAGE_LENGTH_WITH_BLANK_AND_NULL = "Average Length With Blank and Null"; //$NON-NLS-1$
++
++    private static final String AVERAGE_LENGTH_WITH_BLANK_AND_NULL_SQL = "SELECT SUM(CHAR_LENGTH(CASE WHEN   CHAR_LENGTH( TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'')) ) =0  THEN '' ELSE  ISNULL(<%=__COLUMN_NAMES__%>,'') END)), COUNT(*) FROM <%=__TABLE_NAME__%> <%=__WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String AVERAGE_LENGTH_WITH_NULL = "Average Length With Null"; //$NON-NLS-1$
++
++    private static final String AVERAGE_LENGTH_WITH_NULL_SQL = "SELECT SUM(CHAR_LENGTH(ISNULL(<%=__COLUMN_NAMES__%>,''))), COUNT(*) FROM <%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH = "Maximal Length"; //$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH_SQL = "SELECT MAX(CHAR_LENGTH(<%=__COLUMN_NAMES__%>)) FROM <%=__TABLE_NAME__%> WHERE (<%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH_WITH_NULL = "Maximal Length With Null"; //$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH_WITH_NULL_SQL = "SELECT MAX(CHAR_LENGTH(ISNULL(<%=__COLUMN_NAMES__%>,''))) FROM <%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH_WITH_BLANK_AND_NULL = "Maximal Length With Blank and Null";//$NON-NLS-1$
++
++    private static final String MAXIMAL_LENGTH_WITH_BLANK_AND_NULL_SQL = "SELECT MAX(CHAR_LENGTH(ISNULL(<%=__COLUMN_NAMES__%>,''))) FROM <%=__TABLE_NAME__%> <%=__WHERE_CLAUSE__%>";//$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH = "Minimal Length"; //$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH_SQL = "SELECT MIN(CHAR_LENGTH(<%=__COLUMN_NAMES__%>)) FROM <%=__TABLE_NAME__%> WHERE (<%=__COLUMN_NAMES__%> IS NOT NULL ) AND (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH_WITH_BLANK_AND_NULL = "Minimal Length With Blank and Null"; //$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH_WITH_BLANK_AND_NULL_SQL = "SELECT MIN(CHAR_LENGTH(ISNULL(<%=__COLUMN_NAMES__%>,''))) FROM <%=__TABLE_NAME__%> <%=__WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH_WITH_NULL = "Minimal Length With Null"; //$NON-NLS-1$
++
++    private static final String MINIMAL_LENGTH_WITH_NULL_SQL = "SELECT MIN(CHAR_LENGTH(ISNULL(<%=__COLUMN_NAMES__%>,''))) FROM <%=__TABLE_NAME__%> WHERE (TRIM(ISNULL(<%=__COLUMN_NAMES__%>,'NULL TALEND')) <> '' ) <%=__AND_WHERE_CLAUSE__%>"; //$NON-NLS-1$
++
++    private static final String BENFORD_LAW = "Benford Law Frequency";//$NON-NLS-1$
++
++    private static final String BENFORD_LAW_SQL = "SELECT cast(SUBSTR(<%=__COLUMN_NAMES__%>,1,1) as char), COUNT(*) c FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY 1 order by 1";//$NON-NLS-1$
++
++    private static final String SOUNDEX_LOW_FREQUENCY = "Soundex Low Frequency Table";//$NON-NLS-1$
++
++    private static final String SOUNDEX_LOW_FREQUENCY_DEFAULT = "SELECT MAX(<%=__COLUMN_NAMES__%>), SOUNDEX(<%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT <%=__COLUMN_NAMES__%>) d FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY SOUNDEX(<%=__COLUMN_NAMES__%>) ORDER BY d,c ASC"; //$NON-NLS-1$;
++
++    private static final String SOUNDEX_LOW_FREQUENCY_SQL = "SELECT MAX(<%=__COLUMN_NAMES__%>), NYSIIS(<%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT <%=__COLUMN_NAMES__%>) d FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY NYSIIS(<%=__COLUMN_NAMES__%>) ORDER BY d,c ASC";//$NON-NLS-1$
++
++    private static final String SOUNDEX_FREQUENCY = "Soundex Frequency Table";//$NON-NLS-1$
++
++    private static final String SOUNDEX_FREQUENCY_DEFAULT = "SELECT MAX(<%=__COLUMN_NAMES__%>), SOUNDEX(<%=__COLUMN_NAMES__%>), COUNT(*) c, COUNT(DISTINCT <%=__COLUMN_NAMES__%>) d FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY SOUNDEX(<%=__COLUMN_NAMES__%>) ORDER BY d DESC,c DESC";//$NON-NLS-1$
++
++    private static final String SOUNDEX_FREQUENCY_SQL = "SELECT MAX(<%=__COLUMN_NAMES__%>), NYSIIS(<%=__COLUMN_NAMES__%>) , COUNT(*) c, COUNT(DISTINCT <%=__COLUMN_NAMES__%>) d FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY 2 ORDER BY d DESC,c DESC";//$NON-NLS-1$
++
++    private static final String PATTERN_LOW_FREQUENCY = "Pattern Low Frequency Table"; //$NON-NLS-1$
++
++    private static final String PATTERN_LOW_FREQUENCY_DEFAULT = "SELECT <%=__COLUMN_NAMES__%>, COUNT(*) c FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY <%=__GROUP_BY_ALIAS__%> ORDER BY c ASC"; //$NON-NLS-1$
++
++    private static final String PATTERN_LOW_FREQUENCY_SQL = "SELECT <%=__COLUMN_NAMES__%>, COUNT(*) c FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY <%=__GROUP_BY_ALIAS__%> ORDER BY c ASC";//$NON-NLS-1$
++
++    private static final String PATTERN_FREQUENCY = "Pattern Frequency Table";//$NON-NLS-1$
++
++    private static final String PATTERN_FREQUENCY_DEFAULT = "SELECT <%=__COLUMN_NAMES__%>, COUNT(*) c FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY <%=__GROUP_BY_ALIAS__%> ORDER BY c DESC";//$NON-NLS-1$
++
++    private static final String PATTERN_FREQUENCY_SQL = "SELECT <%=__COLUMN_NAMES__%>, COUNT(*) AS c FROM <%=__TABLE_NAME__%> t <%=__WHERE_CLAUSE__%> GROUP BY <%=__COLUMN_NAMES__%> ORDER BY c DESC";//$NON-NLS-1$
++
++    private final String Netezza = SupportDBUrlType.NETEZZADEFAULTURL.getLanguage();
++
++    private final String SQL = "SQL";//$NON-NLS-1$
++
++    private final String CHAR_TOREPLACE = "abcdefghijklmnopqrstuvwxyzçâêîôûéèùïöüABCDEFGHIJKLMNOPQRSTUVWXYZÇÂÊÎÔÛÉÈÙÏÖÜ0123456789";//$NON-NLS-1$
++
++    private final String CHAR_REPLACE = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9999999999";//$NON-NLS-1$
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.dataprofiler.core.migration.AMigrationTask#doExecute()
++     */
++    @Override
++    protected boolean doExecute() throws Exception {
++        boolean result = true;
++
++        // the following indicator only need to add Netezza expression
++        result = result && addExpression(AVERAGE_LENGTH, AVERAGE_LENGTH_SQL, Netezza, false);
++        result = result
++                && addExpression(AVERAGE_LENGTH_WITH_BLANK_AND_NULL, AVERAGE_LENGTH_WITH_BLANK_AND_NULL_SQL, Netezza, false);
++        result = result && addExpression(AVERAGE_LENGTH_WITH_NULL, AVERAGE_LENGTH_WITH_NULL_SQL, Netezza, false);
++        result = result && addExpression(MAXIMAL_LENGTH, MAXIMAL_LENGTH_SQL, Netezza, false);
++        result = result && addExpression(MAXIMAL_LENGTH_WITH_NULL, MAXIMAL_LENGTH_WITH_NULL_SQL, Netezza, false);
++        result = result
++                && addExpression(MAXIMAL_LENGTH_WITH_BLANK_AND_NULL, MAXIMAL_LENGTH_WITH_BLANK_AND_NULL_SQL, Netezza, false);
++
++        result = result && addExpression(MINIMAL_LENGTH, MINIMAL_LENGTH_SQL, Netezza, false);
++        result = result
++                && addExpression(MINIMAL_LENGTH_WITH_BLANK_AND_NULL, MINIMAL_LENGTH_WITH_BLANK_AND_NULL_SQL, Netezza, false);
++        result = result && addExpression(MINIMAL_LENGTH_WITH_NULL, MINIMAL_LENGTH_WITH_NULL_SQL, Netezza, false);
++        result = result && addExpression(BENFORD_LAW, BENFORD_LAW_SQL, Netezza, false);
++
++        // next: the following indicators need to add default expression, and Netezza expression
++        result = result && addExpression(SOUNDEX_LOW_FREQUENCY, SOUNDEX_LOW_FREQUENCY_DEFAULT, SQL, false);
++        result = result && addExpression(SOUNDEX_FREQUENCY, SOUNDEX_FREQUENCY_DEFAULT, SQL, false);
++        result = result && addExpression(SOUNDEX_LOW_FREQUENCY, SOUNDEX_LOW_FREQUENCY_SQL, Netezza, false);
++        result = result && addExpression(SOUNDEX_FREQUENCY, SOUNDEX_FREQUENCY_SQL, Netezza, false);
++
++        // for pattern frequency, also need to add character map(default, and Netezza)
++        result = result && addExpression(PATTERN_LOW_FREQUENCY, PATTERN_LOW_FREQUENCY_DEFAULT, SQL, true);
++        result = result && addExpression(PATTERN_FREQUENCY, PATTERN_FREQUENCY_DEFAULT, SQL, true);
++        result = result && addExpression(PATTERN_LOW_FREQUENCY, PATTERN_LOW_FREQUENCY_SQL, Netezza, true);
++        result = result && addExpression(PATTERN_FREQUENCY, PATTERN_FREQUENCY_SQL, Netezza, true);
++
++        DefinitionHandler.getInstance().reloadIndicatorsDefinitions();
++
++        return result;
++    }
++
++    private boolean addExpression(String indicatorName, String body, String language, boolean withMap) {
++        IndicatorDefinition indiDefinition = IndicatorDefinitionFileHelper.getSystemIndicatorByName(indicatorName);
++        if (indiDefinition != null && !IndicatorDefinitionFileHelper.isExistSqlExprWithLanguage(indiDefinition, language)) {
++            IndicatorDefinitionFileHelper.addSqlExpression(indiDefinition, language, body);
++            if (withMap) {
++                IndicatorDefinitionFileHelper.addCharacterMapping(indiDefinition, language, StringUtils.EMPTY, CHAR_TOREPLACE,
++                        CHAR_REPLACE);
++            }
++
++            return IndicatorDefinitionFileHelper.save(indiDefinition);
++        }
++        return true;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.dataprofiler.core.migration.IWorkspaceMigrationTask#getMigrationTaskType()
++     */
++    public MigrationTaskType getMigrationTaskType() {
++        return MigrationTaskType.FILE;
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.dataprofiler.core.migration.IWorkspaceMigrationTask#getOrder()
++     */
++    public Date getOrder() {
++        return createDate(2014, 02, 18);
++    }
++
++}
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
+index 5bfd8ca..89fdbb7 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternLanguageType.java
+@@ -68,7 +68,12 @@ public enum PatternLanguageType {
+              PatternToExcelEnum.InformixRegexp),
+     // MOD by bzhou, currently, we won't support MDM on using pattern.
+     // MOD by zshen, this will effect for the indicatorDefinition so add new method to return differents result.
+-    MDM(12, SupportDBUrlType.MDM.getLanguage(), SupportDBUrlType.MDM.getLanguage(), PatternToExcelEnum.MDMRegexp),
++    MDM(14, SupportDBUrlType.MDM.getLanguage(), SupportDBUrlType.MDM.getLanguage(), PatternToExcelEnum.MDMRegexp),
++    NETEZZA(
++            15,
++            SupportDBUrlType.NETEZZADEFAULTURL.getLanguage(),
++            SupportDBUrlType.NETEZZADEFAULTURL.getLanguage(),
++            PatternToExcelEnum.NETEZZARegexp),
+ 
+     // ADD by msjian 2011-7-20 22517: no such function: CHAR_LENGTH for SQLite
+     SQLITE3(
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
+index 9b61b36..812bda7 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/pattern/PatternToExcelEnum.java
+@@ -31,7 +31,8 @@ public enum PatternToExcelEnum {
+     SybaseRegexp(11, "Sybase_Regexp"), //$NON-NLS-1$
+     IngresRegexp(12, "Ingres_Regexp"), //$NON-NLS-1$
+     InformixRegexp(13, "Informix_Regexp"), //$NON-NLS-1$
+-    MDMRegexp(18, "MDM_Informix_Regexp"), //$NON-NLS-1$
++    MDMRegexp(24, "MDM_Informix_Regexp"), //$NON-NLS-1$ 
++    NETEZZARegexp(25, "NETEZZA_Regexp"), //$NON-NLS-1$ 
+     SQLite3Regexp(14, "SQLite3_Regexp"), //$NON-NLS-1$
+     Teradata(15, "Teradata_Regexp"), //$NON-NLS-1$
+     JavaRegexp(16, "Java_Regexp"), //$NON-NLS-1$
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
+index eebd7e2..bd9a76c 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/views/PatternTestView.java
+@@ -470,8 +470,12 @@ public class PatternTestView extends ViewPart {
+                         createDbmsLanguage.setFunctionName(getFunctionName());
+                     }
+                     // ~19119
+-                    String selectRegexpTestString = createDbmsLanguage.getSelectRegexpTestString(testText.getText(),
+-                            regularText.getText());
++                    String selectRegexpTestString = null;
++                    if (null != createDbmsLanguage) {
++                        createDbmsLanguage.setFunctionName(getFunctionName());
++                        selectRegexpTestString = createDbmsLanguage.getSelectRegexpTestString(testText.getText(),
++                                regularText.getText());
++                    }
+                     TypedReturnCode<java.sql.Connection> rcConn = JavaSqlFactory.createConnection(tddataprovider);
+                     try {
+                         if (!rcConn.isOk()) {
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
+index 9678a2a..4495fb3 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/wizard/indicator/CsvFileTableViewer.java
+@@ -290,6 +290,8 @@ public class CsvFileTableViewer extends Composite {
+                 return true;
+             } else if (PatternToExcelEnum.MDMRegexp.getLiteral().equalsIgnoreCase(header)) {
+                 return true;
++            } else if (PatternToExcelEnum.NETEZZARegexp.getLiteral().equalsIgnoreCase(header)) {
++                return true;
+             } else if (PatternToExcelEnum.SQLite3Regexp.getLiteral().equalsIgnoreCase(header)) {
+                 return true;
+             } else if (PatternToExcelEnum.Teradata.getLiteral().equalsIgnoreCase(header)) {

@@ -1,0 +1,191 @@
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+index 92497a3..5719534 100755
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/DBConnectionFillerImpl.java
+@@ -815,15 +815,17 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+         }
+         try {
+             // common
+-            boolean flag = true;
++            boolean isOracle8i = true;
++            boolean isOracle = false;
++            boolean isOracleJdbc = false;
+             String tableComment = null;
+             List<String> tablesToFilter = new ArrayList<String>();
+             if (pack != null) {
+                 Connection c = ConnectionHelper.getConnection(pack);
+-                flag = MetadataConnectionUtils.isOracle8i(c);
+-                boolean isOracle = MetadataConnectionUtils.isOracle(c);
+-                boolean isOracleJdbc = MetadataConnectionUtils.isOracleJDBC(c);
+-                if ((isOracleJdbc || isOracle) && !flag) {// oracle and not oracle8
++                isOracle8i = MetadataConnectionUtils.isOracle8i(c);
++                isOracle = MetadataConnectionUtils.isOracle(c);
++                isOracleJdbc = MetadataConnectionUtils.isOracleJDBC(c);
++                if ((isOracleJdbc || isOracle) && !isOracle8i) {// oracle and not oracle8
+                     Statement stmt;
+                     try {
+                         // MOD qiongli TDQ-4732 use the common method to create statement both DI and DQ,avoid Exception
+@@ -881,21 +883,25 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+                 if (!isCreateElement(tableFilter, tableName)) {
+                     continue;
+                 }
+-                if (tableName == null || tablesToFilter.contains(tableName) || tableName.startsWith("/")) { //$NON-NLS-1$
++                if (tableName == null || tablesToFilter.contains(tableName)) { //$NON-NLS-1$
+                     continue;
+                 }
+                 String tableOwner = null;
+                 if (!isHive && MetadataConnectionUtils.isSybase(dbJDBCMetadata)) {
+                     tableOwner = tableSchema;
+                 }
+-                if (!flag) {
+-                    tableComment = tables.getString(GetTable.REMARKS.name());
+-                    if (StringUtils.isBlank(tableComment)) {
+-                        String selectRemarkOnTable = MetadataConnectionUtils.getCommonQueryStr(productName, tableName);
+-                        if (selectRemarkOnTable != null) {
+-                            tableComment = executeGetCommentStatement(selectRemarkOnTable, dbJDBCMetadata.getConnection());
++                if (!isOracle8i) {
++                    try {
++                        tableComment = tables.getString(GetTable.REMARKS.name());
++                        if (StringUtils.isBlank(tableComment)) {
++                            String selectRemarkOnTable = MetadataConnectionUtils.getCommonQueryStr(productName, tableName);
++                            if (selectRemarkOnTable != null) {
++                                tableComment = executeGetCommentStatement(selectRemarkOnTable, dbJDBCMetadata.getConnection());
++                            }
+                         }
++                    } catch (SQLException e) {
+                     }
++
+                 }
+                 MetadataTable metadatatable = null;
+                 if (TableType.VIEW.toString().equals(temptableType) || ETableTypes.VIRTUAL_VIEW.getName().equals(temptableType)) {
+@@ -1208,6 +1214,11 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+                 schemaPattern = ColumnSetHelper.getTableOwner(colSet);
+             }
+             // --- add columns to table
++            // TDI-28578 Metadata wizard doesn't display tables starting with '/'
++            boolean isOracle = MetadataConnectionUtils.isOracle(dbJDBCMetadata);
++            if (isOracle && tablePattern.contains("/")) {//$NON-NLS-1$
++                tablePattern = tablePattern.replaceAll("/", "//");//$NON-NLS-1$
++            }
+             ResultSet columns = dbJDBCMetadata.getColumns(catalogName, schemaPattern, tablePattern, columnPattern);
+             if (MetadataConnectionUtils.isMysql(dbJDBCMetadata)) {
+                 boolean check = !Pattern.matches("^\\w+$", tablePattern);//$NON-NLS-1$
+@@ -1364,6 +1375,10 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl {
+                 schemaPattern = ColumnSetHelper.getTableOwner(colSet);
+             }
+             // --- add columns to table
++            boolean isOracle = MetadataConnectionUtils.isOracle(dbJDBCMetadata);
++            if (isOracle && tablePattern.contains("/")) {//$NON-NLS-1$
++                tablePattern = tablePattern.replaceAll("/", "//");//$NON-NLS-1$
++            }
+             ResultSet columns = dbJDBCMetadata.getColumns(catalogName, schemaPattern, tablePattern, columnPattern);
+             // MOD qiongli 2012-8-15 TDQ-5898,Odbc Terdata don't support some API.
+             boolean isOdbcTeradata = ConnectionUtils.isOdbcTeradata(dbJDBCMetadata);
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/ExtractManager.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/ExtractManager.java
+index 5518458..2cf63bf 100755
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/ExtractManager.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/database/manager/ExtractManager.java
+@@ -268,7 +268,7 @@ public class ExtractManager {
+                 tableName = extractMeta.getStringMetaDataInfo(rsTables, ExtractManager.SYNONYM_NAME, null);
+                 isSynonym = true;
+             }
+-            if (tableName == null || tablesToFilter.contains(tableName) || tableName.startsWith("/")) {
++            if (tableName == null || tablesToFilter.contains(tableName)) {
+                 continue;
+             }
+ 
+@@ -377,10 +377,6 @@ public class ExtractManager {
+                 }
+                 fillSynonyms(metadataConnection, metadataColumns, table, tableName, dbMetaData);
+             } else {
+-                if (tableLabel.contains("/")) {
+-                    tableLabel = tableLabel.replace("/", "");
+-                }
+-                newNode.setValue(tableLabel);
+                 metadataColumns = MetadataFillFactory.getDBInstance().fillColumns(table, metadataConnection, dbMetaData, null);
+             }
+ 
+@@ -835,6 +831,9 @@ public class ExtractManager {
+             throws SQLException {
+         ResultSet columns = null;
+         if (dbMetaData != null) {
++            if (tableName.contains("/")) {//$NON-NLS-1$ 
++                tableName = tableName.replaceAll("/", "//");//$NON-NLS-1$ //$NON-NLS-2$
++            }
+             columns = dbMetaData.getColumns(catalogName, schemaName, tableName, null);
+         }
+         return columns;
+diff --git a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/MetadataConnectionUtils.java b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/MetadataConnectionUtils.java
+index 5caa1d5..6edff5f 100755
+--- a/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/MetadataConnectionUtils.java
++++ b/org.talend.metadata.managment/src/main/java/org/talend/core/model/metadata/builder/util/MetadataConnectionUtils.java
+@@ -466,6 +466,20 @@ public class MetadataConnectionUtils {
+         }
+         return false;
+     }
++    
++    public static boolean isOracle(DatabaseMetaData metadata) {
++        if (metadata != null) {
++            try {
++                String name = metadata.getDatabaseProductName().toUpperCase();
++                if (name != null && name.equals(EDatabaseTypeName.ORACLEFORSID.getProduct().toUpperCase())) {
++                    return true;
++                }
++            } catch (SQLException e) {
++                ExceptionHandler.process(e);
++            }
++        }
++        return false;
++    } 
+ 
+     public static boolean isMssql(DatabaseMetaData connectionMetadata) throws SQLException {
+         if (connectionMetadata.getDriverName() != null && connectionMetadata.getDatabaseProductName() != null) {
+diff --git a/org.talend.sqlbuilder/src/main/java/org/talend/sqlbuilder/dbdetail/tab/ColumnInfoTab.java b/org.talend.sqlbuilder/src/main/java/org/talend/sqlbuilder/dbdetail/tab/ColumnInfoTab.java
+index 1e54811..80b180a 100755
+--- a/org.talend.sqlbuilder/src/main/java/org/talend/sqlbuilder/dbdetail/tab/ColumnInfoTab.java
++++ b/org.talend.sqlbuilder/src/main/java/org/talend/sqlbuilder/dbdetail/tab/ColumnInfoTab.java
+@@ -33,10 +33,12 @@ import org.talend.sqlbuilder.sessiontree.model.SessionTreeNode;
+  */
+ public class ColumnInfoTab extends AbstractDataSetTab {
+ 
++    @Override
+     public String getLabelText() {
+         return Messages.getString("DatabaseDetailView.Tab.ColumnInfo"); //$NON-NLS-1$
+     }
+ 
++    @Override
+     public DataSet getDataSet() throws Exception {
+ 
+         INode node = getNode();
+@@ -67,8 +69,14 @@ public class ColumnInfoTab extends AbstractDataSetTab {
+                         .getColumns(ti.getCatalogName(), ti.getSchemaName(), realTableName, "%"); //$NON-NLS-1$
+ 
+             } else {
+-
+-                resultSet = node.getSession().getMetaData().getColumns(tableNode.getTableInfo());
++                // https://jira.talendforge.org/browse/TDI-28578
++                String tableName = ti.getSimpleName();
++                if (tableName.contains("/")) {
++                    tableName = tableName.replaceAll("/", "//");
++                }
++                resultSet = node.getSession().getMetaData().getJDBCMetaData()
++                        .getColumns(ti.getCatalogName(), ti.getSchemaName(), tableName, "%");
++                // resultSet = node.getSession().getMetaData().getColumns(tableNode.getTableInfo());
+             }
+ 
+             DataSet dataSet = new DataSet(null, resultSet, new int[] { 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 });
+@@ -79,6 +87,7 @@ public class ColumnInfoTab extends AbstractDataSetTab {
+         return null;
+     }
+ 
++    @Override
+     public String getStatusMessage() {
+         return Messages.getString("DatabaseDetailView.Tab.ColumnInfo.status", getNode().getQualifiedName()); //$NON-NLS-1$
+     }
+@@ -107,4 +116,4 @@ public class ColumnInfoTab extends AbstractDataSetTab {
+         return null;
+     }
+ 
+-}
++}
+\ No newline at end of file

@@ -1,0 +1,2543 @@
+diff --git a/org.talend.mdm.core.enterprise/src/com/amalto/core/ejb/XtentisEnterpriseWSBean.java b/org.talend.mdm.core.enterprise/src/com/amalto/core/ejb/XtentisEnterpriseWSBean.java
+index c79eca1..785f183 100644
+--- a/org.talend.mdm.core.enterprise/src/com/amalto/core/ejb/XtentisEnterpriseWSBean.java
++++ b/org.talend.mdm.core.enterprise/src/com/amalto/core/ejb/XtentisEnterpriseWSBean.java
+@@ -72,6 +72,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @see javax.ejb.SessionBean#setSessionContext(javax.ejb.SessionContext)
+      */
++    @Override
+     public void setSessionContext(SessionContext ctx) throws EJBException, RemoteException {
+     }
+ 
+@@ -80,6 +81,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @see javax.ejb.essionBean#ejbRemove()
+      */
++    @Override
+     public void ejbRemove() throws EJBException, RemoteException {
+ 
+     }
+@@ -89,6 +91,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @see javax.ejb.SessionBean#ejbActivate()
+      */
++    @Override
+     public void ejbActivate() throws EJBException, RemoteException {
+     }
+ 
+@@ -97,6 +100,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @see javax.ejb.SessionBean#ejbPassivate()
+      */
++    @Override
+     public void ejbPassivate() throws EJBException, RemoteException {
+     }
+ 
+@@ -123,8 +127,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersion getComponentVersion(WSGetComponentVersion wsGetComponentVersion) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getComponentVersion(wsGetComponentVersion);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getComponentVersion(wsGetComponentVersion);
+     }
+ 
+     /***************************************************************************
+@@ -135,8 +140,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString ping(WSPing wsPing) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().ping(wsPing);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().ping(wsPing);
+     }
+ 
+     /***************************************************************************
+@@ -147,8 +153,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString logout(WSLogout logout) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().logout(logout);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().logout(logout);
+     }
+ 
+     /***************************************************************************
+@@ -159,16 +166,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSInt initMDM(WSInitData initData) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().initMDM(initData);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().initMDM(initData);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSMDMConfig getMDMConfiguration() throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getMDMConfiguration();
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getMDMConfiguration();
+     }
+ 
+     /***************************************************************************
+@@ -179,16 +188,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataModel getDataModel(WSGetDataModel wsDataModelget) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getDataModel(wsDataModelget);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getDataModel(wsDataModelget);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsDataModel(WSExistsDataModel wsExistsDataModel) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsDataModel(wsExistsDataModel);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsDataModel(wsExistsDataModel);
+     }
+ 
+     /**
+@@ -196,16 +207,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      * 
+      */
++    @Override
+     public WSDataModelPKArray getDataModelPKs(WSRegexDataModelPKs regexp) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getDataModelPKs(regexp);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getDataModelPKs(regexp);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataModelPK deleteDataModel(WSDeleteDataModel wsDeleteDataModel) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteDataModel(wsDeleteDataModel);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteDataModel(wsDeleteDataModel);
+     }
+ 
+     /**
+@@ -213,8 +226,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataModelPK putDataModel(WSPutDataModel wsDataModel) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putDataModel(wsDataModel);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putDataModel(wsDataModel);
+     }
+ 
+     /**
+@@ -222,8 +236,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString checkSchema(WSCheckSchema wsSchema) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().checkSchema(wsSchema);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().checkSchema(wsSchema);
+     }
+ 
+     /**
+@@ -231,8 +246,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString putBusinessConcept(WSPutBusinessConcept wsPutBusinessConcept) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putBusinessConcept(wsPutBusinessConcept);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putBusinessConcept(wsPutBusinessConcept);
+     }
+ 
+     /**
+@@ -240,33 +256,36 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * 
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString putBusinessConceptSchema(WSPutBusinessConceptSchema wsPutBusinessConceptSchema) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .putBusinessConceptSchema(wsPutBusinessConceptSchema);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putBusinessConceptSchema(wsPutBusinessConceptSchema);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString deleteBusinessConcept(WSDeleteBusinessConcept wsDeleteBusinessConcept) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteBusinessConcept(wsDeleteBusinessConcept);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteBusinessConcept(wsDeleteBusinessConcept);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getBusinessConcepts(WSGetBusinessConcepts wsGetBusinessConcepts) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getBusinessConcepts(wsGetBusinessConcepts);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getBusinessConcepts(wsGetBusinessConcepts);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSConceptKey getBusinessConceptKey(WSGetBusinessConceptKey wsGetBusinessConceptKey) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getBusinessConceptKey(wsGetBusinessConceptKey);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getBusinessConceptKey(wsGetBusinessConceptKey);
+     }
+ 
+     /***************************************************************************
+@@ -277,74 +296,82 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataCluster getDataCluster(WSGetDataCluster wsDataClusterGet) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getDataCluster(wsDataClusterGet);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getDataCluster(wsDataClusterGet);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsDataCluster(WSExistsDataCluster wsExistsDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsDataCluster(wsExistsDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsDataCluster(wsExistsDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsDBDataCluster(WSExistsDBDataCluster wsExistsDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsDBDataCluster(wsExistsDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsDBDataCluster(wsExistsDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataClusterPKArray getDataClusterPKs(WSRegexDataClusterPKs regexp) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getDataClusterPKs(regexp);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getDataClusterPKs(regexp);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataClusterPK deleteDataCluster(WSDeleteDataCluster wsDeleteDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteDataCluster(wsDeleteDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteDataCluster(wsDeleteDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDataClusterPK putDataCluster(WSPutDataCluster wsDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putDataCluster(wsDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putDataCluster(wsDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean putDBDataCluster(WSPutDBDataCluster wsDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putDBDataCluster(wsDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putDBDataCluster(wsDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getConceptsInDataCluster(WSGetConceptsInDataCluster wsGetConceptsInDataCluster) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .getConceptsInDataCluster(wsGetConceptsInDataCluster);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getConceptsInDataCluster(wsGetConceptsInDataCluster);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSConceptRevisionMap getConceptsInDataClusterWithRevisions(
+             WSGetConceptsInDataClusterWithRevisions wsGetConceptsInDataClusterWithRevisions) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getConceptsInDataClusterWithRevisions(wsGetConceptsInDataClusterWithRevisions);
+     }
+ 
+@@ -356,40 +383,45 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSView getView(WSGetView wsViewGet) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getView(wsViewGet);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getView(wsViewGet);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsView(WSExistsView wsExistsView) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsView(wsExistsView);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsView(wsExistsView);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSViewPKArray getViewPKs(WSGetViewPKs regexp) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getViewPKs(regexp);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getViewPKs(regexp);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSViewPK deleteView(WSDeleteView wsDeleteView) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteView(wsDeleteView);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteView(wsDeleteView);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSViewPK putView(WSPutView wsView) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putView(wsView);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putView(wsView);
+     }
+ 
+     /***************************************************************************
+@@ -399,142 +431,156 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray viewSearch(WSViewSearch wsViewSearch) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().viewSearch(wsViewSearch);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().viewSearch(wsViewSearch);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray xPathsSearch(WSXPathsSearch wsXPathsSearch) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().xPathsSearch(wsXPathsSearch);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().xPathsSearch(wsXPathsSearch);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getItemsPivotIndex(WSGetItemsPivotIndex wsGetItemsPivotIndex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getItemsPivotIndex(wsGetItemsPivotIndex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItemsPivotIndex(wsGetItemsPivotIndex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString count(WSCount wsCount) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().count(wsCount);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().count(wsCount);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getItems(WSGetItems wsGetItems) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getItems(wsGetItems);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItems(wsGetItems);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getItemsSort(WSGetItemsSort wsGetItemsSort) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getItemsSort(wsGetItemsSort);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItemsSort(wsGetItemsSort);
+     }
+-    
++
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKsByCriteriaResponse getItemPKsByCriteria(WSGetItemPKsByCriteria wsGetItemPKsByCriteria) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getItemPKsByCriteria(wsGetItemPKsByCriteria);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItemPKsByCriteria(wsGetItemPKsByCriteria);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKsByCriteriaResponse getItemPKsByFullCriteria(WSGetItemPKsByFullCriteria wsGetItemPKsByFullCriteria)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .getItemPKsByFullCriteria(wsGetItemPKsByFullCriteria);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItemPKsByFullCriteria(wsGetItemPKsByFullCriteria);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItem getItem(WSGetItem wsGetItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getItem(wsGetItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getItem(wsGetItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsItem(WSExistsItem wsExistsItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsItem(wsExistsItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsItem(wsExistsItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray quickSearch(WSQuickSearch wsQuickSearch) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().quickSearch(wsQuickSearch);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().quickSearch(wsQuickSearch);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString getBusinessConceptValue(WSGetBusinessConceptValue wsGetBusinessConceptValue) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .getBusinessConceptValue(wsGetBusinessConceptValue);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getBusinessConceptValue(wsGetBusinessConceptValue);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getFullPathValues(WSGetFullPathValues wsGetFullPathValues) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getFullPathValues(wsGetFullPathValues);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getFullPathValues(wsGetFullPathValues);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK putItem(WSPutItem wsPutItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putItem(wsPutItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putItem(wsPutItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKArray putItemArray(WSPutItemArray wsPutItemArray) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putItemArray(wsPutItemArray);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putItemArray(wsPutItemArray);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKArray putItemWithReportArray(com.amalto.core.webservice.WSPutItemWithReportArray wsPutItemWithReportArray)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .putItemWithReportArray(wsPutItemWithReportArray);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putItemWithReportArray(wsPutItemWithReportArray);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK putItemWithReport(com.amalto.core.webservice.WSPutItemWithReport wsPutItemWithReport) throws RemoteException {
+ 
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putItemWithReport(wsPutItemWithReport);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putItemWithReport(wsPutItemWithReport);
+ 
+     }
+ 
+@@ -542,10 +588,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK putItemWithCustomReport(com.amalto.core.webservice.WSPutItemWithCustomReport wsPutItemWithCustomReport)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .putItemWithCustomReport(wsPutItemWithCustomReport);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putItemWithCustomReport(wsPutItemWithCustomReport);
+ 
+     }
+ 
+@@ -557,18 +603,19 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSPipeline extractUsingTransformer(WSExtractUsingTransformer wsExtractUsingTransformer) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .extractUsingTransformer(wsExtractUsingTransformer);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().extractUsingTransformer(wsExtractUsingTransformer);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSPipeline extractUsingTransformerThruView(WSExtractUsingTransformerThruView wsExtractUsingTransformerThruView)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .extractUsingTransformerThruView(wsExtractUsingTransformerThruView);
+     }
+ 
+@@ -579,31 +626,36 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK deleteItem(WSDeleteItem wsDeleteItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteItem(wsDeleteItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteItem(wsDeleteItem);
+     }
++
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
+-	public WSString deleteItemWithReport(WSDeleteItemWithReport wsDeleteItem)
+-	throws RemoteException {
+-		return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteItemWithReport(wsDeleteItem);	
+-	}
++    @Override
++    public WSString deleteItemWithReport(WSDeleteItemWithReport wsDeleteItem) throws RemoteException {
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteItemWithReport(wsDeleteItem);
++    }
++
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSInt deleteItems(WSDeleteItems wsDeleteItems) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteItems(wsDeleteItems);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteItems(wsDeleteItems);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDroppedItemPK dropItem(WSDropItem wsDropItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().dropItem(wsDropItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().dropItem(wsDropItem);
+     }
+ 
+     /***************************************************************************
+@@ -613,8 +665,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray runQuery(WSRunQuery wsRunQuery) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().runQuery(wsRunQuery);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().runQuery(wsRunQuery);
+     }
+ 
+     /***************************************************************************
+@@ -624,48 +677,54 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSServiceGetDocument getServiceDocument(WSString serviceName) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getServiceDocument(serviceName);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getServiceDocument(serviceName);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString getServiceConfiguration(WSServiceGetConfiguration wsGetConfiguration) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getServiceConfiguration(wsGetConfiguration);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getServiceConfiguration(wsGetConfiguration);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSCheckServiceConfigResponse checkServiceConfiguration(WSCheckServiceConfigRequest serviceName) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().checkServiceConfiguration(serviceName);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().checkServiceConfiguration(serviceName);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString putServiceConfiguration(WSServicePutConfiguration wsPutConfiguration) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putServiceConfiguration(wsPutConfiguration);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putServiceConfiguration(wsPutConfiguration);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString serviceAction(WSServiceAction wsServiceAction) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().serviceAction(wsServiceAction);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().serviceAction(wsServiceAction);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSServicesList getServicesList(WSGetServicesList wsGetServicesList) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getServicesList(wsGetServicesList);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getServicesList(wsGetServicesList);
+     }
+ 
+     /***************************************************************************
+@@ -676,7 +735,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
+     public WSString ping() throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().ping();
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().ping();
+     }
+ 
+     /***************************************************************************
+@@ -689,6 +748,7 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSConnectorInteractionResponse connectorInteraction(WSConnectorInteraction wsConnectorInteraction)
+             throws RemoteException {
+         // This one does not call an EJB
+@@ -754,8 +814,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+ 
+     private Connection getConnection(String JNDIName) throws RemoteException {
+         try {
+-            if (cxFactory == null)
++            if (cxFactory == null) {
+                 cxFactory = (ConnectionFactory) (new InitialContext()).lookup(JNDIName);
++            }
+             return cxFactory.getConnection();
+         } catch (Exception e) {
+             throw new RemoteException(e.getClass().getName() + ": " + e.getLocalizedMessage());
+@@ -766,10 +827,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+         try {
+             HashMap map = new HashMap();
+             if (params != null) {
+-                for (int i = 0; i < params.length; i++) {
+-                    if (params[i] != null) {
+-                        String key = params[i].getKey();
+-                        byte[] bytes = (new BASE64Decoder()).decodeBuffer(params[i].getBase64StringValue());
++                for (WSBase64KeyValue param : params) {
++                    if (param != null) {
++                        String key = param.getKey();
++                        byte[] bytes = (new BASE64Decoder()).decodeBuffer(param.getBase64StringValue());
+                         if (bytes != null) {
+                             ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                             ObjectInputStream ois = new ObjectInputStream(bais);
+@@ -788,8 +849,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+ 
+     private WSBase64KeyValue[] getKeyValuesFromMap(HashMap params) throws RemoteException {
+         try {
+-            if (params == null)
++            if (params == null) {
+                 return null;
++            }
+             WSBase64KeyValue[] keyValues = new WSBase64KeyValue[params.size()];
+             Set keys = params.keySet();
+             int i = 0;
+@@ -820,49 +882,54 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStoredProcedurePK deleteStoredProcedure(WSDeleteStoredProcedure wsStoredProcedureDelete) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteStoredProcedure(wsStoredProcedureDelete);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteStoredProcedure(wsStoredProcedureDelete);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray executeStoredProcedure(WSExecuteStoredProcedure wsExecuteStoredProcedure) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .executeStoredProcedure(wsExecuteStoredProcedure);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().executeStoredProcedure(wsExecuteStoredProcedure);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStoredProcedure getStoredProcedure(WSGetStoredProcedure wsGetStoredProcedure) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getStoredProcedure(wsGetStoredProcedure);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getStoredProcedure(wsGetStoredProcedure);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsStoredProcedure(WSExistsStoredProcedure wsExistsStoredProcedure) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsStoredProcedure(wsExistsStoredProcedure);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsStoredProcedure(wsExistsStoredProcedure);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStoredProcedurePKArray getStoredProcedurePKs(WSRegexStoredProcedure regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getStoredProcedurePKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getStoredProcedurePKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStoredProcedurePK putStoredProcedure(WSPutStoredProcedure wsStoredProcedure) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putStoredProcedure(wsStoredProcedure);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putStoredProcedure(wsStoredProcedure);
+     }
+ 
+     /***************************************************************************
+@@ -872,40 +939,45 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSMenuPK deleteMenu(WSDeleteMenu wsMenuDelete) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteMenu(wsMenuDelete);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteMenu(wsMenuDelete);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSMenu getMenu(WSGetMenu wsGetMenu) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getMenu(wsGetMenu);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getMenu(wsGetMenu);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsMenu(WSExistsMenu wsExistsMenu) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsMenu(wsExistsMenu);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsMenu(wsExistsMenu);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSMenuPKArray getMenuPKs(WSGetMenuPKs regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getMenuPKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getMenuPKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSMenuPK putMenu(WSPutMenu wsMenu) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putMenu(wsMenu);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putMenu(wsMenu);
+     }
+ 
+     /***************************************************************************
+@@ -927,24 +999,27 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJob getBackgroundJob(WSGetBackgroundJob wsBackgroundJobGet) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getBackgroundJob(wsBackgroundJobGet);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getBackgroundJob(wsBackgroundJobGet);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPKArray findBackgroundJobPKs(WSFindBackgroundJobPKs wsFindBackgroundJobPKs) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().findBackgroundJobPKs(wsFindBackgroundJobPKs);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().findBackgroundJobPKs(wsFindBackgroundJobPKs);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK putBackgroundJob(WSPutBackgroundJob wsputjob) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putBackgroundJob(wsputjob);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putBackgroundJob(wsputjob);
+     }
+ 
+     /***************************************************************************
+@@ -955,8 +1030,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniverse getCurrentUniverse(WSGetCurrentUniverse wsGetCurrentUniverse) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getCurrentUniverse(wsGetCurrentUniverse);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getCurrentUniverse(wsGetCurrentUniverse);
+     }
+ 
+     /***************************************************************************
+@@ -974,65 +1050,73 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerPK deleteTransformer(WSDeleteTransformer wsTransformerDelete) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteTransformer(wsTransformerDelete);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteTransformer(wsTransformerDelete);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformer getTransformer(WSGetTransformer wsGetTransformer) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getTransformer(wsGetTransformer);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getTransformer(wsGetTransformer);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsTransformer(WSExistsTransformer wsExistsTransformer) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsTransformer(wsExistsTransformer);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsTransformer(wsExistsTransformer);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerPKArray getTransformerPKs(WSGetTransformerPKs regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getTransformerPKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getTransformerPKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerPK putTransformer(WSPutTransformer wsTransformer) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putTransformer(wsTransformer);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putTransformer(wsTransformer);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSPipeline processBytesUsingTransformer(WSProcessBytesUsingTransformer wsProjectBytes) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().processBytesUsingTransformer(wsProjectBytes);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().processBytesUsingTransformer(wsProjectBytes);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSPipeline processFileUsingTransformer(WSProcessFileUsingTransformer wsProcessFile) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().processFileUsingTransformer(wsProcessFile);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().processFileUsingTransformer(wsProcessFile);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK processBytesUsingTransformerAsBackgroundJob(
+             WSProcessBytesUsingTransformerAsBackgroundJob wsProcessBytesUsingTransformerAsBackgroundJob) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .processBytesUsingTransformerAsBackgroundJob(wsProcessBytesUsingTransformerAsBackgroundJob);
+     }
+ 
+@@ -1040,9 +1124,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK processFileUsingTransformerAsBackgroundJob(
+             WSProcessFileUsingTransformerAsBackgroundJob wsProcessFileUsingTransformerAsBackgroundJob) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .processFileUsingTransformerAsBackgroundJob(wsProcessFileUsingTransformerAsBackgroundJob);
+     }
+ 
+@@ -1050,32 +1135,36 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDroppedItemPKArray findAllDroppedItemsPKs(WSFindAllDroppedItemsPKs regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().findAllDroppedItemsPKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().findAllDroppedItemsPKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDroppedItem loadDroppedItem(WSLoadDroppedItem wsLoadDroppedItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().loadDroppedItem(wsLoadDroppedItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().loadDroppedItem(wsLoadDroppedItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK recoverDroppedItem(WSRecoverDroppedItem wsRecoverDroppedItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().recoverDroppedItem(wsRecoverDroppedItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().recoverDroppedItem(wsRecoverDroppedItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSDroppedItemPK removeDroppedItem(WSRemoveDroppedItem wsRemoveDroppedItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().removeDroppedItem(wsRemoveDroppedItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().removeDroppedItem(wsRemoveDroppedItem);
+     }
+ 
+     /***************************************************************************
+@@ -1086,40 +1175,45 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingRule getRoutingRule(WSGetRoutingRule wsRoutingRuleGet) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getRoutingRule(wsRoutingRuleGet);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getRoutingRule(wsRoutingRuleGet);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsRoutingRule(WSExistsRoutingRule wsExistsRoutingRule) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsRoutingRule(wsExistsRoutingRule);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsRoutingRule(wsExistsRoutingRule);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingRulePK deleteRoutingRule(WSDeleteRoutingRule wsDeleteRoutingRule) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteRoutingRule(wsDeleteRoutingRule);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteRoutingRule(wsDeleteRoutingRule);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingRulePK putRoutingRule(WSPutRoutingRule wsRoutingRule) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putRoutingRule(wsRoutingRule);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putRoutingRule(wsRoutingRule);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingRulePKArray getRoutingRulePKs(WSGetRoutingRulePKs regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getRoutingRulePKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getRoutingRulePKs(regex);
+     }
+ 
+     /***************************************************************************
+@@ -1129,57 +1223,64 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerV2PK deleteTransformerV2(WSDeleteTransformerV2 wsTransformerV2Delete) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteTransformerV2(wsTransformerV2Delete);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteTransformerV2(wsTransformerV2Delete);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerV2 getTransformerV2(WSGetTransformerV2 wsGetTransformerV2) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getTransformerV2(wsGetTransformerV2);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getTransformerV2(wsGetTransformerV2);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsTransformerV2(WSExistsTransformerV2 wsExistsTransformerV2) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsTransformerV2(wsExistsTransformerV2);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsTransformerV2(wsExistsTransformerV2);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerV2PKArray getTransformerV2PKs(WSGetTransformerV2PKs regex) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getTransformerV2PKs(regex);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getTransformerV2PKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerV2PK putTransformerV2(WSPutTransformerV2 wsTransformerV2) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().putTransformerV2(wsTransformerV2);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().putTransformerV2(wsTransformerV2);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerContext executeTransformerV2(WSExecuteTransformerV2 wsExecuteTransformerV2) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().executeTransformerV2(wsExecuteTransformerV2);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().executeTransformerV2(wsExecuteTransformerV2);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK executeTransformerV2AsJob(WSExecuteTransformerV2AsJob wsExecuteTransformerV2AsJob)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .executeTransformerV2AsJob(wsExecuteTransformerV2AsJob);
+     }
+ 
+@@ -1187,9 +1288,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerContext extractThroughTransformerV2(WSExtractThroughTransformerV2 wsExtractThroughTransformerV2)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .extractThroughTransformerV2(wsExtractThroughTransformerV2);
+     }
+ 
+@@ -1201,18 +1303,19 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsTransformerPluginV2(WSExistsTransformerPluginV2 wsExistsTransformerPlugin) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
+-                .existsTransformerPluginV2(wsExistsTransformerPlugin);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsTransformerPluginV2(wsExistsTransformerPlugin);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString getTransformerPluginV2Configuration(WSTransformerPluginV2GetConfiguration wsGetConfiguration)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getTransformerPluginV2Configuration(wsGetConfiguration);
+     }
+ 
+@@ -1220,9 +1323,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString putTransformerPluginV2Configuration(WSTransformerPluginV2PutConfiguration wsPutConfiguration)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .putTransformerPluginV2Configuration(wsPutConfiguration);
+     }
+ 
+@@ -1230,9 +1334,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerPluginV2Details getTransformerPluginV2Details(
+             WSGetTransformerPluginV2Details wsGetTransformerPluginDetails) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getTransformerPluginV2Details(wsGetTransformerPluginDetails);
+     }
+ 
+@@ -1240,9 +1345,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSTransformerPluginV2SList getTransformerPluginV2SList(WSGetTransformerPluginV2SList wsGetTransformerPluginsList)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getTransformerPluginV2SList(wsGetTransformerPluginsList);
+     }
+ 
+@@ -1254,33 +1360,37 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2 getRoutingOrderV2(WSGetRoutingOrderV2 wsGetRoutingOrder) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getRoutingOrderV2(wsGetRoutingOrder);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getRoutingOrderV2(wsGetRoutingOrder);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2 existsRoutingOrderV2(WSExistsRoutingOrderV2 wsExistsRoutingOrder) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().existsRoutingOrderV2(wsExistsRoutingOrder);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().existsRoutingOrderV2(wsExistsRoutingOrder);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2PK deleteRoutingOrderV2(WSDeleteRoutingOrderV2 wsDeleteRoutingOrder) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().deleteRoutingOrderV2(wsDeleteRoutingOrder);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().deleteRoutingOrderV2(wsDeleteRoutingOrder);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2PK executeRoutingOrderV2Asynchronously(
+             WSExecuteRoutingOrderV2Asynchronously wsExecuteRoutingOrderAsynchronously) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .executeRoutingOrderV2Asynchronously(wsExecuteRoutingOrderAsynchronously);
+     }
+ 
+@@ -1288,9 +1398,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString executeRoutingOrderV2Synchronously(WSExecuteRoutingOrderV2Synchronously wsExecuteRoutingOrderSynchronously)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .executeRoutingOrderV2Synchronously(wsExecuteRoutingOrderSynchronously);
+     }
+ 
+@@ -1298,9 +1409,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2PKArray getRoutingOrderV2PKsByCriteria(
+             WSGetRoutingOrderV2PKsByCriteria wsGetRoutingOrderV2PKsByCriteria) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getRoutingOrderV2PKsByCriteria(wsGetRoutingOrderV2PKsByCriteria);
+     }
+ 
+@@ -1308,9 +1420,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2Array getRoutingOrderV2SByCriteria(WSGetRoutingOrderV2SByCriteria wsGetRoutingOrderV2SByCriteria)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getRoutingOrderV2SByCriteria(wsGetRoutingOrderV2SByCriteria);
+     }
+ 
+@@ -1322,16 +1435,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingRulePKArray routeItemV2(WSRouteItemV2 wsRouteItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().routeItemV2(wsRouteItem);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().routeItemV2(wsRouteItem);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingEngineV2Status routingEngineV2Action(WSRoutingEngineV2Action wsRoutingEngineAction) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().routingEngineV2Action(wsRoutingEngineAction);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().routingEngineV2Action(wsRoutingEngineAction);
+ 
+     }
+ 
+@@ -1344,8 +1459,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRolePK deleteRole(WSDeleteRole wsRoleDelete) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .deleteRole(wsRoleDelete);
+     }
+ 
+@@ -1353,17 +1469,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRole getRole(WSGetRole wsGetRole) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .getRole(wsGetRole);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getRole(wsGetRole);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsRole(WSExistsRole wsExistsRole) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .existsRole(wsExistsRole);
+     }
+ 
+@@ -1371,24 +1488,27 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRolePKArray getRolePKs(WSGetRolePKs regex) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()).getRolePKs(regex);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getRolePKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRolePK putRole(WSPutRole wsRole) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()).putRole(wsRole);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).putRole(wsRole);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getObjectsForRoles(WSGetObjectsForRoles wsRoleDelete) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getObjectsForRoles(wsRoleDelete);
+     }
+ 
+@@ -1400,8 +1520,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningCommitItems(WSVersioningCommitItems wsVersioningCommitItems) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningCommitItems(wsVersioningCommitItems);
+     };
+ 
+@@ -1409,9 +1530,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean versioningRestoreItemByRevision(WSVersioningRestoreItemByRevision wsVersioningRestoreItemByRevision)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningRestoreItemByRevision(wsVersioningRestoreItemByRevision);
+     };
+ 
+@@ -1419,9 +1541,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningItemHistory versioningGetItemHistory(WSVersioningGetItemHistory wsVersioningGetItemHistory)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetItemHistory(wsVersioningGetItemHistory);
+     };
+ 
+@@ -1429,9 +1552,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningItemsVersions versioningGetItemsVersions(WSVersioningGetItemsVersions wsVersioningGetItemsVersions)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetItemsVersions(wsVersioningGetItemsVersions);
+     };
+ 
+@@ -1439,8 +1563,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString versioningGetItemContent(WSVersioningGetItemContent wsVersioningGetItemContent) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetItemContent(wsVersioningGetItemContent);
+     }
+ 
+@@ -1448,9 +1573,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningObjectsVersions versioningGetObjectsVersions(WSVersioningGetObjectsVersions wsVersioningGetObjectsVersions)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetObjectsVersions(wsVersioningGetObjectsVersions);
+     }
+ 
+@@ -1458,9 +1584,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningUniverseVersions versioningGetUniverseVersions(
+             WSVersioningGetUniverseVersions wsVersioningGetUniverseVersions) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetUniverseVersions(wsVersioningGetUniverseVersions);
+     }
+ 
+@@ -1468,8 +1595,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningRestoreItems(WSVersioningRestoreItems wsVersioningRestoreItems) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningRestoreItems(wsVersioningRestoreItems);
+     }
+ 
+@@ -1477,9 +1605,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningRestoreObjects(WSVersioningRestoreObjects wsVersioningRestoreObjects)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningRestoreObjects(wsVersioningRestoreObjects);
+     }
+ 
+@@ -1487,9 +1616,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningRestoreUniverse(WSVersioningRestoreUniverse wsVersioningRestoreUniverse)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningRestoreUniverse(wsVersioningRestoreUniverse);
+ 
+     }
+@@ -1498,8 +1628,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningTagItems(WSVersioningTagItems wsVersioningTagItems) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningTagItems(wsVersioningTagItems);
+     }
+ 
+@@ -1507,8 +1638,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningTagObjects(WSVersioningTagObjects wsVersioningTagObjects) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningTagObjects(wsVersioningTagObjects);
+     }
+ 
+@@ -1516,8 +1648,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBackgroundJobPK versioningTagUniverse(WSVersioningTagUniverse wsVersioningTagUniverse) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningTagUniverse(wsVersioningTagUniverse);
+     }
+ 
+@@ -1525,8 +1658,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningInfo versioningGetInfo(WSVersioningGetInfo wsVersioningGetInfo) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .versioningGetInfo(wsVersioningGetInfo);
+     }
+ 
+@@ -1534,9 +1668,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString putVersioningSystemConfiguration(WSPutVersioningSystemConfiguration wsPutVersioningSystemConfiguration)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .putVersioningSystemConfiguration(wsPutVersioningSystemConfiguration);
+     }
+ 
+@@ -1544,9 +1679,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSVersioningSystemConfiguration getVersioningSystemConfiguration(
+             WSGetVersioningSystemConfiguration wsGetVersioningSystemConfiguration) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getVersioningSystemConfiguration(wsGetVersioningSystemConfiguration);
+     };
+ 
+@@ -1558,8 +1694,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniversePK deleteUniverse(WSDeleteUniverse wsUniverseDelete) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .deleteUniverse(wsUniverseDelete);
+     }
+ 
+@@ -1567,8 +1704,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniverse getUniverse(WSGetUniverse wsGetUniverse) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getUniverse(wsGetUniverse);
+     }
+ 
+@@ -1576,8 +1714,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsUniverse(WSExistsUniverse wsExistsUniverse) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .existsUniverse(wsExistsUniverse);
+     }
+ 
+@@ -1585,8 +1724,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniversePKArray getUniverseByRevision(WSGetUniverseByRevision revision) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getUniverseByRevision(revision);
+     }
+ 
+@@ -1594,26 +1734,27 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniversePKArray getUniversePKs(WSGetUniversePKs regex) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .getUniversePKs(regex);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getUniversePKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSUniversePK putUniverse(WSPutUniverse wsUniverse) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .putUniverse(wsUniverse);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).putUniverse(wsUniverse);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getObjectsForUniverses(WSGetObjectsForUniverses wsUniverseDelete) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getObjectsForUniverses(wsUniverseDelete);
+     }
+ 
+@@ -1625,9 +1766,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationPlanPK deleteSynchronizationPlan(WSDeleteSynchronizationPlan wsSynchronizationPlanDelete)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .deleteSynchronizationPlan(wsSynchronizationPlanDelete);
+     }
+ 
+@@ -1635,8 +1777,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationPlan getSynchronizationPlan(WSGetSynchronizationPlan wsGetSynchronizationPlan) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationPlan(wsGetSynchronizationPlan);
+     }
+ 
+@@ -1644,8 +1787,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsSynchronizationPlan(WSExistsSynchronizationPlan wsExistsSynchronizationPlan) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .existsSynchronizationPlan(wsExistsSynchronizationPlan);
+     }
+ 
+@@ -1653,8 +1797,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationPlanPKArray getSynchronizationPlanPKs(WSGetSynchronizationPlanPKs regex) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationPlanPKs(regex);
+     }
+ 
+@@ -1662,8 +1807,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationPlanPK putSynchronizationPlan(WSPutSynchronizationPlan wsSynchronizationPlan) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .putSynchronizationPlan(wsSynchronizationPlan);
+     }
+ 
+@@ -1671,9 +1817,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getObjectsForSynchronizationPlans(WSGetObjectsForSynchronizationPlans wsSynchronizationPlanDelete)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getObjectsForSynchronizationPlans(wsSynchronizationPlanDelete);
+     }
+ 
+@@ -1681,9 +1828,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getSynchronizationPlanObjectsAlgorithms(WSGetSynchronizationPlanObjectsAlgorithms regex)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationPlanObjectsAlgorithms(regex);
+     }
+ 
+@@ -1691,9 +1839,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getSynchronizationPlanItemsAlgorithms(WSGetSynchronizationPlanItemsAlgorithms regex)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationPlanItemsAlgorithms(regex);
+     }
+ 
+@@ -1701,9 +1850,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationPlanStatus synchronizationPlanAction(WSSynchronizationPlanAction wsSynchronizationPlan)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationPlanAction(wsSynchronizationPlan);
+     }
+ 
+@@ -1711,9 +1861,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray synchronizationGetUnsynchronizedObjectsIDs(
+             WSSynchronizationGetUnsynchronizedObjectsIDs wsSynchronizationGetUnsynchronizedObjectsIDs) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationGetUnsynchronizedObjectsIDs(wsSynchronizationGetUnsynchronizedObjectsIDs);
+     }
+ 
+@@ -1721,9 +1872,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString synchronizationGetObjectXML(WSSynchronizationGetObjectXML wsSynchronizationGetObjectXML)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationGetObjectXML(wsSynchronizationGetObjectXML);
+     }
+ 
+@@ -1731,9 +1883,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString synchronizationPutObjectXML(WSSynchronizationPutObjectXML wsSynchronizationPutObjectXML)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationPutObjectXML(wsSynchronizationPutObjectXML);
+     }
+ 
+@@ -1741,9 +1894,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKArray synchronizationGetUnsynchronizedItemPKs(
+             WSSynchronizationGetUnsynchronizedItemPKs wsSynchronizationGetUnsynchronizedItemPKs) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationGetUnsynchronizedItemPKs(wsSynchronizationGetUnsynchronizedItemPKs);
+     }
+ 
+@@ -1751,8 +1905,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString synchronizationGetItemXML(WSSynchronizationGetItemXML wsSynchronizationGetItemXML) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationGetItemXML(wsSynchronizationGetItemXML);
+     }
+ 
+@@ -1760,8 +1915,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK synchronizationPutItemXML(WSSynchronizationPutItemXML wsSynchronizationPutItemXML) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .synchronizationPutItemXML(wsSynchronizationPutItemXML);
+     }
+ 
+@@ -1773,9 +1929,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationItemPK deleteSynchronizationItem(WSDeleteSynchronizationItem wsSynchronizationItemDelete)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .deleteSynchronizationItem(wsSynchronizationItemDelete);
+     }
+ 
+@@ -1783,8 +1940,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationItem getSynchronizationItem(WSGetSynchronizationItem wsGetSynchronizationItem) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationItem(wsGetSynchronizationItem);
+     }
+ 
+@@ -1792,8 +1950,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsSynchronizationItem(WSExistsSynchronizationItem wsExistsSynchronizationItem) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .existsSynchronizationItem(wsExistsSynchronizationItem);
+     }
+ 
+@@ -1801,8 +1960,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationItemPKArray getSynchronizationItemPKs(WSGetSynchronizationItemPKs regex) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getSynchronizationItemPKs(regex);
+     }
+ 
+@@ -1810,8 +1970,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationItemPK putSynchronizationItem(WSPutSynchronizationItem wsSynchronizationItem) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .putSynchronizationItem(wsSynchronizationItem);
+     }
+ 
+@@ -1819,9 +1980,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSSynchronizationItem resolveSynchronizationItem(WSResolveSynchronizationItem wsResolveSynchronizationItem)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .resolveSynchronizationItem(wsResolveSynchronizationItem);
+     }
+ 
+@@ -1829,9 +1991,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSWorkflowProcessDefinitionUUIDArray workflowGetProcessDefinitions(
+             WSWorkflowGetProcessDefinitions wsWorkflowGetProcessDefinitions) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowGetProcessDefinitions(wsWorkflowGetProcessDefinitions);
+     }
+ 
+@@ -1839,17 +2002,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSWorkflowProcessDefinitionUUID workflowDeploy(WSWorkflowDeploy deploy) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .workflowDeploy(deploy);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).workflowDeploy(deploy);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowUnDeploy(WSWorkflowUnDeploy undeploy) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowUnDeploy(undeploy);
+     }
+ 
+@@ -1857,8 +2021,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSProcessInstanceArray workflowGetProcessInstances(WSWorkflowGetProcessInstances instance) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowGetProcessInstances(instance);
+     }
+ 
+@@ -1866,9 +2031,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowDeleteProcessInstances(WSWorkflowDeleteProcessInstancesRequest deleteWolkflowRequest)
+             throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowDeleteProcessInstances(deleteWolkflowRequest);
+     }
+ 
+@@ -1876,8 +2042,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSProcessTaskInstanceArray workflowGetTaskList(WSWorkflowGetTaskList tasklist) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowGetTaskList(tasklist);
+     }
+ 
+@@ -1893,16 +2060,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean putMDMJob(WSPUTMDMJob job) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()).putMDMJob(job);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).putMDMJob(job);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean deleteMDMJob(WSDELMDMJob job) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()).deleteMDMJob(job);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).deleteMDMJob(job);
+     }
+ 
+     /**
+@@ -1910,17 +2079,19 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
+ 
++    @Override
+     public WSMDMJobArray getMDMJob(WSMDMNULL job) {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()).getMDMJob(job);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getMDMJob(job);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK putItemByOperatorType(WSPutItemByOperatorType putItemByOperatorType) throws RemoteException {
+ 
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .putItemByOperatorType(putItemByOperatorType);
+     }
+ 
+@@ -1928,18 +2099,19 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public com.amalto.core.webservice.WSCategoryData getMDMCategory(WSCategoryData request) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .getMDMCategory(request);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getMDMCategory(request);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSAutoIncrement getAutoIncrement(WSAutoIncrement wsAutoIncrementRequest) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getAutoIncrement(wsAutoIncrementRequest);
+     }
+ 
+@@ -1947,25 +2119,28 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getChildrenItems(WSGetChildrenItems wsGetChildrenItems) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().getChildrenItems(wsGetChildrenItems);
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().getChildrenItems(wsGetChildrenItems);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean isItemModifiedByOther(WSIsItemModifiedByOther wsItem) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator().isItemModifiedByOther(wsItem.getWsItem());
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator().isItemModifiedByOther(wsItem.getWsItem());
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSString countItemsByCustomFKFilters(WSCountItemsByCustomFKFilters wsCountItemsByCustomFKFilters)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .countItemsByCustomFKFilters(wsCountItemsByCustomFKFilters);
+     }
+ 
+@@ -1973,9 +2148,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSStringArray getItemsByCustomFKFilters(WSGetItemsByCustomFKFilters wsGetItemsByCustomFKFilters)
+             throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getItemsByCustomFKFilters(wsGetItemsByCustomFKFilters);
+     }
+ 
+@@ -1983,8 +2159,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK partialPutItem(WSPartialPutItem wsPartialPutItem) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .partialPutItem(wsPartialPutItem);
+     }
+ 
+@@ -1992,9 +2169,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowUnassignTask(WSUnassignTask task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowUnassignTask(task);
+     }
+ 
+@@ -2002,9 +2180,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowAssignTask(WSAssignTask task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowAssignTask(task);
+     }
+ 
+@@ -2012,9 +2191,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowSetTaskPriority(WSSetTaskPriority task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowSetTaskPriority(task);
+     }
+ 
+@@ -2022,27 +2202,32 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowSuspendTask(WSSuspendTask task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowSuspendTask(task);
+     }
++
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowResumeTask(WSResumeTask task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowResumeTask(task);
+     }
++
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean workflowStartProcessInstance(WSStartProcessInstance task) throws RemoteException {
+         // TODO Auto-generated method stub
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .workflowStartProcessInstance(task);
+     }
+ 
+@@ -2050,8 +2235,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPK updateItemMetadata(WSUpdateMetadataItem wsUpdateMetadataItem) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .updateItemMetadata(wsUpdateMetadataItem);
+     }
+ 
+@@ -2059,27 +2245,29 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSItemPKArray updateItemArrayMetadata(WSUpdateItemArrayMetadata wsUpdateItemArrayMetadata) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .updateItemArrayMetadata(wsUpdateItemArrayMetadata);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+-     */    
+-	public WSString refreshCache(WSRefreshCache refreshCache)
+-			throws RemoteException {
+-		 return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-         .refreshCache(refreshCache);
+-	}
++     */
++    @Override
++    public WSString refreshCache(WSRefreshCache refreshCache) throws RemoteException {
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
++                .refreshCache(refreshCache);
++    }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSCustomForm getCustomForm(WSGetCustomForm wsGetCustomForm) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .getCustomForm(wsGetCustomForm);
+     }
+ 
+@@ -2087,8 +2275,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSBoolean existsCustomForm(WSExistsCustomForm wsExistsCustomForm) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .existsCustomForm(wsExistsCustomForm);
+     }
+ 
+@@ -2096,17 +2285,18 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSCustomFormPKArray getCustomFormPKs(WSGetCustomFormPKs regex) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
+-                .getCustomFormPKs(regex);
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator()).getCustomFormPKs(regex);
+     }
+ 
+     /**
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSCustomFormPK putCustomForm(WSPutCustomForm wsCustomForm) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .putCustomForm(wsCustomForm);
+     }
+ 
+@@ -2114,8 +2304,9 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSCustomFormPK deleteCustomForm(WSDeleteCustomForm wsCustomFormDelete) throws RemoteException {
+-        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator())
++        return ((DefaultXtentisWSDelegator) BeanDelegatorContainer.getInstance().getXtentisWSDelegator())
+                 .deleteCustomForm(wsCustomFormDelete);
+     }
+ 
+@@ -2123,9 +2314,10 @@ public class XtentisEnterpriseWSBean implements SessionBean, XtentisPort {
+      * @ejb.interface-method view-type = "service-endpoint"
+      * @ejb.permission role-name = "authenticated" view-type = "service-endpoint"
+      */
++    @Override
+     public WSRoutingOrderV2Array getRoutingOrderV2ByCriteriaWithPaging(
+             WSGetRoutingOrderV2ByCriteriaWithPaging wsGetRoutingOrderV2ByCriteriaWithPaging) throws RemoteException {
+-        return BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator()
++        return BeanDelegatorContainer.getInstance().getXtentisWSDelegator()
+                 .getRoutingOrderV2ByCriteriaWithPaging(wsGetRoutingOrderV2ByCriteriaWithPaging);
+     }
+ 
+diff --git a/org.talend.mdm.core.enterprise/src/com/amalto/core/history/DefaultDocument.java b/org.talend.mdm.core.enterprise/src/com/amalto/core/history/DefaultDocument.java
+index 3fc17c3..fa8e7ff 100644
+--- a/org.talend.mdm.core.enterprise/src/com/amalto/core/history/DefaultDocument.java
++++ b/org.talend.mdm.core.enterprise/src/com/amalto/core/history/DefaultDocument.java
+@@ -43,8 +43,8 @@ import com.amalto.core.webservice.WSPutItem;
+ import com.amalto.core.webservice.WSPutItemWithReport;
+ 
+ /**
+- * <b>IMPORTANT NOTE</b> Please note this implementation of {@link MutableDocument} is not efficient (especially in
+- * the way deletes are handled). See {@link #recover(DeleteType)} ()} note for more details.
++ * <b>IMPORTANT NOTE</b> Please note this implementation of {@link MutableDocument} is not efficient (especially in the
++ * way deletes are handled). See {@link #recover(DeleteType)} ()} note for more details.
+  */
+ class DefaultDocument implements MutableDocument {
+ 
+@@ -105,6 +105,7 @@ class DefaultDocument implements MutableDocument {
+         }
+     }
+ 
++    @Override
+     public String exportToString() {
+         if (documentAsDOM == EmptyDocument.EMPTY_DOCUMENT) {
+             // When a document is deleted, we just return empty string
+@@ -125,6 +126,7 @@ class DefaultDocument implements MutableDocument {
+         }
+     }
+ 
++    @Override
+     public Document transform(DocumentTransformer transformer) {
+         if (transformer == null) {
+             throw new IllegalArgumentException("Transformer argument cannot be null");
+@@ -132,33 +134,38 @@ class DefaultDocument implements MutableDocument {
+         return transformer.transform(this);
+     }
+ 
++    @Override
+     public void restore() {
+         try {
+             boolean isAdmin = LocalUser.getLocalUser().getRoles().contains(ICoreConstants.SYSTEM_ADMIN_ROLE);
+             if (!isAdmin) {
+                 throw new IllegalStateException("Logged user is not admin and this feature is admin only");
+             }
+-            IXtentisWSDelegator delegator = BeanDelegatorContainer.getUniqueInstance().getXtentisWSDelegator();       
++            IXtentisWSDelegator delegator = BeanDelegatorContainer.getInstance().getXtentisWSDelegator();
+             // Test if document is in recycle bin
+             ItemPOJOPK refItemPOJOPK = new ItemPOJOPK(new DataClusterPOJOPK(dataClusterName), conceptName, key);
+-            DroppedItemPOJOPK droppedItemPOJOPK = new DroppedItemPOJOPK(revisionId, refItemPOJOPK, "/");  //$NON-NLS-1$
++            DroppedItemPOJOPK droppedItemPOJOPK = new DroppedItemPOJOPK(revisionId, refItemPOJOPK, "/"); //$NON-NLS-1$
+             if (DroppedItemPOJO.load(droppedItemPOJOPK) != null) {
+                 DroppedItemPOJO.recover(droppedItemPOJOPK);
+                 // create a updatereport for restored
+                 String strKey = Util.joinStrings(key, "."); //$NON-NLS-1$
+                 StringBuilder stringBuilder = new StringBuilder();
+-                stringBuilder.append("<Update><UserName>").append(LocalUser.getLocalUser().getUsername()).append("</UserName><Source>").append(UpdateReportPOJO.SOURCE_RESTORE).append("</Source><TimeInMillis>") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+-                        .append(System.currentTimeMillis()).append("</TimeInMillis><OperationType>") //$NON-NLS-1$
+-                        .append(StringEscapeUtils.escapeXml(UpdateReportPOJO.OPERATION_TYPE_RESTORED)).append("</OperationType><RevisionID>").append(revisionId) //$NON-NLS-1$
++                stringBuilder
++                        .append("<Update><UserName>").append(LocalUser.getLocalUser().getUsername()).append("</UserName><Source>").append(UpdateReportPOJO.SOURCE_RESTORE).append("</Source><TimeInMillis>") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
++                        .append(System.currentTimeMillis())
++                        .append("</TimeInMillis><OperationType>") //$NON-NLS-1$
++                        .append(StringEscapeUtils.escapeXml(UpdateReportPOJO.OPERATION_TYPE_RESTORED))
++                        .append("</OperationType><RevisionID>").append(revisionId) //$NON-NLS-1$
+                         .append("</RevisionID><DataCluster>").append(dataClusterName).append("</DataCluster><DataModel>") //$NON-NLS-1$ //$NON-NLS-2$
+-                        .append(dataModelName).append("</DataModel><Concept>").append(StringEscapeUtils.escapeXml(conceptName)) //$NON-NLS-1$
++                        .append(dataModelName)
++                        .append("</DataModel><Concept>").append(StringEscapeUtils.escapeXml(conceptName)) //$NON-NLS-1$
+                         .append("</Concept><Key>").append(StringEscapeUtils.escapeXml(strKey)).append("</Key>").append("</Update>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$             
+                 WSPutItem putItem = new WSPutItem();
+                 putItem.setIsUpdate(false);
+                 putItem.setWsDataClusterPK(new WSDataClusterPK(UpdateReportPOJO.DATA_CLUSTER));
+                 putItem.setWsDataModelPK(new WSDataModelPK(UpdateReportPOJO.DATA_MODEL));
+                 putItem.setXmlString(stringBuilder.toString());
+-                delegator.putItem(putItem);                
++                delegator.putItem(putItem);
+             } else {
+                 // Recreate an ItemPOJO base on current document state/content
+                 WSPutItem putItem = new WSPutItem();
+@@ -180,109 +187,121 @@ class DefaultDocument implements MutableDocument {
+         }
+     }
+ 
++    @Override
+     public Accessor createAccessor(String path) {
+-        return DOMAccessorFactory.createAccessor("/ii/p/" + conceptName + "/" + path, this);  //$NON-NLS-1$ //$NON-NLS-2$
++        return DOMAccessorFactory.createAccessor("/ii/p/" + conceptName + "/" + path, this); //$NON-NLS-1$ //$NON-NLS-2$
+     }
+ 
++    @Override
+     public org.w3c.dom.Document asDOM() {
+         return documentAsDOM;
+     }
+ 
++    @Override
+     public MutableDocument setField(String field, String newValue) {
+         Accessor accessor = createAccessor(field);
+         accessor.set(newValue);
+         return this;
+     }
+ 
++    @Override
+     public MutableDocument deleteField(String field) {
+         Accessor accessor = createAccessor(field);
+         accessor.delete();
+         return this;
+     }
+ 
++    @Override
+     public MutableDocument addField(String field, String value) {
+         Accessor accessor = createAccessor(field);
+         accessor.createAndSet(value);
+         return this;
+     }
+ 
++    @Override
+     public MutableDocument create(MutableDocument content) {
+         return this;
+     }
+ 
++    @Override
+     public MutableDocument setContent(MutableDocument content) {
+         return this;
+     }
+ 
++    @Override
+     public MutableDocument delete(DeleteType deleteType) {
+         switch (deleteType) {
+-            case LOGICAL:
+-                if (documentAsDOM != EmptyDocument.EMPTY_DOCUMENT) {
+-                    logicalDeleteDocument = documentAsDOM; // Keep logical document for restore.
+-                    documentAsDOM = EmptyDocument.EMPTY_DOCUMENT; 
+-                }
+-                return this;
+-            case PHYSICAL:
++        case LOGICAL:
++            if (documentAsDOM != EmptyDocument.EMPTY_DOCUMENT) {
++                logicalDeleteDocument = documentAsDOM; // Keep logical document for restore.
+                 documentAsDOM = EmptyDocument.EMPTY_DOCUMENT;
+-                return this;
+-            default:
+-                throw new NotImplementedException("Not supported: '" + deleteType + "'");
++            }
++            return this;
++        case PHYSICAL:
++            documentAsDOM = EmptyDocument.EMPTY_DOCUMENT;
++            return this;
++        default:
++            throw new NotImplementedException("Not supported: '" + deleteType + "'");
+         }
+     }
+ 
+     /**
+      * NOTE: This implementation is not efficient if multiple logical deletes / recover are performed.
+-     *
++     * 
+      * @param deleteType Type of delete to recover.
+      * @return A recovered document
+      */
++    @Override
+     public MutableDocument recover(DeleteType deleteType) {
+         switch (deleteType) {
+-            case LOGICAL:
+-                if (documentAsDOM != EmptyDocument.EMPTY_DOCUMENT) {
+-                    return this; // This means document is already recovered, return this instance.
+-                }
+-                // Recover from a logical delete
+-                try {
+-                    ItemPOJOPK refItemPOJOPK = new ItemPOJOPK(new DataClusterPOJOPK(dataClusterName), conceptName, key);
+-                    DroppedItemPOJOPK droppedItemPOJOPK = new DroppedItemPOJOPK(revisionId, refItemPOJOPK, "/");  //$NON-NLS-1$
+-                    DroppedItemPOJO droppedItemPOJO = DroppedItemPOJO.load(droppedItemPOJOPK);
+-                    if (droppedItemPOJO == null) {
+-                        if (logicalDeleteDocument == null) {
+-                            throw new IllegalStateException("Could not recover delete for '"
+-                                    + refItemPOJOPK.getUniqueID()
+-                                    + "' (record is missing in item trash).");
+-                        } else {
+-                            documentAsDOM = logicalDeleteDocument;
+-                        }
++        case LOGICAL:
++            if (documentAsDOM != EmptyDocument.EMPTY_DOCUMENT) {
++                return this; // This means document is already recovered, return this instance.
++            }
++            // Recover from a logical delete
++            try {
++                ItemPOJOPK refItemPOJOPK = new ItemPOJOPK(new DataClusterPOJOPK(dataClusterName), conceptName, key);
++                DroppedItemPOJOPK droppedItemPOJOPK = new DroppedItemPOJOPK(revisionId, refItemPOJOPK, "/"); //$NON-NLS-1$
++                DroppedItemPOJO droppedItemPOJO = DroppedItemPOJO.load(droppedItemPOJOPK);
++                if (droppedItemPOJO == null) {
++                    if (logicalDeleteDocument == null) {
++                        throw new IllegalStateException("Could not recover delete for '" + refItemPOJOPK.getUniqueID()
++                                + "' (record is missing in item trash).");
+                     } else {
+-                        documentAsDOM = Util.parse(droppedItemPOJO.getProjection());
++                        documentAsDOM = logicalDeleteDocument;
+                     }
+-                    return this;
+-                } catch (Exception e) {
+-                    throw new RuntimeException(e);
++                } else {
++                    documentAsDOM = Util.parse(droppedItemPOJO.getProjection());
+                 }
+-            case PHYSICAL:
+-                // TODO Add support for delete undo (but requires changes in update report)
+-                throw new UnsupportedUndoPhysicalDeleteException();
+-            default:
+-                throw new NotImplementedException("Not supported: '" + deleteType + "'");
++                return this;
++            } catch (Exception e) {
++                throw new RuntimeException(e);
++            }
++        case PHYSICAL:
++            // TODO Add support for delete undo (but requires changes in update report)
++            throw new UnsupportedUndoPhysicalDeleteException();
++        default:
++            throw new NotImplementedException("Not supported: '" + deleteType + "'");
+         }
+     }
+ 
++    @Override
+     public Document applyChanges() {
+         // TODO Add optimizations here (or a new class? to be determined later)
+         return this;
+     }
+ 
++    @Override
+     public Node getLastAccessedNode() {
+         return lastAccessedNode;
+     }
+ 
++    @Override
+     public void setLastAccessedNode(Node lastAccessedNode) {
+         this.lastAccessedNode = lastAccessedNode;
+     }
+ 
++    @Override
+     public MutableDocument copy() {
+         DefaultDocument document = new DefaultDocument(dataClusterName, dataModelName, conceptName, key, revisionId);
+         document.documentAsDOM = documentAsDOM.cloneNode(true).getOwnerDocument();
+diff --git a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
+index 763883e..66e428b 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
++++ b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
+@@ -425,7 +425,7 @@ public class HierarchyServiceImpl implements HierarchyService {
+                     continue;
+                 }
+                 businessConcept.load();
+-                List<String> PkXpaths = businessConcept.getKeyFiledPaths();
++                List<String> PkXpaths = businessConcept.getKeyFieldPaths();
+ 
+                 if (PkXpaths.size() > 0) {
+                     resultList.add(result);
+@@ -473,7 +473,7 @@ public class HierarchyServiceImpl implements HierarchyService {
+             String concept = lastCriteria.getConcept();
+             BusinessConcept businessConcept = SchemaWebAgent.getInstance().getBusinessConcept(concept);
+             businessConcept.load();
+-            String[] PkXpaths = businessConcept.getKeyFiledPaths().toArray(new String[businessConcept.getKeyFiledPaths().size()]);
++            String[] PkXpaths = businessConcept.getKeyFieldPaths().toArray(new String[businessConcept.getKeyFieldPaths().size()]);
+             List<String> lableXpaths = lastCriteria.getLabelXpath();
+             String viewPk = lastCriteria.getView();
+             WSView wsView = com.amalto.webapp.core.util.Util.getPort().getView(new WSGetView(new WSViewPK(viewPk)));
+@@ -788,8 +788,8 @@ public class HierarchyServiceImpl implements HierarchyService {
+             // set PK condition
+             BusinessConcept businessConcept = SchemaWebAgent.getInstance().getBusinessConcept(fatherConcept);
+             businessConcept.load();
+-            String[] fatherPkXpaths = businessConcept.getKeyFiledPaths().toArray(
+-                    new String[businessConcept.getKeyFiledPaths().size()]);
++            String[] fatherPkXpaths = businessConcept.getKeyFieldPaths().toArray(
++                    new String[businessConcept.getKeyFieldPaths().size()]);
+ 
+             // terminal case
+             if (refValues == null || refValues.length == 0) {
+diff --git a/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/MultiLevelHierarchyTest.java b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/MultiLevelHierarchyTest.java
+index 8768d09..5024314 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/MultiLevelHierarchyTest.java
++++ b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/MultiLevelHierarchyTest.java
+@@ -220,11 +220,11 @@ public class MultiLevelHierarchyTest extends TestCase {
+         Mockito.when(agent.getBusinessConcept("E4")).thenReturn(concept4);
+         Mockito.when(agent.getBusinessConcept("E5")).thenReturn(concept5);
+ 
+-        Mockito.when(concept1.getKeyFiledPaths()).thenReturn(Arrays.asList("E1/subelement"));
+-        Mockito.when(concept2.getKeyFiledPaths()).thenReturn(Arrays.asList("E2/subelement"));
+-        Mockito.when(concept3.getKeyFiledPaths()).thenReturn(Arrays.asList("E3/subelement"));
+-        Mockito.when(concept4.getKeyFiledPaths()).thenReturn(Arrays.asList("E4/subelement"));
+-        Mockito.when(concept5.getKeyFiledPaths()).thenReturn(Arrays.asList("E5/subelement"));
++        Mockito.when(concept1.getKeyFieldPaths()).thenReturn(Arrays.asList("E1/subelement"));
++        Mockito.when(concept2.getKeyFieldPaths()).thenReturn(Arrays.asList("E2/subelement"));
++        Mockito.when(concept3.getKeyFieldPaths()).thenReturn(Arrays.asList("E3/subelement"));
++        Mockito.when(concept4.getKeyFieldPaths()).thenReturn(Arrays.asList("E4/subelement"));
++        Mockito.when(concept5.getKeyFieldPaths()).thenReturn(Arrays.asList("E5/subelement"));
+ 
+         PowerMockito.mockStatic(BaseConfiguration.class);
+         Mockito.when(BaseConfiguration.isStandalone()).thenReturn(true);

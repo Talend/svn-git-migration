@@ -1,0 +1,447 @@
+diff --git a/org.talend.commandline.audit/plugin.xml b/org.talend.commandline.audit/plugin.xml
+index 1d4876d..c470b3b 100644
+--- a/org.talend.commandline.audit/plugin.xml
++++ b/org.talend.commandline.audit/plugin.xml
+@@ -97,6 +97,86 @@
+                   </Option>
+                </Group>
+             </Command>
++            <Command
++                  description="Populate and generate audit report"
++                  executeCommand="org.talend.commandline.audit.command.PopulateAndGenerateReportExecuteCommand"
++                  inner="false"
++                  name="populateAndGenerateReport"
++                  serverCommand="org.talend.commandline.client.command.extension.PopulateAndGenerateReportServerCommand">
++               <Group>
++                  <Option
++                        description="jdbc url for database"
++                        longName="jdbc-url"
++                        name="JDBC_URL"
++                        required="true"
++                        shortName="ju">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="jdbc_url">
++                     </Argument>
++                  </Option>
++                  <Option
++                        description="the driver of database"
++                        longName="db-driver"
++                        name="DB_DRIVER"
++                        required="true"
++                        shortName="dd">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="driver">
++                     </Argument>
++                  </Option>
++                  <Option
++                        description="the user of database"
++                        longName="db-user"
++                        name="DB_USER"
++                        required="true"
++                        shortName="du">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="user">
++                     </Argument>
++                  </Option>
++                  <Option
++                        description="user password"
++                        longName="user-password"
++                        name="USER_PASSWORD"
++                        shortName="up">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="password">
++                     </Argument>
++                  </Option>
++                  <Option
++                        description="filePath"
++                        longName="filePath"
++                        name="FILEPATH"
++                        required="true"
++                        shortName="fp">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="filePath">
++                     </Argument>
++                  </Option>
++                  <Option
++                        description="Template of Audit"
++                        longName="template"
++                        name="TEMPLATE"
++                        required="false"
++                        shortName="t">
++                     <Argument
++                           max="1"
++                           min="1"
++                           name="template">
++                     </Argument>
++                  </Option>
++               </Group>
++            </Command>
+    </extension>
+ 
+ </plugin>
+diff --git a/org.talend.commandline.audit/src/main/java/org/talend/commandline/audit/command/PopulateAndGenerateReportExecuteCommand.java b/org.talend.commandline.audit/src/main/java/org/talend/commandline/audit/command/PopulateAndGenerateReportExecuteCommand.java
+new file mode 100644
+index 0000000..a5d02b8
+--- /dev/null
++++ b/org.talend.commandline.audit/src/main/java/org/talend/commandline/audit/command/PopulateAndGenerateReportExecuteCommand.java
+@@ -0,0 +1,185 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.commandline.audit.command;
++
++import java.io.IOException;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++
++import org.apache.commons.cli2.CommandLine;
++import org.apache.commons.cli2.Option;
++import org.eclipse.emf.common.util.URI;
++import org.eclipse.emf.ecore.resource.Resource;
++import org.eclipse.emf.ecore.resource.ResourceSet;
++import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
++import org.eclipse.emf.query.index.IndexFactory;
++import org.eclipse.emf.query.index.update.IndexUpdater;
++import org.eclipse.emf.query.index.update.ResourceIndexer;
++import org.eclipse.emf.query.index.update.UpdateCommandAdapter;
++import org.talend.commandline.audit.TalendAuditSelectMode2;
++import org.talend.commandline.audit.TalendRating;
++import org.talend.commandline.client.command.JavaServerCommand;
++import org.talend.commandline.client.command.LogonProjectCommand;
++import org.talend.commandline.client.command.extension.PopulateAndGenerateReportServerCommand;
++import org.talend.commandline.client.constant.extension.GenerateAuditReportDefine;
++import org.talend.commandline.client.constant.extension.PopulateAuditDefine;
++import org.talend.commandline.command.execute.AbstractExecuteCommand;
++import org.talend.core.model.properties.PropertiesPackage;
++import org.talend.core.model.repository.ERepositoryObjectType;
++import org.talend.core.model.repository.IRepositoryViewObject;
++import org.talend.core.model.repository.RepositoryObject;
++import org.talend.core.repository.constants.FileConstants;
++import org.talend.core.repository.model.ProxyRepositoryFactory;
++import org.talend.designer.core.model.utils.emf.talendfile.TalendFilePackage;
++import org.talend.repository.ProjectManager;
++
++/**
++ * DOC PLV class global comment. Detailled comment
++ */
++public class PopulateAndGenerateReportExecuteCommand extends AbstractExecuteCommand {
++
++    /**
++     * DOC PLV populateAndGenerateReport constructor comment.
++     */
++    public PopulateAndGenerateReportExecuteCommand() {
++        super();
++    }
++
++    @Override
++    public PopulateAndGenerateReportServerCommand getServerCommand() {
++        return (PopulateAndGenerateReportServerCommand) super.getServerCommand();
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commandline.command.execute.AbstractExecuteCommand#setValues(org.apache.commons.cli2.CommandLine,
++     * org.apache.commons.cli2.Option)
++     */
++    @Override
++    public void setValues(CommandLine commandLine, Option option) throws Exception {
++        checkServerCommand();
++        if (commandLine == null || option == null) {
++            return;
++        }
++        // dbUrl
++        setOptionValue(commandLine, PopulateAuditDefine.OPTION_JDBC_URL, true, true, new IllegalArgumentException(
++                "the url of audit database must be set.")); //$NON-NLS-1$
++        setOptionValue(commandLine, PopulateAuditDefine.OPTION_DB_DRIVER, true, true, new IllegalArgumentException(
++                "the db_driver of audit database must be set.")); //$NON-NLS-1$
++        setOptionValue(commandLine, PopulateAuditDefine.OPTION_DB_USER, true, true, new IllegalArgumentException(
++                "the userName of audit database must be set.")); //$NON-NLS-1$
++        setOptionValue(commandLine, PopulateAuditDefine.OPTION_USER_PASSWORD);
++
++        setOptionValue(commandLine, GenerateAuditReportDefine.OPTION_FILEPATH, true, true, new IllegalArgumentException(
++                "the file path of audit report must be set.")); //$NON-NLS-1$
++
++        setOptionValue(commandLine, GenerateAuditReportDefine.OPTION_TEMPLATE);
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commandline.command.execute.AbstractExecuteCommand#execute()
++     */
++    @Override
++    public Object execute() throws Exception {
++        // populate Audit
++        checkServerCommand();
++        checkLogged();
++
++        PopulateAndGenerateReportServerCommand serverCommand = getServerCommand();
++        TalendAuditSelectMode2 rating = new TalendAuditSelectMode2();
++        rating.setUp();
++        final List<IRepositoryViewObject> list = new ArrayList<IRepositoryViewObject>();
++        for (ERepositoryObjectType type : (ERepositoryObjectType[]) ERepositoryObjectType.values()) {
++            if (type.isDIItemType() && !type.equals(ERepositoryObjectType.SNIPPETS)
++                    && !type.equals(ERepositoryObjectType.RECYCLE_BIN) && !type.equals(ERepositoryObjectType.CODE)
++                    && !type.equals(ERepositoryObjectType.ROUTINES) && !type.equals(ERepositoryObjectType.SQLPATTERNS)) {
++                List<IRepositoryViewObject> object = ProxyRepositoryFactory.getInstance().getAll(type);
++                list.addAll(object);
++            }
++        }
++        final List<Resource> resourceList = new ArrayList<Resource>();
++        IndexFactory.getInstance().executeUpdateCommand(new UpdateCommandAdapter() {
++
++            public void execute(final IndexUpdater updater) {
++                ResourceSet resourceSet = new ResourceSetImpl();
++                resourceSet.getLoadOptions().put("OPTION_DEFER_IDREF_RESOLUTION", Boolean.TRUE); //$NON-NLS-1$
++                resourceSet.getLoadOptions().put("OPTION_USE_PARSER_POOL", Boolean.TRUE); //$NON-NLS-1$
++                final ResourceIndexer indexer = new ResourceIndexer();
++                indexer.resourceChanged(updater, TalendFilePackage.eINSTANCE.eResource());
++                indexer.resourceChanged(updater, PropertiesPackage.eINSTANCE.eResource());
++                for (int i = 0; i < list.size(); i++) {
++                    RepositoryObject object = (RepositoryObject) list.get(i);
++                    Resource resource = object.getProperty().getItem().eResource();
++                    URI uri = resource.getURI();
++                    if (object.getRepositoryObjectType() != ERepositoryObjectType.DOCUMENTATION
++                            && object.getRepositoryObjectType() != ERepositoryObjectType.JOB_DOC) {
++                        uri = resource.getURI().trimFileExtension().appendFileExtension(FileConstants.ITEM_EXTENSION);
++                    }
++                    // XmiResourceManager manager = new XmiResourceManager();
++                    Resource res = resourceSet.createResource(uri);
++                    if (!res.isLoaded()) {
++                        try {
++                            res.load(Collections.EMPTY_MAP);
++                        } catch (IOException e) {
++                        }
++                    }
++                    resourceList.add(resource);
++                    resourceList.add(res);
++                }
++
++                indexer.resourceChanged(updater, (Resource[]) (resourceList.toArray(new Resource[resourceList.size()])));
++                Resource re = ProjectManager.getInstance().getCurrentProject().getEmfProject().eResource();
++                indexer.resourceChanged(updater, re);
++                for (int i = 0; i < resourceList.size(); i++) {
++                    Resource resource = resourceList.get(i);
++                    resource.unload();
++                }
++            }
++        });
++        rating.createHibernateSessionFactory(serverCommand.getDbDriver(), serverCommand.getJdbcUrl(), serverCommand.getDbUser(),
++                serverCommand.getDbPassword());
++
++        IndexFactory.getInstance().executeUpdateCommand(new UpdateCommandAdapter() {
++
++            public void execute(final IndexUpdater updater) {
++                for (Resource resource : resourceList) {
++                    updater.deleteResource(resource.getURI());
++                }
++            }
++        });
++
++        // gengerate report
++        String auditId = rating.getAuditId();
++        List<JavaServerCommand> commands = serverCommand.getGroupCommand().getCommands();
++        LogonProjectCommand logonCommand = null;
++        for (int i = 0; i < commands.size(); i++) {
++            JavaServerCommand command = commands.get(i);
++            if (command instanceof LogonProjectCommand) {
++                logonCommand = (LogonProjectCommand) command;
++                break;
++            }
++        }
++        TalendRating rating2 = new TalendRating();
++        boolean result = rating2.generateReport(auditId, serverCommand.getFilePath(), serverCommand.getDbDriver(),
++                serverCommand.getJdbcUrl(), serverCommand.getDbUser(), serverCommand.getDbPassword(),
++                logonCommand.getProjectTechnicalLabel());
++
++        return result;
++
++    }
++
++}
+diff --git a/org.talend.commandline.client/src/main/java/org/talend/commandline/client/command/extension/PopulateAndGenerateReportServerCommand.java b/org.talend.commandline.client/src/main/java/org/talend/commandline/client/command/extension/PopulateAndGenerateReportServerCommand.java
+new file mode 100644
+index 0000000..761ec9e
+--- /dev/null
++++ b/org.talend.commandline.client/src/main/java/org/talend/commandline/client/command/extension/PopulateAndGenerateReportServerCommand.java
+@@ -0,0 +1,159 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.commandline.client.command.extension;
++
++import org.talend.commandline.client.constant.extension.GenerateAuditReportDefine;
++import org.talend.commandline.client.constant.extension.PopulateAuditDefine;
++import org.talend.commandline.client.util.CommandStringBuilder;
++
++/**
++ * DOC PLV class global comment. Detailled comment
++ */
++public class PopulateAndGenerateReportServerCommand extends AbstractServerCommand {
++
++    /**
++     * DOC PLV PopulateAndGenerateReportServerCommand constructor comment.
++     */
++    public PopulateAndGenerateReportServerCommand() {
++        super();
++    }
++
++    public PopulateAndGenerateReportServerCommand(String jdbcUrl, String dbDriver, String dbUser, String dbPassword,
++            String filePath, String template) {
++        this();
++        this.setValue(PopulateAuditDefine.OPTION_JDBC_URL, jdbcUrl);
++        this.setValue(PopulateAuditDefine.OPTION_DB_DRIVER, dbDriver);
++        this.setValue(PopulateAuditDefine.OPTION_DB_USER, dbUser);
++        this.setValue(PopulateAuditDefine.OPTION_USER_PASSWORD, dbPassword);
++        this.setValue(GenerateAuditReportDefine.OPTION_FILEPATH, filePath);
++        this.setValue(GenerateAuditReportDefine.OPTION_TEMPLATE, template);
++    }
++
++    public PopulateAndGenerateReportServerCommand(String jdbcUrl, String dbDriver, String dbUser, String dbPassword,
++            String template) {
++        this(jdbcUrl, dbDriver, dbUser, dbPassword, null, template);
++    }
++
++    public String writeToString(boolean forDisplay) {
++        CommandStringBuilder builder = new CommandStringBuilder(PopulateAuditDefine.COMMAND_NAME);
++        String jdbcUrl = getJdbcUrl();
++        if (jdbcUrl != null) {
++            builder.addOptionWithArgument(PopulateAuditDefine.OPTION_JDBC_URL_SHORT, jdbcUrl);
++        }
++        String dbDriver = getDbDriver();
++        if (dbDriver != null) {
++            builder.addOptionWithArgument(PopulateAuditDefine.OPTION_DB_DRIVER_SHORT, dbDriver);
++        }
++        String dbUser = getDbUser();
++        if (dbUser != null) {
++            builder.addOptionWithArgument(PopulateAuditDefine.OPTION_DB_USER_SHORT, dbUser);
++        }
++        String dbPassword = getDbPassword();
++        if (dbPassword != null) {
++            if (!dbPassword.equals("")) {
++                if (forDisplay) {
++                    builder.addOptionWithArgument(PopulateAuditDefine.OPTION_USER_PASSWORD_SHORT, dbPassword.replaceAll(".", "*"));
++                } else {
++                    builder.addOptionWithArgument(PopulateAuditDefine.OPTION_USER_PASSWORD_SHORT, dbPassword);
++                }
++            }
++        }
++
++        String branch = getFilePath();
++        if (branch != null) {
++            builder.addOptionWithArgument(GenerateAuditReportDefine.OPTION_FILEPATH_SHORT, branch);
++        }
++
++        String template = getTemplate();
++        if (template != null) {
++            builder.addOptionWithArgument(GenerateAuditReportDefine.OPTION_TEMPLATE_SHORT, template);
++        }
++        return builder.toString();
++
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commandline.client.command.IJavaCommand#writeToString()
++     */
++    @Override
++    public String writeToString() {
++        return writeToString(false);
++    }
++
++    /*
++     * (non-Javadoc)
++     * 
++     * @see org.talend.commandline.client.command.extension.AbstractExtensionCommand#toString()
++     */
++    @Override
++    public String toString() {
++        return writeToString(true);
++    }
++
++    /**
++     * DOC PLV Comment method "getDbDriver".
++     * 
++     * @return
++     */
++    public String getDbDriver() {
++        return (String) this.getValue(PopulateAuditDefine.OPTION_DB_DRIVER);
++    }
++
++    /**
++     * DOC PLV Comment method "getJdbcUrl".
++     * 
++     * @return
++     */
++    public String getJdbcUrl() {
++        return (String) this.getValue(PopulateAuditDefine.OPTION_JDBC_URL);
++    }
++
++    /**
++     * DOC PLV Comment method "getDbUser".
++     * 
++     * @return
++     */
++    public String getDbUser() {
++        return (String) this.getValue(PopulateAuditDefine.OPTION_DB_USER);
++    }
++
++    /**
++     * DOC PLV Comment method "getDbPassword".
++     * 
++     * @return
++     */
++    public String getDbPassword() {
++        return (String) this.getValue(PopulateAuditDefine.OPTION_USER_PASSWORD);
++    }
++
++    /**
++     * DOC PLV Comment method "getFilePath".
++     * 
++     * @return
++     */
++    public String getFilePath() {
++        return (String) this.getValue(GenerateAuditReportDefine.OPTION_FILEPATH);
++    }
++
++    /**
++     * DOC PLV Comment method "getTemplate".
++     * 
++     * @return
++     */
++    private String getTemplate() {
++        return (String) this.getValue(GenerateAuditReportDefine.OPTION_TEMPLATE);
++    }
++
++}

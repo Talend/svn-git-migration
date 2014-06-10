@@ -1,0 +1,450 @@
+diff --git a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/ChangeValuesFromRepository.java b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/ChangeValuesFromRepository.java
+index 7757a1c..5bfba9c 100644
+--- a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/ChangeValuesFromRepository.java
++++ b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/cmd/ChangeValuesFromRepository.java
+@@ -29,6 +29,7 @@ import org.talend.core.model.metadata.QueryUtil;
+ import org.talend.core.model.metadata.builder.connection.Connection;
+ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
+ import org.talend.core.model.metadata.builder.connection.FTPConnection;
++import org.talend.core.model.metadata.builder.connection.HL7Connection;
+ import org.talend.core.model.metadata.builder.connection.MDMConnection;
+ import org.talend.core.model.metadata.builder.connection.MetadataTable;
+ import org.talend.core.model.metadata.builder.connection.Query;
+@@ -551,6 +552,16 @@ public class ChangeValuesFromRepository extends ChangeMetadataCommand {
+             if (curParam.getFieldType().equals(EParameterFieldType.AS400_CHECK)) {
+                 setOtherProperties();
+             }
++            // change the HL7 Version
++            if (connection instanceof HL7Connection) {
++                if (curParam.getName().equals("HL7_VER")) {
++                    String hl7VersionString = connection.getVersion();
++                    if (hl7VersionString != null) {
++                        hl7VersionString = hl7VersionString.replace(".", "");
++                        curParam.setValue(hl7VersionString);
++                    }
++                }
++            }
+         }
+ 
+         if (elem instanceof Node) {
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/managers/HL7OutputManager.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/managers/HL7OutputManager.java
+index 46db1cf..224b67f 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/managers/HL7OutputManager.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/managers/HL7OutputManager.java
+@@ -62,7 +62,7 @@ public class HL7OutputManager extends HL7Manager {
+         List<Map<String, String>> maps = (List<Map<String, String>>) ElementParameterParser.getObjectValue(hl7Component,
+                 "__SCHEMAS__"); //$NON-NLS-1$
+         List<String> schemaList = new ArrayList<String>();
+-        List<Map<String, String>> rootTable = (List<Map<String, String>>) hl7Component.getTableList(HL7InputComponent.ROOT);
++        List<Map<String, String>> rootTable = hl7Component.getTableList(HL7InputComponent.ROOT);
+         List<String> columnList = new ArrayList<String>();
+         if (rootTable != null && rootTable.size() > 0) {
+             for (Map<String, String> rootMap : rootTable) {
+@@ -70,10 +70,11 @@ public class HL7OutputManager extends HL7Manager {
+                 if (columnName.contains(":")) {
+                     columnName = columnName.substring(0, columnName.indexOf(":"));
+                 }
+-                if (!columnList.contains(columnName)) {
++                if (!columnList.contains(columnName) && !"".equals(columnName)) {
+                     columnList.add(columnName);
+                 }
+             }
++            HL7TreeNode rootNode = null;
+             for (String rowName : columnList) {
+                 IMetadataTable metadataTable = null;
+                 String metadataTableName = rowName;
+@@ -107,10 +108,10 @@ public class HL7OutputManager extends HL7Manager {
+                 // }
+ 
+                 treeData = new ArrayList<HL7TreeNode>();
+-                if (i == 0)// the first schema as current
++                if (i == 0) {
+                     currentSchema = metadataTableName;// metadataTable.getLabel();
++                }
+ 
+-                HL7TreeNode rootNode = null;
+                 HL7TreeNode current = null;
+                 HL7TreeNode temp = null;
+                 HL7TreeNode mainNode = null;
+@@ -150,6 +151,10 @@ public class HL7OutputManager extends HL7Manager {
+                         temp = addElement(current, currentPath, newPath, defaultValue);
+                         if (rootNode == null) {
+                             rootNode = temp;
++                        } else if (rowName.equals(columnName) && rowName.equals(temp.getLabel())) {
++                            if (!rootNode.getChildren().contains(temp)) {
++                                rootNode.addChild(temp);
++                            }
+                         }
+                         if (rootMap.get(HL7InputComponent.ATTRIBUTE).equals("main")) { //$NON-NLS-1$
+                             temp.setMain(true);
+@@ -159,14 +164,26 @@ public class HL7OutputManager extends HL7Manager {
+                         current = temp;
+                         currentPath = newPath;
+                     }
++                    temp.setRepetable(repeatable);
+                     if (haveOrder) {
+                         temp.setOrder(nodeOrder);
+                     }
+-                    temp.setRepetable(repeatable);
+-                    temp.setRow(rowName);
+                     if (columnName != null && columnName.length() > 0 && columnName.startsWith(schemaId)) {
+                         columnName = columnName.replace(schemaId, ""); // $!=Nnull-1$
+-                        if (metadataTable != null) {
++                        // group node can not get the metadata table
++                        if (metadataTable == null) {
++                            IMetadataTable metadataTableTemp = null;
++                            for (IConnection connection : incomingConnections) {
++                                metadataTableTemp = connection.getMetadataTable();
++                                if (columnName.startsWith(metadataTableTemp.getLabel())) {
++                                    break;
++                                }
++                            }
++                            if (metadataTableTemp != null) {
++                                temp.setColumn(metadataTableTemp.getColumn(columnName));
++                                temp.setTable(metadataTableTemp);
++                            }
++                        } else {
+                             temp.setColumn(metadataTable.getColumn(columnName));
+                             temp.setTable(metadataTable);
+                         }
+@@ -182,11 +199,12 @@ public class HL7OutputManager extends HL7Manager {
+                 if (haveOrder) {
+                     orderNode(rootNode);
+                 }
+-                treeData.add(rootNode);
+-                rootNode.setRow(rowName);
+-                contents.put(metadataTableName, treeData);
+                 i++;
+             }
++            if (rootNode != null && treeData != null) {
++                treeData.add(rootNode);
++                contents.put(rootNode.getColumnLabel(), treeData);
++            }
+             initCurrentSchema();
+ 
+         } else if (rootTable != null && rootTable.size() <= 0) {
+@@ -216,8 +234,9 @@ public class HL7OutputManager extends HL7Manager {
+                     }
+                 }
+                 treeData = new ArrayList<HL7TreeNode>();
+-                if (i == 0)// the first schema as current
++                if (i == 0) {
+                     currentSchema = metadataTableName;// metadataTable.getLabel();
++                }
+                 HL7TreeNode rootNode = null;
+                 HL7TreeNode current = null;
+                 HL7TreeNode temp = null;
+@@ -519,7 +538,7 @@ public class HL7OutputManager extends HL7Manager {
+             newMap.put(HL7InputComponent.PATH, att.getLabel());
+             newMap.put(HL7InputComponent.COLUMN, att.getColumnLabel());
+             newMap.put(HL7InputComponent.ATTRIBUTE, "attri"); //$NON-NLS-1$
+-            newMap.put(HL7InputComponent.VALUE, att.getDefaultValue()); //$NON-NLS-1$
++            newMap.put(HL7InputComponent.VALUE, att.getDefaultValue());
+             newMap.put(HL7InputComponent.ORDER, String.valueOf(getNodeOrder(att)));
+             newMap.put("REPEATABLE", String.valueOf(att.isRepetable()));
+             table.add(newMap);
+@@ -529,7 +548,7 @@ public class HL7OutputManager extends HL7Manager {
+             newMap.put(HL7InputComponent.PATH, att.getLabel());
+             newMap.put(HL7InputComponent.COLUMN, att.getColumnLabel());
+             newMap.put(HL7InputComponent.ATTRIBUTE, "ns"); //$NON-NLS-1$
+-            newMap.put(HL7InputComponent.VALUE, att.getDefaultValue()); //$NON-NLS-1$
++            newMap.put(HL7InputComponent.VALUE, att.getDefaultValue());
+             newMap.put("REPEATABLE", String.valueOf(att.isRepetable()));
+             newMap.put(HL7InputComponent.ORDER, String.valueOf(getNodeOrder(att)));
+             table.add(newMap);
+@@ -608,6 +627,7 @@ public class HL7OutputManager extends HL7Manager {
+         return null;
+     }
+ 
++    @Override
+     public List<HL7TreeNode> getTreeData(String curSchema) {
+         if (currentSchema == null) {
+             if (treeData == null) {
+@@ -694,6 +714,7 @@ public class HL7OutputManager extends HL7Manager {
+         }
+     }
+ 
++    @Override
+     public String getCurrentSchema(boolean sign) {
+         if (sign && schemaMap.get(currentSchema) != null && !"".equals(schemaMap.get(currentSchema))) {
+             return schemaMap.get(currentSchema);
+@@ -751,8 +772,9 @@ public class HL7OutputManager extends HL7Manager {
+                 parent = tmpParent;
+             }
+ 
+-            if (parent != null)
++            if (parent != null) {
+                 parent.addChild(temp);
++            }
+         }
+ 
+         return temp;
+@@ -811,6 +833,7 @@ public class HL7OutputManager extends HL7Manager {
+         return this.contents;
+     }
+ 
++    @Override
+     public List<IMetadataColumn> getSchemaData(String currentSchema) {
+         List<? extends IConnection> incomingConnections = NodeUtil.getIncomingConnections(hl7Component, IConnectionCategory.FLOW);
+         for (IConnection connection : incomingConnections) {
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/PrimitiveModel.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/PrimitiveModel.java
+index 131c25f..a7aa363 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/PrimitiveModel.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/PrimitiveModel.java
+@@ -15,7 +15,11 @@ package org.talend.designer.hl7.model;
+ import org.talend.core.model.utils.TalendTextUtils;
+ 
+ import ca.uhn.hl7v2.model.Primitive;
++import ca.uhn.hl7v2.model.Type;
+ 
++/**
++ * DOC gcui class global comment. Detailled comment
++ */
+ public class PrimitiveModel extends AbstractStructureModel {
+ 
+     private int componentindex;
+@@ -37,18 +41,24 @@ public class PrimitiveModel extends AbstractStructureModel {
+ 
+     @Override
+     protected void generateDisplayName() {
+-        String parentName = "";
++        String parentName = ""; //$NON-NLS-1$
+         if (parent instanceof TypeModel) {
+             TypeModel tm = (TypeModel) parent;
+-            String extensionName = tm.getType().getName();
++            Type type = tm.getType();
+             String parentDisplayName = tm.getDisplayName();
+-            // int extensionIndex = parentDisplayName.indexOf(extensionName);
+-            int extensionIndex = parentDisplayName.lastIndexOf(extensionName);// changed for bug TDI-19467
+-            parentName = parentDisplayName.substring(0, extensionIndex - 1);
++            parentName = parentDisplayName;
++            if (type != null) {
++                String extensionName = type.getName();
++                // int extensionIndex = parentDisplayName.indexOf(extensionName);
++                int extensionIndex = parentDisplayName.lastIndexOf(extensionName);// changed for bug TDI-19467
++                parentName = parentDisplayName.substring(0, extensionIndex - 1);
++            }
+         }
++        String typeDispaly = primitive == null ? "" : TalendTextUtils.LBRACKET + this.primitive.getName()
++                + TalendTextUtils.RBRACKET;
++
++        this.displayName = parentName + "-" + this.componentindex + "-" + this.subcomponentindex + typeDispaly; //$NON-NLS-1$ //$NON-NLS-2$
+ 
+-        this.displayName = parentName + "-" + this.componentindex + "-" + this.subcomponentindex + TalendTextUtils.LBRACKET
+-                + this.primitive.getName() + TalendTextUtils.RBRACKET;
+     }
+ 
+ }
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/SegmentModel.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/SegmentModel.java
+index 9bcd522..5ab5736 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/SegmentModel.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/SegmentModel.java
+@@ -38,6 +38,7 @@ public class SegmentModel extends AbstractStructureModel {
+         generateDataTypes();
+     }
+ 
++    @Override
+     protected void generateDisplayName() {
+         this.displayName = seg.getName();
+     }
+@@ -45,16 +46,30 @@ public class SegmentModel extends AbstractStructureModel {
+     private void generateDataTypes() {
+         int number = this.seg.numFields();
+         ArrayList<TypeModel> datatypes = new ArrayList<TypeModel>();
+-        for (int i = 1; i < number; i++) {
+-            try {
++        try {
++            int lastNotEmptyFiledIndex = 0;
++            for (int i = 1; i < number; i++) {
+                 Type[] reps = seg.getField(i);
+-                for (int j = 0; j < reps.length; j++) {
+-                    TypeModel tm = new TypeModel(reps[j], seg, j, i);
++                if (reps.length > 0) {
++                    lastNotEmptyFiledIndex = i;
++                }
++            }
++            for (int i = 1; i <= lastNotEmptyFiledIndex; i++) {
++                Type[] reps = seg.getField(i);
++                if (reps.length > 0) {
++                    for (int j = 0; j < reps.length; j++) {
++                        TypeModel tm = new TypeModel(reps[j], seg, j, i);
++                        datatypes.add(tm);
++                    }
++                } else {
++                    // for empty column
++                    TypeModel tm = new TypeModel(null, seg, 0, i);
+                     datatypes.add(tm);
+                 }
+-            } catch (HL7Exception e) {
+-                e.printStackTrace();
++
+             }
++        } catch (HL7Exception e) {
++            e.printStackTrace();
+         }
+         this.types = datatypes.toArray(new TypeModel[0]);
+     }
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/TypeModel.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/TypeModel.java
+index 263f450..35f3c5d 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/model/TypeModel.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/model/TypeModel.java
+@@ -55,26 +55,32 @@ public class TypeModel extends AbstractStructureModel {
+         generatePrimitive();
+     }
+ 
++    @Override
+     protected void generateDisplayName() {
++        String typeDispaly = type == null ? "" : TalendTextUtils.LBRACKET + this.type.getName() + TalendTextUtils.RBRACKET;
++        this.displayName = getParent().getName() + "-" + index + "(" + (++rep) + ")" + typeDispaly; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+ 
+-        this.displayName = getParent().getName() + "-" + index + "(" + (++rep) + ")" + TalendTextUtils.LBRACKET + type.getName() //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+-                + TalendTextUtils.RBRACKET;
+     }
+ 
+     private void generatePrimitive() {
+-        List<PrimitiveModel> pms = new ArrayList<PrimitiveModel>();
+-        int numComp = Terser.numComponents(this.type);
+-        for (int k = 1; k <= numComp; k++) {
+-            int numSubComp = Terser.numSubComponents(this.type, k);
+-            for (int m = 1; m <= numSubComp; m++) {
+-                Primitive p = getPrimitive(this.type, k, m);
+-                if (p.getValue() != null) {
+-                    PrimitiveModel pm = new PrimitiveModel(this, p, k, m);
+-                    pms.add(pm);
++        if (type != null) {
++            List<PrimitiveModel> pms = new ArrayList<PrimitiveModel>();
++            int numComp = Terser.numComponents(this.type);
++            for (int k = 1; k <= numComp; k++) {
++                int numSubComp = Terser.numSubComponents(this.type, k);
++                for (int m = 1; m <= numSubComp; m++) {
++                    Primitive p = getPrimitive(this.type, k, m);
++                    if (p.getValue() != null) {
++                        PrimitiveModel pm = new PrimitiveModel(this, p, k, m);
++                        pms.add(pm);
++                    }
+                 }
+             }
++            primitives = pms.toArray(new PrimitiveModel[0]);
++        } else {
++            PrimitiveModel pm = new PrimitiveModel(this, null, 1, 1);
++            primitives = new PrimitiveModel[] { pm };
+         }
+-        primitives = pms.toArray(new PrimitiveModel[0]);
+     }
+ 
+     public Primitive getPrimitive(Type type, int component, int subcomponent) {
+@@ -101,8 +107,9 @@ public class TypeModel extends AbstractStructureModel {
+             Varies v = (Varies) type;
+ 
+             try {
+-                if (comp > 1 && GenericPrimitive.class.isAssignableFrom(v.getData().getClass()))
++                if (comp > 1 && GenericPrimitive.class.isAssignableFrom(v.getData().getClass())) {
+                     v.setData(new GenericComposite(v.getMessage()));
++                }
+             } catch (DataTypeException de) {
+                 String message = "Unexpected exception copying data to generic composite: " + de.getMessage();
+                 throw new Error(message);
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeContentProvider.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeContentProvider.java
+index 1ce2286..57d375b 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeContentProvider.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeContentProvider.java
+@@ -13,7 +13,6 @@
+ package org.talend.designer.hl7.ui.provider;
+ 
+ import java.util.ArrayList;
+-import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.List;
+ 
+@@ -54,11 +53,9 @@ public class HL7MessageTreeContentProvider implements ITreeContentProvider {
+                             values.add(childReps[j]);
+                         }
+                         if (childReps[j] instanceof Group) {
++                            values.add(childReps[j]);
+                             allSegmentFromGroup.clear();
+                             getAllSegmentsFromGroup((Group) childReps[j]);
+-                            if (allSegmentFromGroup.size() > 0) {
+-                                values.addAll(Arrays.asList(allSegmentFromGroup.toArray(new SegmentModel[0])));
+-                            }
+                         }
+                         if (childReps[j] instanceof Segment) {
+                             SegmentModel sModel = new SegmentModel((Segment) childReps[j], messParent, i, j);
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeLabelProvider.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeLabelProvider.java
+index 9743567..9ec87e6 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeLabelProvider.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/ui/provider/HL7MessageTreeLabelProvider.java
+@@ -62,7 +62,7 @@ public class HL7MessageTreeLabelProvider extends LabelProvider implements ITable
+         // }
+         if (element instanceof Group) {
+             Group group = (Group) element;
+-            String groupName = group.getClass().getName();
++            String groupName = group.getName();
+             groupName = groupName.substring(groupName.lastIndexOf('.') + 1, groupName.length());
+             return groupName;
+         }
+diff --git a/org.talend.designer.hl7/src/org/talend/designer/hl7/util/HL7PublicUtil.java b/org.talend.designer.hl7/src/org/talend/designer/hl7/util/HL7PublicUtil.java
+index 03347f2..acee422 100644
+--- a/org.talend.designer.hl7/src/org/talend/designer/hl7/util/HL7PublicUtil.java
++++ b/org.talend.designer.hl7/src/org/talend/designer/hl7/util/HL7PublicUtil.java
+@@ -144,9 +144,6 @@ public class HL7PublicUtil {
+         HL7TreeNode node = new Element();
+         String nodeLabel = getLabel(treeNode, true);
+         node.setLabel(nodeLabel);
+-        // if (node instanceof Element) {
+-        // ((Element) node).setRow(nodeLabel);
+-        // }
+         node.setMain(true);
+         List children = getFirstLevelChild(treeNode);
+         if (children != null) {
+@@ -183,6 +180,7 @@ public class HL7PublicUtil {
+                     childEle.setLabel(tlabel);
+                     if (childEle instanceof Element) {
+                         ((Element) childEle).setRow(label);
++                        ((Element) childEle).setColumnName(getLabel(element, true));
+                     }
+ 
+                     node.addChild(childEle);
+@@ -197,12 +195,6 @@ public class HL7PublicUtil {
+                     childEle.setMain(false);
+                     node.addChild(childEle);
+                 }
+-                // if (children[i] instanceof ATreeNode) {
+-                // ATreeNode child = (ATreeNode) children[i];
+-                // HL7TreeNode HL7Child = cloneATreeNode(child);
+-                // // HL7Child.setRow(schemaName);
+-                // node.addChild(HL7Child);
+-                // }
+             }
+         }
+         return node;
+@@ -341,16 +333,9 @@ public class HL7PublicUtil {
+                             }
+                         }
+                         if (childReps[j] instanceof Group) {
++                            values.add(childReps[j]);
+                             allSegmentFromGroup.clear();
+                             getAllSegmentsFromGroup((Group) childReps[j]);
+-                            if (allSegmentFromGroup.size() > 0) {
+-                                values.addAll(Arrays.asList(allSegmentFromGroup.toArray(new SegmentModel[0])));
+-                                for (SegmentModel sm : Arrays.asList(allSegmentFromGroup.toArray(new SegmentModel[0]))) {
+-                                    if (getChildren(sm).size() > 0) {
+-                                        values.add(getChildren(sm));
+-                                    }
+-                                }
+-                            }
+                         }
+                         if (childReps[j] instanceof Segment) {
+                             SegmentModel sModel = new SegmentModel((Segment) childReps[j], messParent, i, j);
+@@ -463,11 +448,9 @@ public class HL7PublicUtil {
+                             values.add(childReps[j]);
+                         }
+                         if (childReps[j] instanceof Group) {
++                            values.add(childReps[j]);
+                             allSegmentFromGroup.clear();
+                             getAllSegmentsFromGroup((Group) childReps[j]);
+-                            if (allSegmentFromGroup.size() > 0) {
+-                                values.addAll(Arrays.asList(allSegmentFromGroup.toArray(new SegmentModel[0])));
+-                            }
+                         }
+                         if (childReps[j] instanceof Segment) {
+                             SegmentModel sModel = new SegmentModel((Segment) childReps[j], messParent, i, j);

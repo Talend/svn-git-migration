@@ -1,0 +1,91 @@
+diff --git a/org.talend.mdm.core.enterprise/test/com/amalto/core/history/DocumentHistoryBaseTestCase.java b/org.talend.mdm.core.enterprise/test/com/amalto/core/history/DocumentHistoryBaseTestCase.java
+index 35c7f27..0ada2e1 100755
+--- a/org.talend.mdm.core.enterprise/test/com/amalto/core/history/DocumentHistoryBaseTestCase.java
++++ b/org.talend.mdm.core.enterprise/test/com/amalto/core/history/DocumentHistoryBaseTestCase.java
+@@ -17,13 +17,7 @@ import java.util.List;
+ import junit.framework.TestCase;
+ 
+ import org.apache.commons.lang.StringUtils;
+-import org.talend.mdm.commmon.metadata.ComplexTypeMetadata;
+-import org.talend.mdm.commmon.metadata.FieldMetadata;
+-import org.talend.mdm.commmon.metadata.MetadataExtensions;
+-import org.talend.mdm.commmon.metadata.MetadataRepository;
+-import org.talend.mdm.commmon.metadata.MetadataVisitor;
+-import org.talend.mdm.commmon.metadata.TypeMetadata;
+-import org.talend.mdm.commmon.metadata.ValidationHandler;
++import org.talend.mdm.commmon.metadata.*;
+ import org.talend.mdm.commmon.metadata.validation.ValidationFactory;
+ import org.talend.mdm.commmon.metadata.validation.ValidationRule;
+ 
+@@ -81,6 +75,21 @@ public abstract class DocumentHistoryBaseTestCase extends TestCase {
+         }
+ 
+         @Override
++        public ComplexTypeMetadata getEntity() {
++            return null;
++        }
++
++        @Override
++        public FieldMetadata getContainer() {
++            return null;
++        }
++
++        @Override
++        public void setContainer(FieldMetadata field) {
++
++        }
++
++        @Override
+         public Collection<FieldMetadata> getKeyFields() {
+             return Collections.emptyList();
+         }
+@@ -161,12 +170,24 @@ public abstract class DocumentHistoryBaseTestCase extends TestCase {
+         }
+ 
+         @Override
++        public void declareUsage(ContainedComplexTypeMetadata usage) {
++        }
++
++        @Override
++        public void freezeUsages() {
++        }
++
++        @Override
++        public void setSubTypes(List<ComplexTypeMetadata> subTypes) {
++        }
++
++        @Override
+         public Collection<TypeMetadata> getSuperTypes() {
+             return Collections.emptyList();
+         }
+ 
+         @Override
+-        public void addSuperType(TypeMetadata superType, MetadataRepository repository) {
++        public void addSuperType(TypeMetadata superType) {
+             // Do nothing
+         }
+ 
+@@ -191,7 +212,7 @@ public abstract class DocumentHistoryBaseTestCase extends TestCase {
+         }
+ 
+         @Override
+-        public TypeMetadata copy(MetadataRepository repository) {
++        public TypeMetadata copy() {
+             return this;
+         }
+ 
+@@ -270,12 +291,12 @@ public abstract class DocumentHistoryBaseTestCase extends TestCase {
+         }
+ 
+         @Override
+-        public void adopt(ComplexTypeMetadata metadata, MetadataRepository repository) {
++        public void adopt(ComplexTypeMetadata metadata) {
+             // Do nothing
+         }
+ 
+         @Override
+-        public FieldMetadata copy(MetadataRepository repository) {
++        public FieldMetadata copy() {
+             return this;
+         }
+ 

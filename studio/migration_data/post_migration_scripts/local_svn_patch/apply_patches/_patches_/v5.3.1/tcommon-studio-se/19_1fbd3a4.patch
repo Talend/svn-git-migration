@@ -1,0 +1,34 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
+index 5d229be..b2cc042 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/utils/JavaResourcesHelper.java
+@@ -24,6 +24,7 @@ import org.talend.core.model.properties.Property;
+ import org.talend.core.ui.branding.IBrandingService;
+ import org.talend.designer.runprocess.IRunProcessService;
+ import org.talend.repository.ProjectManager;
++import org.talend.repository.model.RepositoryNode;
+ 
+ /**
+  * An util tools for java version resources. Detailled comment <br/>
+@@ -112,5 +113,21 @@ public class JavaResourcesHelper {
+         itemGroupPrefixName += '.' + itemName;
+         return itemGroupPrefixName.trim().toLowerCase();
+     }
++    
++    public static String getJobClassPackageName(Item processItem){
++    	Property itemProperty = processItem.getProperty();
++    	String itemLabel = itemProperty.getLabel();
++    	String itemVersion = itemProperty.getVersion();
++    	String packageName = getProjectFolderName(processItem)+ "." + getJobFolderName(itemLabel, itemVersion);
++    	return packageName;
++    }
++    
++    public static String getJobClassName(Item processItem){
++    	return getJobClassPackageName(processItem) +"."+ processItem.getProperty().getLabel();
++    }
++    
++    public static String getJobClassName(RepositoryNode jobNode){
++    	return getJobClassName(jobNode.getObject().getProperty().getItem());
++    }
+ 
+ }

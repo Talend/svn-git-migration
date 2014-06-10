@@ -1,0 +1,1185 @@
+diff --git a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/model/HierarchySearchCriterias.java b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/model/HierarchySearchCriterias.java
+index 4f11711..8d6b936 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/model/HierarchySearchCriterias.java
++++ b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/model/HierarchySearchCriterias.java
+@@ -101,8 +101,12 @@ public class HierarchySearchCriterias implements Serializable, IsSerializable {
+         criteriaBuilder.append("<").append(HIERARCHY_SEARCH_CRITERIAS).append(">").append("<Concept>").append(concept) //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                 .append("</Concept>").append("<View>").append(view).append("</View>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+ 
+-        for (String path : labelXpath) {
+-            criteriaBuilder.append("<LabelXpath>").append(path).append("</LabelXpath>"); //$NON-NLS-1$ //$NON-NLS-2$
++        if (labelXpath != null) {
++            for (String path : labelXpath) {
++                criteriaBuilder.append("<LabelXpath>").append(path).append("</LabelXpath>"); //$NON-NLS-1$ //$NON-NLS-2$
++            }
++        } else {
++            criteriaBuilder.append("<LabelXpath/>"); //$NON-NLS-1$
+         }
+ 
+         if (fkXpath != null) {
+@@ -120,4 +124,13 @@ public class HierarchySearchCriterias implements Serializable, IsSerializable {
+                 .append(HIERARCHY_SEARCH_CRITERIAS).append(">"); //$NON-NLS-1$
+         return criteriaBuilder.toString();
+     }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (obj == null || !(obj instanceof HierarchySearchCriterias)) {
++            return false;
++        }
++        HierarchySearchCriterias temp = (HierarchySearchCriterias) obj;
++        return this.toString().equals(temp.toString());
++    }
+ }
+diff --git a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/mvc/HierarchyPivotView.java b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/mvc/HierarchyPivotView.java
+index 6a8464d..bb554e3 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/mvc/HierarchyPivotView.java
++++ b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/client/mvc/HierarchyPivotView.java
+@@ -485,7 +485,7 @@ public class HierarchyPivotView extends View implements SavedListener, UpdatedLi
+ 
+                     if (currentSearchItem.isChildToParentRelation()) { // child to parent
+                         if (criteriaLength >= level) {
+-                            concept = currentSearchItem.getHierarchySearchCriterias()[criteriaLength - level].getConcept();
++                            concept = selectedPivotBean.getConcept();
+                             id = selectedPivotBean.getPk();
+                             if (id != null) {
+                                 initialItemDetails(concept, id);
+@@ -885,7 +885,7 @@ public class HierarchyPivotView extends View implements SavedListener, UpdatedLi
+     }
+ 
+     private void renderItemTreeDetails(final String concept, final String ids) {
+-        service.getItemBeanById(concept, ids.split("\\."), Locale.getLanguage(), new SessionAwareAsyncCallback<ItemBean>() { //$NON-NLS-1$
++        service.getItemBeanById(concept, parseKey(ids), Locale.getLanguage(), new SessionAwareAsyncCallback<ItemBean>() { //$NON-NLS-1$
+ 
+                     @Override
+                     public void onSuccess(final ItemBean item) {
+@@ -1092,6 +1092,20 @@ public class HierarchyPivotView extends View implements SavedListener, UpdatedLi
+                 });
+     }
+ 
++    private String[] parseKey(String keyStr) {
++        String [] ids = keyStr.split("\\."); //$NON-NLS-1$
++        
++        if (keyStr.endsWith(".")) { //$NON-NLS-1$
++            String [] idsPlus = new String[ids.length+1];
++            for (int i=0; i < ids.length; i++) {
++                idsPlus[i] = ids[i];
++            }
++            idsPlus[ids.length] = ""; //$NON-NLS-1$
++            return idsPlus;
++        } else {
++            return ids;
++        }
++    }
+     private void getPivotUpdateModel4Update(final PivotHierarchyBean bean, String concept, String pk,
+             final PivotHierarchyBean parent) {
+         hierarchyService.getPivotUpdateModel(currentSearchItem, bean.getLevel(), concept, pk,
+diff --git a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
+index 66e428b..8fd3933 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
++++ b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/server/HierarchyServiceImpl.java
+@@ -12,6 +12,7 @@
+ // ============================================================================
+ package org.talend.mdm.webapp.hierarchy.server;
+ 
++import java.rmi.RemoteException;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collections;
+@@ -55,6 +56,7 @@ import com.amalto.core.util.Messages;
+ import com.amalto.core.util.MessagesFactory;
+ import com.amalto.webapp.core.bean.Configuration;
+ import com.amalto.webapp.core.dmagent.SchemaWebAgent;
++import com.amalto.webapp.core.util.XtentisWebappException;
+ import com.amalto.webapp.util.webservices.WSBoolean;
+ import com.amalto.webapp.util.webservices.WSDataClusterPK;
+ import com.amalto.webapp.util.webservices.WSDataModelPK;
+@@ -460,6 +462,11 @@ public class HierarchyServiceImpl implements HierarchyService {
+             String datamodel = configuration.getModel();
+ 
+             HierarchySearchCriterias[] criteria = searchItem.getHierarchySearchCriterias();
++            HierarchySearchCriterias[] headCriteria = null;
++            if (!Utils.hasRecursion(criteria) && !Utils.isSingleCriterionPerConcept(criteria) && level >= criteria.length - 1) {
++                headCriteria = Utils.getHeadCriteria(criteria);
++                level = Utils.locateCounterpartClosureInSearchCriterias(headCriteria, true);
++            }
+             // handle unlimited expansion in transitive closure case
+             if (level > criteria.length - 1) {
+                 level = Utils.locateCounterpartClosureInSearchCriterias(criteria, true);
+@@ -469,101 +476,221 @@ public class HierarchyServiceImpl implements HierarchyService {
+                 pk = pk.substring(1);
+                 idx = 0;
+             }
+-            HierarchySearchCriterias lastCriteria = criteria[idx];
+-            String concept = lastCriteria.getConcept();
+-            BusinessConcept businessConcept = SchemaWebAgent.getInstance().getBusinessConcept(concept);
+-            businessConcept.load();
+-            String[] PkXpaths = businessConcept.getKeyFieldPaths().toArray(new String[businessConcept.getKeyFieldPaths().size()]);
+-            List<String> lableXpaths = lastCriteria.getLabelXpath();
+-            String viewPk = lastCriteria.getView();
+-            WSView wsView = com.amalto.webapp.core.util.Util.getPort().getView(new WSGetView(new WSViewPK(viewPk)));
+-            List<String> viewableBusinessElements = Arrays.asList(wsView.getViewableBusinessElements());
+-            if (limit == -1) {
+-                limit = Integer.MAX_VALUE;
+-            }
+-            limit++;
+-
+-            WSViewSearch wsviewSearch = new WSViewSearch(new WSDataClusterPK(cluster), new WSViewPK(lastCriteria.getView()),
+-                    null, -1, start, limit, null, null);
+-
+-            boolean isTransitiveClosure = Utils.isASheerTransitiveClosure(searchItem.getHierarchySearchCriterias());
+-            MultipleCriteria targetMultipleCriteria = isTransitiveClosure ? criteria[0].getMultipleCriteria() : lastCriteria
+-                    .getMultipleCriteria();
+-
+-            if (pk.equals("-1") && isTransitiveClosure) { //$NON-NLS-1$
+-                WSWhereItem wsWhereItem = new WSWhereItem();
+-                String fkXpath = lastCriteria.getFkXpath() == null ? criteria[0].getFkXpath() : lastCriteria.getFkXpath();
+-                // first loading condition (childToParent: FK = null; parentToChild: FK != null)
+-                wsWhereItem.setWhereCondition(new WSWhereCondition(fkXpath, childToParent ? WSWhereOperator.EMPTY_NULL
+-                        : WSWhereOperator.NOT_EQUALS, "[null]", WSStringPredicate.NONE, false)); //$NON-NLS-1$
+-                wsviewSearch.setWhereItem(wsWhereItem);
+-            } else if (!pk.equals("-1") && lastCriteria.getFkXpath() != null) { //$NON-NLS-1$
+-                String fkValue = Utils.formatIdsByBracket(pk);
+-                WSWhereItem wsWhereItem = new WSWhereItem();
+-                wsWhereItem.setWhereCondition(new WSWhereCondition(lastCriteria.getFkXpath(), WSWhereOperator.EQUALS, fkValue,
+-                        WSStringPredicate.NONE, false));
+-                wsviewSearch.setWhereItem(wsWhereItem);
++            
++            List<PivotHierarchyBean> pivotBeanListForLeafs =  Collections.<PivotHierarchyBean>emptyList();;
++            if (!Utils.hasRecursion(criteria) && !Utils.isSingleCriterionPerConcept(criteria) && levelCpy >= 1 && idx > 0 ) {
++                pivotBeanListForLeafs = getPivotBeanListAsLeaf(searchItem, cluster, datamodel, pk, levelCpy, start, limit, language, criteria[0]);
+             }
++            
++            List<PivotHierarchyBean> pivotBeanListForInodes = getPivotBeanList(searchItem, cluster, datamodel, pk,
++                    level, levelCpy, start, limit, language, childToParent, idx);
++            
++            pivotBeanList.addAll(pivotBeanListForLeafs);
++            pivotBeanList.addAll(pivotBeanListForInodes);
++            
++            return pivotBeanList;
++        } catch (Exception e) {
++            LOG.error(e.getMessage(), e);
++            throw new ServiceException(e.getLocalizedMessage());
++        }
++    }
+ 
+-            boolean filtered = (targetMultipleCriteria != null && !"".equals(targetMultipleCriteria.toString())) ? true : false; //$NON-NLS-1$
+-            HierarchyUtil.buildFilterWhereItem(wsviewSearch, targetMultipleCriteria != null ? targetMultipleCriteria.toString()
+-                    : ""); //$NON-NLS-1$
++    public List<PivotHierarchyBean> getPivotBeanList(HierarchySearchItem searchItem, String cluster, String datamodel,
++            String pk, int level,int levelCpy, int start, int limit, String language, boolean childToParent, int idx) 
++                    throws Exception, RemoteException, XtentisWebappException, ServiceException {
++        
++        List<PivotHierarchyBean> pivotBeanList = new ArrayList<PivotHierarchyBean>();
++        
++        HierarchySearchCriterias[] criteria = searchItem.getHierarchySearchCriterias();
++        HierarchySearchCriterias lastCriteria = criteria[idx];
++        
++        if (limit == -1) {
++            limit = Integer.MAX_VALUE;
++        }
++        limit++;
++
++        WSViewSearch wsviewSearch = new WSViewSearch(new WSDataClusterPK(cluster), new WSViewPK(lastCriteria.getView()),
++                null, -1, start, limit, null, null);
++
++        boolean isTransitiveClosure = false;
++        MultipleCriteria targetMultipleCriteria = null;
++        HierarchySearchCriterias[] headCriteria = null;
++        boolean filtered = false;
++        if ((levelCpy == 0) && criteria.length>=3 && !Utils.hasRecursion(criteria)) {
++            headCriteria = Utils.getHeadCriteria(criteria);
++            isTransitiveClosure = Utils.isASheerTransitiveClosure(headCriteria);
++            targetMultipleCriteria = isTransitiveClosure ? headCriteria[0].getMultipleCriteria() : lastCriteria.getMultipleCriteria();
++        } else {
++            isTransitiveClosure = Utils.isASheerTransitiveClosure(criteria);
++            targetMultipleCriteria = isTransitiveClosure ? criteria[0].getMultipleCriteria() : lastCriteria.getMultipleCriteria();
++        }
+ 
+-            WSStringArray wsStringArray = com.amalto.webapp.core.util.Util.getPort().viewSearch(wsviewSearch);
++        if (pk.equals("-1") && isTransitiveClosure) { //$NON-NLS-1$
++            WSWhereItem wsWhereItem = new WSWhereItem();
++            String fkXpath = null;
++            if( criteria.length>=3 && !Utils.hasRecursion(criteria)) {
++                fkXpath = lastCriteria.getFkXpath() == null ? headCriteria[0].getFkXpath() : lastCriteria.getFkXpath();
++            } else {
++                fkXpath = lastCriteria.getFkXpath() == null ? criteria[0].getFkXpath() : lastCriteria.getFkXpath();
++            }                
++            // first loading condition (childToParent: FK = null; parentToChild: FK != null)
++            wsWhereItem.setWhereCondition(new WSWhereCondition(fkXpath, childToParent ? WSWhereOperator.EMPTY_NULL
++                    : WSWhereOperator.NOT_EQUALS, "[null]", WSStringPredicate.NONE, false)); //$NON-NLS-1$
++            wsviewSearch.setWhereItem(wsWhereItem);
++        } else if (!pk.equals("-1") && lastCriteria.getFkXpath() != null) { //$NON-NLS-1$
++            String fkValue = Utils.formatIdsAsSingleKeyByBracket(pk);
++            WSWhereItem wsWhereItem = new WSWhereItem();
++            wsWhereItem.setWhereCondition(new WSWhereCondition(lastCriteria.getFkXpath(), WSWhereOperator.EQUALS, fkValue,
++                    WSStringPredicate.NONE, false));
++            wsviewSearch.setWhereItem(wsWhereItem);
++        }
+ 
+-            String[] results = wsStringArray.getStrings();
+-            Map<String, String> fkMap = getFKMap(concept, language);
+-            EntityModel entityModel = new EntityModel();
+-            DataModelHelper.parseSchema(datamodel, concept, entityModel, RoleHelper.getUserRoles());
+-            for (int i = 1; i < results.length; i++) {
+-                if (level == 0 && isTransitiveClosure && levelCpy == level) {
+-                    String fkXpath = lastCriteria.getFkXpath();
+-                    if (fkXpath == null) {
+-                        fkXpath = criteria[0].getFkXpath();
+-                    }
++        filtered = (targetMultipleCriteria != null && !"".equals(targetMultipleCriteria.toString())) ? true : false; //$NON-NLS-1$
++        HierarchyUtil.buildFilterWhereItem(wsviewSearch, targetMultipleCriteria != null ? targetMultipleCriteria.toString() : ""); //$NON-NLS-1$
++
++        WSStringArray wsStringArray = com.amalto.webapp.core.util.Util.getPort().viewSearch(wsviewSearch);
++        isTransitiveClosure = Utils.isASheerTransitiveClosure(criteria);
++        String concept = lastCriteria.getConcept();
++        BusinessConcept businessConcept = SchemaWebAgent.getInstance().getBusinessConcept(concept);
++        businessConcept.load();
++        String[] PkXpaths = businessConcept.getKeyFieldPaths().toArray(new String[businessConcept.getKeyFieldPaths().size()]);
++        List<String> lableXpaths = lastCriteria.getLabelXpath();
++        String viewPk = lastCriteria.getView();
++        WSView wsView = com.amalto.webapp.core.util.Util.getPort().getView(new WSGetView(new WSViewPK(viewPk)));
++        List<String> viewableBusinessElements = Arrays.asList(wsView.getViewableBusinessElements());
++        
++        String[] results = wsStringArray.getStrings();
++        Map<String, String> fkMap = getFKMap(concept, language);
++        EntityModel entityModel = new EntityModel();
++        DataModelHelper.parseSchema(datamodel, concept, entityModel, RoleHelper.getUserRoles());
++        for (int i = 1; i < results.length; i++) {
++            if (level == 0 && isTransitiveClosure && levelCpy == level) {
++                String fkXpath = lastCriteria.getFkXpath();
++                if (fkXpath == null) {
++                    fkXpath = criteria[0].getFkXpath();
++                }
+ 
+-                    if (childToParent) {
+-                        Document docCnt = parseItemContentDocument(results[i], cluster, concept, PkXpaths,
+-                                viewableBusinessElements);
+-                        String key = com.amalto.webapp.core.util.Util.getFirstTextNode(docCnt,
+-                                HierarchyUtil.changeConceptName4Xpath("result", fkXpath)); //$NON-NLS-1$
+-                        if (key != null) {
++                if (childToParent) {
++                    Document docCnt = parseItemContentDocument(results[i], cluster, concept, PkXpaths,
++                            viewableBusinessElements);
++                    String key = com.amalto.webapp.core.util.Util.getFirstTextNode(docCnt,
++                            HierarchyUtil.changeConceptName4Xpath("result", fkXpath)); //$NON-NLS-1$
++                    if (key != null) {
++                        continue;
++
++                    } else if (!childToParent) {
++                        String[] pkValues = getPkValues(results[i], cluster, concept, PkXpaths, viewableBusinessElements);
++                        if (pkValues == null) {
+                             continue;
+-
+-                        } else if (!childToParent) {
+-                            String[] pkValues = getPkValues(results[i], cluster, concept, PkXpaths, viewableBusinessElements);
+-                            if (pkValues == null) {
+-                                continue;
+-                            }
+                         }
+                     }
+                 }
+-                String result = HierarchyUtil.searchResultToViewResult(results[i], entityModel, lableXpaths, PkXpaths,
+-                        viewableBusinessElements, language);
+-                PivotHierarchyBean pivotBean = toPivotHierarchyBean(result, level + 1, criteria.length, criteria, childToParent,
+-                        language, lastCriteria.getView(), searchItem.getSeparator());
+-                pivotBean.setConcept(concept);
+-                pivotBean.setFkMap(fkMap);
+-                pivotBean.setFiltered(filtered);
+-                pivotBeanList.add(pivotBean);
+             }
+-            if (results.length == (limit + 1)) {
+-                if (pivotBeanList.size() > 0) {
+-                    pivotBeanList.remove(pivotBeanList.get(pivotBeanList.size() - 1));
+-                }
++            String result = HierarchyUtil.searchResultToViewResult(results[i], entityModel, lableXpaths, PkXpaths,
++                    viewableBusinessElements, language);
++            PivotHierarchyBean pivotBean = toPivotHierarchyBean(result, level + 1, criteria.length, criteria, childToParent,
++                    language, lastCriteria.getView(), searchItem.getSeparator());
++            pivotBean.setConcept(concept);
++            pivotBean.setFkMap(fkMap);
++            pivotBean.setFiltered(filtered);
++            pivotBeanList.add(pivotBean);
++        }
++        if (results.length == (limit + 1)) {
++            if (pivotBeanList.size() > 0) {
++                pivotBeanList.remove(pivotBeanList.get(pivotBeanList.size() - 1));
+             }
+-            if (results.length > limit) {
+-                pivotBeanList.add(PivotHierarchyBean.newPivothierarchyBeanForAddNode(
+-                        MESSAGES.getMessage(new Locale(language), "hierarchy_next_page_text"), limit - 1)); //$NON-NLS-1$
++        }
++        if (results.length > limit) {
++            pivotBeanList.add(PivotHierarchyBean.newPivothierarchyBeanForAddNode(
++                    MESSAGES.getMessage(new Locale(language), "hierarchy_next_page_text"), limit - 1)); //$NON-NLS-1$
++        }
++
++        return pivotBeanList;
++    }
++    
++    public List<PivotHierarchyBean> getPivotBeanListAsLeaf(HierarchySearchItem searchItem, String cluster, String datamodel,
++            String pk, int level, int start, int limit, String language, HierarchySearchCriterias lastCriteria)
++            throws Exception, RemoteException, XtentisWebappException, ServiceException {
++        
++        List<PivotHierarchyBean> pivotBeanList = new ArrayList<PivotHierarchyBean>();
++        
++        if (limit == -1) {
++            limit = Integer.MAX_VALUE;
++        }
++        limit++;
++
++        WSViewSearch wsviewSearch = new WSViewSearch(new WSDataClusterPK(cluster), new WSViewPK(lastCriteria.getView()),
++                null, -1, start, limit, null, null);
++
++        boolean filtered = false;
++        if (lastCriteria.getFkXpath() != null) { //$NON-NLS-1$
++            String fkValue = Utils.formatIdsAsSingleKeyByBracket(pk);
++            WSWhereItem wsWhereItem = new WSWhereItem();
++            wsWhereItem.setWhereCondition(new WSWhereCondition(lastCriteria.getFkXpath(), WSWhereOperator.EQUALS, fkValue,
++                    WSStringPredicate.NONE, false));
++            wsviewSearch.setWhereItem(wsWhereItem);
++        }
++
++        MultipleCriteria targetMultipleCriteria = null;
++        filtered = (targetMultipleCriteria != null && !"".equals(targetMultipleCriteria.toString())) ? true : false; //$NON-NLS-1$
++        HierarchyUtil.buildFilterWhereItem(wsviewSearch, targetMultipleCriteria != null ? targetMultipleCriteria.toString() : ""); //$NON-NLS-1$
++
++        WSStringArray wsStringArray = com.amalto.webapp.core.util.Util.getPort().viewSearch(wsviewSearch);
++        String concept = lastCriteria.getConcept();
++        BusinessConcept businessConcept = SchemaWebAgent.getInstance().getBusinessConcept(concept);
++        businessConcept.load();
++        String[] PkXpaths = businessConcept.getKeyFieldPaths().toArray(new String[businessConcept.getKeyFieldPaths().size()]);
++        List<String> lableXpaths = lastCriteria.getLabelXpath();
++        String viewPk = lastCriteria.getView();
++        WSView wsView = com.amalto.webapp.core.util.Util.getPort().getView(new WSGetView(new WSViewPK(viewPk)));
++        List<String> viewableBusinessElements = Arrays.asList(wsView.getViewableBusinessElements());
++        
++        String[] results = wsStringArray.getStrings();
++        Map<String, String> fkMap = getFKMap(concept, language);
++        EntityModel entityModel = new EntityModel();
++        DataModelHelper.parseSchema(datamodel, concept, entityModel, RoleHelper.getUserRoles());
++        for (int i = 1; i < results.length; i++) {
++            String result = HierarchyUtil.searchResultToViewResult(results[i], entityModel, lableXpaths, PkXpaths,
++                    viewableBusinessElements, language);
++            PivotHierarchyBean pivotBean = toPivotHierarchyBeanAsLeaf(result, level + 1, searchItem.getSeparator());
++            pivotBean.setConcept(concept);
++            pivotBean.setFkMap(fkMap);
++            pivotBean.setFiltered(filtered);
++            pivotBeanList.add(pivotBean);
++        }
++        if (results.length == (limit + 1)) {
++            if (pivotBeanList.size() > 0) {
++                pivotBeanList.remove(pivotBeanList.get(pivotBeanList.size() - 1));
+             }
++        }
++        if (results.length > limit) {
++            pivotBeanList.add(PivotHierarchyBean.newPivothierarchyBeanForAddNode(
++                    MESSAGES.getMessage(new Locale(language), "hierarchy_next_page_text"), limit - 1)); //$NON-NLS-1$
++        }
+ 
+-            return pivotBeanList;
++        return pivotBeanList;
++    }
++    
++    private PivotHierarchyBean toPivotHierarchyBeanAsLeaf(String result, int level, String separator)
++            throws ServiceException {
++        try {
++            Document doc = com.amalto.webapp.core.util.Util.parse(result);
++            String key = com.amalto.webapp.core.util.Util.getFirstTextNode(doc, "/result/result-key/"); //$NON-NLS-1$
++            NodeList labelList = com.amalto.webapp.core.util.Util.getNodeList(doc, "//result-label"); //$NON-NLS-1$
++            List<String> list = new ArrayList<String>();
++            for (int i = 0; i < labelList.getLength(); i++) {
++                list.add(labelList.item(i).getTextContent());
++            }
++
++            PivotHierarchyBean pivotHierarchyBean = new PivotHierarchyBean(LabelUtil.convertList2String(list,
++                    HierarchyUtil.getSeparator(separator)), key, level, true);
++            return pivotHierarchyBean;
+         } catch (Exception e) {
+             LOG.error(e.getMessage(), e);
+             throw new ServiceException(e.getLocalizedMessage());
+         }
+     }
+-
++    
+     @Override
+     public PivotUpdateModel getPivotUpdateModel(HierarchySearchItem searchItem, int level, String concept, String pk)
+             throws ServiceException {
+@@ -750,7 +877,7 @@ public class HierarchyServiceImpl implements HierarchyService {
+                     pk = stripIDs(pk);
+ 
+                     WSItem wsItem = com.amalto.webapp.core.util.Util.getPort().getItem(
+-                            new WSGetItem(new WSItemPK(new WSDataClusterPK(cluster), concept, pk.split("\\.")))); //$NON-NLS-1$
++                            new WSGetItem(new WSItemPK(new WSDataClusterPK(cluster), concept, parseKey(pk)))); //$NON-NLS-1$
+ 
+                     if (wsItem != null) {
+ 
+@@ -800,16 +927,28 @@ public class HierarchyServiceImpl implements HierarchyService {
+                 // normal case
+             } else {
+                 ArrayList<WSWhereItem> subconditions = new ArrayList<WSWhereItem>();
++                String[] fatherIDs;
+                 for (String refValue : refValues) {
+-                    String[] fatherIDs = stripIDs(refValue).split("\\."); //$NON-NLS-1$
++                    if (fatherPkXpaths.length == 1) {
++                        fatherIDs = new String[] {stripIDs(refValue)};
++                    } else {
++                        fatherIDs = stripIDs(refValue).split("\\."); //$NON-NLS-1$
++                    }
+                     if (fatherPkXpaths != null && fatherPkXpaths.length > 0) {
+-                        for (int i = 0; i < fatherPkXpaths.length; i++) {
+-                            if (fatherIDs[i] == null || fatherIDs[i].length() == 0) {
+-                                fatherIDs[i] = "null"; //$NON-NLS-1$
+-                            }
+-                            WSWhereCondition wcn = new WSWhereCondition(fatherPkXpaths[i], WSWhereOperator.EQUALS, fatherIDs[i],
++                        WSWhereCondition wcn;
++                        if (fatherPkXpaths.length == 1) {
++                            wcn = new WSWhereCondition(fatherPkXpaths[0], WSWhereOperator.EQUALS, fatherIDs[0],
+                                     WSStringPredicate.OR, false);
+                             subconditions.add(new WSWhereItem(wcn, null, null));
++                        } else {
++                            for (int i = 0; i < fatherPkXpaths.length; i++) {
++                                if (fatherIDs[i] == null || fatherIDs[i].length() == 0) {
++                                    fatherIDs[i] = "null"; //$NON-NLS-1$
++                                }
++                                wcn = new WSWhereCondition(fatherPkXpaths[i], WSWhereOperator.EQUALS, fatherIDs[i],
++                                        WSStringPredicate.OR, false);
++                                subconditions.add(new WSWhereItem(wcn, null, null));
++                            }
+                         }
+                     }
+                 }// end for
+@@ -874,6 +1013,21 @@ public class HierarchyServiceImpl implements HierarchyService {
+         }
+     }
+ 
++    private String[] parseKey(String keyStr) {
++        String [] ids = keyStr.split("\\."); //$NON-NLS-1$
++        
++        if (keyStr.endsWith(".")) { //$NON-NLS-1$
++            String [] idsPlus = new String[ids.length+1];
++            for (int i=0; i < ids.length; i++) {
++                idsPlus[i] = ids[i];
++            }
++            idsPlus[ids.length] = ""; //$NON-NLS-1$
++            return idsPlus;
++        } else {
++            return ids;
++        }
++    }
++    
+     private static String stripIDs(String input) {
+ 
+         if (input != null && input.length() > 0) {
+diff --git a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/shared/Utils.java b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/shared/Utils.java
+index 2f23131..96b09bf 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/shared/Utils.java
++++ b/org.talend.mdm.webapp.hierarchy/src/main/java/org/talend/mdm/webapp/hierarchy/shared/Utils.java
+@@ -164,6 +164,12 @@ public class Utils {
+         return "[" + ids.replaceAll("\\.", "][") + "]"; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
+     }
+     
++    public static String formatIdsAsSingleKeyByBracket(String ids) {
++        if (ids == null)
++            return null;
++        return "[" + ids + "]"; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$
++    }
++    
+     public static HierarchySearchCriterias getCriteriaByConcept(HierarchySearchItem searchItem, HierarchySearchCriterias criteria, String cpt) {
+         if(!criteria.getConcept().equals(cpt)) {
+             for(HierarchySearchCriterias ctr : searchItem.getHierarchySearchCriterias()) {
+@@ -174,4 +180,29 @@ public class Utils {
+         }
+         return criteria;
+     }
++    
++    public static boolean isSingleCriterionPerConcept(HierarchySearchCriterias[] criteria) {
++        List<String> concepts = getConceptList(criteria);
++        return criteria.length == concepts.size();
++    }
++
++    public static List<String> getConceptList(HierarchySearchCriterias[] criteria) {
++        List<String> concepts = new ArrayList<String>();
++        String concept = null;
++        for(HierarchySearchCriterias ctr : criteria) {
++            concept = ctr.getConcept();
++            if (!concepts.contains(concept)) {
++               concepts.add(concept);
++            }
++        }
++        return concepts;
++    }
++    
++    public static HierarchySearchCriterias[] getHeadCriteria(HierarchySearchCriterias[] criteria) {
++        HierarchySearchCriterias[] headCriteria = new HierarchySearchCriterias[criteria.length-1];
++        for(int i =1; i< criteria.length; i++) {
++            headCriteria[i-1] = criteria[i];
++        }
++        return headCriteria;
++    }
+ }
+diff --git a/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/RecursiveHierarchyTest.java b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/RecursiveHierarchyTest.java
+new file mode 100644
+index 0000000..ae8a8ad
+--- /dev/null
++++ b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/server/RecursiveHierarchyTest.java
+@@ -0,0 +1,604 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2012 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.mdm.webapp.hierarchy.server;
++
++import static org.mockito.Matchers.*;
++import static org.mockito.Mockito.*;
++
++import java.io.StringReader;
++import java.rmi.RemoteException;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++import javax.xml.parsers.DocumentBuilder;
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.xpath.XPath;
++import javax.xml.xpath.XPathConstants;
++import javax.xml.xpath.XPathExpression;
++import javax.xml.xpath.XPathFactory;
++
++import junit.framework.TestCase;
++import junit.framework.TestSuite;
++
++import org.mockito.ArgumentCaptor;
++import org.powermock.api.mockito.PowerMockito;
++import org.powermock.core.classloader.annotations.PrepareForTest;
++import org.powermock.modules.junit3.PowerMockSuite;
++import org.talend.mdm.commmon.util.datamodel.management.BusinessConcept;
++import org.talend.mdm.webapp.base.client.exception.ServiceException;
++import org.talend.mdm.webapp.base.server.BaseConfiguration;
++import org.talend.mdm.webapp.browserecords.server.bizhelpers.DataModelHelper;
++import org.talend.mdm.webapp.hierarchy.client.model.HierarchySearchCriterias;
++import org.talend.mdm.webapp.hierarchy.client.model.HierarchySearchItem;
++import org.talend.mdm.webapp.hierarchy.client.model.PivotHierarchyBean;
++import org.talend.mdm.webapp.hierarchy.server.util.HierarchyUtil;
++import org.talend.mdm.webapp.hierarchy.shared.Utils;
++import org.w3c.dom.Document;
++import org.w3c.dom.Element;
++import org.w3c.dom.Node;
++import org.w3c.dom.NodeList;
++import org.xml.sax.InputSource;
++
++import com.amalto.webapp.core.bean.Configuration;
++import com.amalto.webapp.core.dmagent.SchemaWebAgent;
++import com.amalto.webapp.core.util.Util;
++import com.amalto.webapp.util.webservices.WSBoolean;
++import com.amalto.webapp.util.webservices.WSDataClusterPK;
++import com.amalto.webapp.util.webservices.WSGetView;
++import com.amalto.webapp.util.webservices.WSStringArray;
++import com.amalto.webapp.util.webservices.WSStringPredicate;
++import com.amalto.webapp.util.webservices.WSView;
++import com.amalto.webapp.util.webservices.WSViewPK;
++import com.amalto.webapp.util.webservices.WSViewSearch;
++import com.amalto.webapp.util.webservices.WSWhereCondition;
++import com.amalto.webapp.util.webservices.WSWhereItem;
++import com.amalto.webapp.util.webservices.WSWhereOperator;
++import com.amalto.webapp.util.webservices.XtentisPort;
++
++@SuppressWarnings("nls")
++@PrepareForTest({ Configuration.class, SchemaWebAgent.class, Util.class, BaseConfiguration.class, HierarchyUtil.class,
++        DataModelHelper.class })
++public class RecursiveHierarchyTest extends TestCase {
++
++    static interface AssertHandler {
++
++        void assertResult(List<PivotHierarchyBean> result);
++    }
++
++    final String cluster = "RecursiveHierarchy";
++
++    final String model = "RecursiveHierarchy";
++
++    HierarchySearchItem searchItem = new HierarchySearchItem();
++
++    HierarchyServiceImpl service = null;
++
++    XtentisPort port = null;
++
++    Map<String, String> store = new HashMap<String, String>();
++
++    Map<String, Map<String, Map<String, String>>> recordDb = new HashMap<String, Map<String, Map<String, String>>>();
++
++    HierarchySearchCriterias criterion0_Goods = new HierarchySearchCriterias("Goods", "Browse_items_Goods", getList("Goods/Id",
++            "Goods/Name"), "Goods/BelongsToClassGroup", null);
++
++    HierarchySearchCriterias criterion1_ClassGroup = new HierarchySearchCriterias("ClassGroup", "Browse_items_ClassGroup",
++            getList("ClassGroup/Id", "ClassGroup/Name"), "ClassGroup/ParentClassGroup", null);
++
++    HierarchySearchCriterias criterion2_ClassGroup = new HierarchySearchCriterias("ClassGroup", "Browse_items_ClassGroup",
++            getList("ClassGroup/Id", "ClassGroup/Name"), "ClassGroup/ParentClassGroup", null);
++
++    HierarchySearchCriterias[] criteria;
++
++    WSStringArray wsStringArray;
++
++    ArgumentCaptor<WSViewSearch> wsViewSearchCaptor;
++
++    @SuppressWarnings("unchecked")
++    public static TestSuite suite() throws Exception {
++        return new PowerMockSuite("Unit tests for " + RecursiveHierarchyTest.class.getSimpleName(), RecursiveHierarchyTest.class);
++    }
++
++    @Override
++    protected void setUp() throws Exception {
++
++        searchItem.addHierarchySearchCriterias(criterion0_Goods);
++        searchItem.addHierarchySearchCriterias(criterion1_ClassGroup);
++        searchItem.addHierarchySearchCriterias(criterion2_ClassGroup);
++
++        criteria = searchItem.getHierarchySearchCriterias();
++
++        initRecordDb();
++
++        initStore();
++
++        service = new HierarchyServiceImpl() {
++
++            @Override
++            public Map<String, String> getFKMap(String businessConcept, String language) throws ServiceException {
++                Map<String, String> map = new HashMap<String, String>();
++                if ("ClassGroup".equals(businessConcept)) {
++                    map.put("ClassGroup/ParentClassGroup", "ClassGroup");
++                }
++                if ("Goods".equals(businessConcept)) {
++                    map.put("Goods/BelongsToClassGroup", "ClassGroup");
++                }
++                return map;
++            }
++        };
++
++        Configuration configuration = PowerMockito.mock(Configuration.class);
++        PowerMockito.mockStatic(Configuration.class);
++        when(Configuration.loadConfigurationFromDBDirectly()).thenReturn(configuration);
++        when(configuration.getCluster()).thenReturn(cluster);
++        when(configuration.getModel()).thenReturn(model);
++
++        port = PowerMockito.mock(XtentisPort.class);
++        PowerMockito.mockStatic(Util.class);
++        when(Util.getPort()).thenReturn(port);
++        wsViewSearchCaptor = ArgumentCaptor.forClass(WSViewSearch.class);
++
++        Iterator<String> iter1 = recordDb.keySet().iterator();
++        while (iter1.hasNext()) {
++            String key1 = iter1.next();
++            Map<String, Map<String, String>> clusters = recordDb.get(key1);
++            Iterator<String> iter2 = clusters.keySet().iterator();
++            while (iter2.hasNext()) {
++                String key2 = iter2.next();
++                Map<String, String> items = clusters.get(key2);
++                Iterator<String> iter3 = items.keySet().iterator();
++                while (iter3.hasNext()) {
++                    String key3 = iter3.next();
++                    String originalStr = items.get(key3);
++                    String resultStrP_C = originalStr.replace("<" + key2 + ">", "<result>").replace("</" + key2 + ">",
++                            "</result>");
++                    Document originalDoc = buildDocument(originalStr);
++                    Document resultDocP_C = buildDocument(resultStrP_C);
++
++                    String[] resultStr = getKeyAndLabel(originalDoc);
++                    String resultStrC_P = "<result><result-key>" + resultStr[0] + "</result-key><result-label>" + resultStr[1]
++                            + "</result-label><result-label>" + resultStr[2] + "</result-label></result>";
++                    Document resultDocC_P = buildDocument(resultStrC_P);
++
++                    when(Util.parse(originalStr)).thenReturn(originalDoc);
++                    when(Util.parse(resultStrP_C)).thenReturn(resultDocP_C);
++                    when(Util.parse(resultStrC_P)).thenReturn(resultDocC_P);
++
++                    String[] result = get_id_name_fk(resultDocP_C);
++                    when(Util.getFirstTextNode(resultDocP_C, "result/Id")).thenReturn(result[0]);
++                    when(Util.getFirstTextNode(originalDoc, "/result/" + key2 + "/Id")).thenReturn(result[0]);
++                    when(Util.getFirstTextNode(originalDoc, "/" + key2 + "/Id")).thenReturn(result[0]);
++
++                    when(Util.getFirstTextNode(resultDocC_P, "/result/result-key/")).thenReturn(result[0]);
++
++                    when(Util.getFirstTextNode(resultDocP_C, "result/name")).thenReturn(result[1]);
++                    when(Util.getFirstTextNode(originalDoc, "/result/" + key2 + "/name")).thenReturn(result[1]);
++                    when(Util.getFirstTextNode(originalDoc, "/" + key2 + "/name")).thenReturn(result[1]);
++
++                    when(Util.getNodeList(resultDocC_P, "//result-label")).thenReturn(
++                            getFkNodeList(resultStrC_P, "//result-label"));
++                }
++            }
++        }
++
++        BusinessConcept conceptGoods = PowerMockito.mock(BusinessConcept.class);
++        BusinessConcept conceptClassGroup = PowerMockito.mock(BusinessConcept.class);
++
++        SchemaWebAgent agent = PowerMockito.mock(SchemaWebAgent.class);
++        PowerMockito.mockStatic(SchemaWebAgent.class);
++        when(SchemaWebAgent.getInstance()).thenReturn(agent);
++
++        when(agent.getBusinessConcept("Goods")).thenReturn(conceptGoods);
++        when(agent.getBusinessConcept("ClassGroup")).thenReturn(conceptClassGroup);
++
++        when(conceptGoods.getKeyFieldPaths()).thenReturn(Arrays.asList("Goods/Id"));
++        when(conceptClassGroup.getKeyFieldPaths()).thenReturn(Arrays.asList("ClassGroup/Id"));
++
++        PowerMockito.mockStatic(BaseConfiguration.class);
++        when(BaseConfiguration.isStandalone()).thenReturn(true);
++
++        when(port.getView(new WSGetView(new WSViewPK("Browse_items_Goods")))).thenReturn(getView("Goods"));
++        when(port.getView(new WSGetView(new WSViewPK("Browse_items_ClassGroup")))).thenReturn(getView("ClassGroup"));
++
++        PowerMockito.mockStatic(DataModelHelper.class);
++        PowerMockito.doNothing().when(DataModelHelper.class, "parseSchema", anyString(), anyString(), anyObject(),
++                anyListOf(String.class));
++    }
++
++    public void testGiven_PK_minus_one_shouldReturn_CG1_CG5() throws Exception {
++
++        String pk = "-1";
++        int level = 0;
++        int levelCpy = level;
++        int index = 2;
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, level, levelCpy, index);
++
++        // only invoked one time since the method getPivotBeanListAsLeaf() should not be invoked at leveCpy=0
++        verify(port, times(1)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getValue()));
++
++        assertNotNull(childClassGroups);
++        assertEquals(2, childClassGroups.size());
++        assertEquals("cg1[separator]-[/separator]CG1", childClassGroups.get(0).getName());
++        assertEquals("cg5[separator]-[/separator]CG5", childClassGroups.get(1).getName());
++    }
++
++    public void testGiven_PK_cg1_shouldReturn_Goods1_And_CG2_CG3() throws Exception {
++        String pk = "cg1";
++        int level = 1;
++        int levelCpy = level;
++        int index = 1;
++
++        stubMockedPortForGettingChildGoods(pk);
++        List<PivotHierarchyBean> childGoods = getChildGoods(pk, levelCpy);
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, level, levelCpy, index);
++
++        verify(port, times(2)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, true, wsViewSearchCaptor.getAllValues().get(0)));
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getAllValues().get(1)));
++
++        assertNotNull(childGoods);
++        assertEquals(1, childGoods.size());
++        assertEquals("g1[separator]-[/separator]GO1", childGoods.get(0).getName());
++
++        assertNotNull(childClassGroups);
++        assertEquals(2, childClassGroups.size());
++        assertEquals("cg2[separator]-[/separator]CG2", childClassGroups.get(0).getName());
++        assertEquals("cg3[separator]-[/separator]CG3", childClassGroups.get(1).getName());
++    }
++
++    public void testGiven_PK_cg5_shouldReturn_No_Children() throws Exception {
++        String pk = "cg5";
++        int level = 1;
++        int levelCpy = level;
++        int index = 1;
++
++        stubMockedPortForGettingChildGoods(pk);
++        List<PivotHierarchyBean> childGoods = getChildGoods(pk, levelCpy);
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, level, levelCpy, index);
++
++        verify(port, times(2)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, true, wsViewSearchCaptor.getAllValues().get(0)));
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getAllValues().get(1)));
++
++        assertNotNull(childGoods);
++        assertEquals(0, childGoods.size());
++
++        assertNotNull(childClassGroups);
++        assertEquals(0, childClassGroups.size());
++    }
++
++    public void testGiven_PK_cg2_shouldReturn_Goods2_Goods3_And_CG4() throws Exception {
++        String pk = "cg2";
++        int level = 2;
++        int levelCpy = level;
++
++        int levelUpdated = 0;
++        int index = criteria.length - 1 - levelUpdated;
++
++        stubMockedPortForGettingChildGoods(pk);
++        List<PivotHierarchyBean> childGoods = getChildGoods(pk, levelCpy);
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, levelUpdated, levelCpy, index);
++
++        verify(port, times(2)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, true, wsViewSearchCaptor.getAllValues().get(0)));
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getAllValues().get(1)));
++
++        assertNotNull(childGoods);
++        assertEquals(2, childGoods.size());
++        assertEquals("g2[separator]-[/separator]GO2", childGoods.get(0).getName());
++        assertEquals("g3[separator]-[/separator]GO3", childGoods.get(1).getName());
++
++        assertNotNull(childClassGroups);
++        assertEquals(1, childClassGroups.size());
++        assertEquals("cg4[separator]-[/separator]CG4", childClassGroups.get(0).getName());
++    }
++
++    public void testGiven_PK_cg3_shouldReturn_No_Children() throws Exception {
++        String pk = "cg3";
++        int level = 2;
++        int levelCpy = level;
++
++        int levelUpdated = 0;
++        int index = criteria.length - 1 - levelUpdated;
++
++        stubMockedPortForGettingChildGoods(pk);
++        List<PivotHierarchyBean> childGoods = getChildGoods(pk, levelCpy);
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, levelUpdated, levelCpy, index);
++
++        verify(port, times(2)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, true, wsViewSearchCaptor.getAllValues().get(0)));
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getAllValues().get(1)));
++
++        assertNotNull(childGoods);
++        assertEquals(0, childGoods.size());
++
++        assertNotNull(childClassGroups);
++        assertEquals(0, childClassGroups.size());
++    }
++
++    public void testGiven_PK_cg4_shouldReturn_Good4_And_No_CG() throws Exception {
++        String pk = "cg4";
++        int level = 1;
++        int levelCpy = level;
++
++        int index = criteria.length - 1 - level;
++
++        stubMockedPortForGettingChildGoods(pk);
++        List<PivotHierarchyBean> childGoods = getChildGoods(pk, levelCpy);
++
++        stubMockedPortForGettingChildClassGroups(pk);
++        List<PivotHierarchyBean> childClassGroups = getChildClassGroups(pk, level, levelCpy, index);
++
++        verify(port, times(2)).viewSearch(wsViewSearchCaptor.capture());
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, true, wsViewSearchCaptor.getAllValues().get(0)));
++        assertTrue(compareWSViewSearchObjectWithExpectedFor(pk, false, wsViewSearchCaptor.getAllValues().get(1)));
++
++        assertNotNull(childGoods);
++        assertEquals(1, childGoods.size());
++        assertEquals("g4[separator]-[/separator]GO4", childGoods.get(0).getName());
++
++        assertNotNull(childClassGroups);
++        assertEquals(0, childClassGroups.size());
++    }
++
++    private boolean compareWSViewSearchObjectWithExpectedFor(String pk, boolean isForLeafs, WSViewSearch actualWSViewSearch) {
++        WSViewSearch expected = getExpectedWSViewSearchObject(pk, isForLeafs);
++
++        if (!actualWSViewSearch.getWsViewPK().equals(expected.getWsViewPK())) {
++            return false;
++        } else {
++            WSWhereItem actualWSWhereItem = actualWSViewSearch.getWhereItem();
++            WSWhereItem expectedWSWhereItem = expected.getWhereItem();
++
++            if (actualWSWhereItem == null && expectedWSWhereItem == null) {
++                return true;
++            }
++            if ((actualWSWhereItem == null && expectedWSWhereItem != null)
++                    || (actualWSWhereItem != null && expectedWSWhereItem == null)) {
++                return false;
++            }
++
++            if (actualWSWhereItem != null && expectedWSWhereItem != null) {
++                return isWhereConditionsEqual(actualWSViewSearch.getWhereItem().getWhereCondition(), expected.getWhereItem()
++                        .getWhereCondition());
++            }
++
++            return false;
++        }
++    }
++
++    private Document buildDocument(String xml) {
++        try {
++            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(
++                    "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl", this.getClass().getClassLoader());
++            DocumentBuilder builder = factory.newDocumentBuilder();
++            return builder.parse(new InputSource(new StringReader(xml)));
++        } catch (Exception e) {
++            return null;
++        }
++    }
++
++    private String[] getKeyAndLabel(Document doc) {
++        Element root = doc.getDocumentElement();
++        Node keyNode = root.getFirstChild();
++        Node labelNode1 = keyNode;
++        Node labelNode2 = keyNode.getNextSibling();
++        return new String[] { keyNode.getFirstChild().getNodeValue(), labelNode1.getFirstChild().getNodeValue(),
++                labelNode2.getFirstChild().getNodeValue() };
++    }
++
++    private String[] get_id_name_fk(Document doc) {
++        Element root = doc.getDocumentElement();
++        Node subElementNode = root.getFirstChild();
++        Node nameNode = root.getFirstChild().getNextSibling();
++        Node fkNode = root.getLastChild();
++        return new String[] { subElementNode.getFirstChild().getNodeValue(), nameNode.getFirstChild().getNodeValue(),
++                fkNode.getFirstChild().getNodeValue() };
++    }
++
++    private NodeList getFkNodeList(String xml, String fkxpath) throws Exception {
++        XPathFactory factory = XPathFactory.newInstance();
++        XPath xpath = factory.newXPath();
++        XPathExpression expr = xpath.compile(fkxpath);
++        Object result = expr.evaluate(buildDocument(xml), XPathConstants.NODESET);
++        return result == null ? null : (NodeList) result;
++    }
++
++    private boolean isWhereConditionsEqual(WSWhereCondition actual, WSWhereCondition expected) {
++        if ((actual.getLeftPath().equals(expected.getLeftPath()))
++                && (actual.getOperator().getValue().equals(expected.getOperator().getValue()))
++                && (actual.getRightValueOrPath().equals(expected.getRightValueOrPath()))) {
++            return true;
++        }
++        return false;
++    }
++
++    private WSViewSearch getExpectedWSViewSearchObject(String pk, boolean isForLeafs) {
++        WSViewSearch expectedWSViewSearch = new WSViewSearch(new WSDataClusterPK(cluster), null, null, -1, 0, 21, null, null);
++        String fkValue = Utils.formatIdsByBracket(pk);
++        WSWhereItem wsWhereItem = new WSWhereItem();
++        WSWhereCondition wsWhereCondition = null;
++
++        if (isForLeafs) {
++            expectedWSViewSearch.setWsViewPK(new WSViewPK("Browse_items_Goods"));
++            wsWhereCondition = new WSWhereCondition("Goods/BelongsToClassGroup", WSWhereOperator.EQUALS, fkValue,
++                    WSStringPredicate.NONE, false);
++        } else {
++            expectedWSViewSearch.setWsViewPK(new WSViewPK("Browse_items_ClassGroup"));
++
++            if (pk.equals("-1")) {
++                wsWhereCondition = new WSWhereCondition("ClassGroup/ParentClassGroup", WSWhereOperator.EMPTY_NULL, "[null]",
++                        WSStringPredicate.NONE, false);
++            } else {
++                wsWhereCondition = new WSWhereCondition("ClassGroup/ParentClassGroup", WSWhereOperator.EQUALS, fkValue,
++                        WSStringPredicate.NONE, false);
++            }
++        }
++
++        wsWhereItem.setWhereCondition(wsWhereCondition);
++        expectedWSViewSearch.setWhereItem(wsWhereItem);
++
++        return expectedWSViewSearch;
++    }
++
++    private void stubMockedPortForGettingChildGoods(String pk) throws RemoteException {
++        when(port.viewSearch(any(WSViewSearch.class))).thenReturn(getWSStringArrayFor_C_P_Goods(pk));
++        WSView wsView = new WSView();
++        wsView.setViewableBusinessElements(new String[] { "Goods" + "/Id", "Goods" + "/Name" });
++        when(port.getView(any(WSGetView.class))).thenReturn(wsView);
++    }
++
++    private void stubMockedPortForGettingChildClassGroups(String pk) throws RemoteException {
++        when(port.viewSearch(any(WSViewSearch.class))).thenReturn(getWSStringArrayFor_C_P_ClassGroups(pk));
++        WSView wsView = new WSView();
++        wsView.setViewableBusinessElements(new String[] { "ClassGroup" + "/Id", "ClassGroup" + "/Name" });
++        when(port.getView(any(WSGetView.class))).thenReturn(wsView);
++    }
++
++    private List<PivotHierarchyBean> getChildGoods(String pk, int levelCpy) throws Exception {
++        return service.getPivotBeanListAsLeaf(searchItem, cluster, model, pk, levelCpy, 0, 20, "en", criteria[0]);
++    }
++
++    private List<PivotHierarchyBean> getChildClassGroups(String id, int level, int levelCpy, int index) throws Exception {
++        return service.getPivotBeanList(searchItem, cluster, model, id, level, levelCpy, 0, 20, "en", true, index);
++    }
++
++    private WSStringArray getWSStringArrayFor_C_P_Goods(String id) {
++        WSStringArray array = new WSStringArray();
++        String[] strings = null;
++
++        if (id.equals("cg1")) {
++            strings = new String[] { "<totalCount>1</totalCount>", store.get("g1") };
++        }
++
++        if (id.equals("cg2")) {
++            strings = new String[] { "<totalCount>2</totalCount>", store.get("g2"), store.get("g3") };
++        }
++
++        if (id.equals("cg3")) {
++            strings = new String[] { "<totalCount>0</totalCount>" };
++        }
++
++        if (id.equals("cg4")) {
++            strings = new String[] { "<totalCount>1</totalCount>", store.get("g4") };
++        }
++
++        if (id.equals("cg5")) {
++            strings = new String[] { "<totalCount>0</totalCount>" };
++        }
++
++        array.setStrings(strings);
++
++        return array;
++    }
++
++    private WSStringArray getWSStringArrayFor_C_P_ClassGroups(String id) {
++        WSStringArray array = new WSStringArray();
++        String[] strings = null;
++
++        if (id.equals("-1")) {
++            strings = new String[] { "<totalCount>2</totalCount>", store.get("cg1"), store.get("cg5") };
++        }
++        if (id.equals("cg1")) {
++            strings = new String[] { "<totalCount>2</totalCount>", store.get("cg2"), store.get("cg3") };
++        }
++
++        if (id.equals("cg2")) {
++            strings = new String[] { "<totalCount>1</totalCount>", store.get("cg4") };
++        }
++
++        if (id.equals("cg3")) {
++            strings = new String[] { "<totalCount>0</totalCount>" };
++        }
++
++        if (id.equals("cg4")) {
++            strings = new String[] { "<totalCount>0</totalCount>" };
++        }
++
++        if (id.equals("cg5")) {
++            strings = new String[] { "<totalCount>0</totalCount>" };
++        }
++
++        array.setStrings(strings);
++
++        return array;
++    }
++
++    private WSView getView(String concept) {
++        WSView view = new WSView();
++        view.setDescription("[EN:" + concept + "]");
++        view.setIsTransformerActive(new WSBoolean(false));
++        view.setName("Browse_items_" + concept);
++        view.setSearchableBusinessElements(new String[] { concept + "/Id", concept + "/Name" });
++        view.setTransformerPK("");
++        view.setViewableBusinessElements(new String[] { concept + "/Id", concept + "/Name" });
++        view.setWhereConditions(new WSWhereCondition[] {});
++        return view;
++    }
++
++    private void initRecordDb() {
++        Map<String, Map<String, String>> clusterMap = new HashMap<String, Map<String, String>>();
++        Map<String, String> classGroups = new HashMap<String, String>();
++        classGroups.put("cg1", "<ClassGroup><Id>cg1</Id><Name>CG1</Name></ClassGroup>");
++        classGroups.put("cg2", "<ClassGroup><Id>cg2</Id><Name>CG2</Name><e1>[1]</e1></ClassGroup>");
++        classGroups.put("cg3", "<ClassGroup><Id>cg3</Id><Name>CG3</Name><e1>[1]</e1></ClassGroup>");
++        classGroups.put("cg4", "<ClassGroup><Id>cg4</Id><Name>CG4</Name><e2>[2]</e2></ClassGroup>");
++        classGroups.put("cg5", "<ClassGroup><Id>cg5</Id><Name>CG5</Name></ClassGroup>");
++        clusterMap.put("ClassGroup", classGroups);
++
++        Map<String, String> goods = new HashMap<String, String>();
++        goods.put("g1", "<Goods><Id>g1</Id><Name>GO1</Name><e1>[cg1]</e1></Goods>");
++        goods.put("g2", "<Goods><Id>g2</Id><Name>GO2</Name><e2>[cg2]</e2></Goods>");
++        goods.put("g3", "<Goods><Id>g3</Id><Name>GO3</Name><e2>[cg2]</e2></Goods>");
++        goods.put("g4", "<Goods><Id>g4</Id><Name>GO4</Name><e4>[cg4]</e4></Goods>");
++        clusterMap.put("Goods", goods);
++
++        recordDb.put(cluster, clusterMap);
++    }
++
++    private void initStore() {
++        store.put("cg1", "<result><Id>cg1</Id><Name>CG1</Name></result>");
++        store.put("cg2", "<result><Id>cg2</Id><Name>CG2</Name><e1>[1]</e1></result>");
++        store.put("cg3", "<result><Id>cg3</Id><Name>CG3</Name><e1>[1]</e1></result>");
++        store.put("cg4", "<result><Id>cg4</Id><Name>CG4</Name><e2>[2]</e2></result>");
++        store.put("cg5", "<result><Id>cg5</Id><Name>CG5</Name></result>");
++
++        store.put("g1", "<result><Id>g1</Id><Name>GO1</Name><e1>[cg1]</e1></result>");
++        store.put("g2", "<result><Id>g2</Id><Name>GO2</Name><e2>[cg2]</e2></result>");
++        store.put("g3", "<result><Id>g3</Id><Name>GO3</Name><e2>[cg2]</e2></result>");
++        store.put("g4", "<result><Id>g4</Id><Name>GO4</Name><e4>[cg4]</e4></result>");
++    }
++
++    private List<String> getList(String... strs) {
++        List<String> list = new ArrayList<String>();
++        for (String str : strs) {
++            list.add(str);
++        }
++        return list;
++    }
++}
+diff --git a/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/shared/UtilsTest.java b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/shared/UtilsTest.java
+index 11b5ce8..b39877d 100644
+--- a/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/shared/UtilsTest.java
++++ b/org.talend.mdm.webapp.hierarchy/src/test/java/org/talend/mdm/webapp/hierarchy/shared/UtilsTest.java
+@@ -1,5 +1,6 @@
+ package org.talend.mdm.webapp.hierarchy.shared;
+ 
++import static org.junit.Assert.*;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+@@ -100,6 +101,42 @@ public class UtilsTest extends TestCase {
+         assertNotNull(criteria);
+         assertNotSame(criteria.getConcept(), concept);
+         assertEquals(criteria, searchItem.getHierarchySearchCriterias()[0]);
+-        
++    }
++    
++    public void testIsSingleCriterionPerConcept() {
++        HierarchySearchCriterias[] criterias = new HierarchySearchCriterias[] {
++                new HierarchySearchCriterias("A", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("A", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("A", null, null, null, null) //$NON-NLS-1$ 
++        };
++        assertFalse(Utils.isSingleCriterionPerConcept(criterias));
++
++        criterias = new HierarchySearchCriterias[] { new HierarchySearchCriterias("A", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("B", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("B", null, null, null, null) //$NON-NLS-1$ 
++        };
++        assertFalse(Utils.isSingleCriterionPerConcept(criterias));
++
++        criterias = new HierarchySearchCriterias[] { new HierarchySearchCriterias("A", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("B", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("C", null, null, null, null) //$NON-NLS-1$ 
++        };
++        assertTrue(Utils.isSingleCriterionPerConcept(criterias));
++    }
++
++    public void testGetSubCriteria() {
++        HierarchySearchCriterias[] criterias = new HierarchySearchCriterias[] {
++                new HierarchySearchCriterias("A", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("B", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("C", null, null, null, null) //$NON-NLS-1$ 
++        };
++        HierarchySearchCriterias[] subCriterias = new HierarchySearchCriterias[] {
++                new HierarchySearchCriterias("B", null, null, null, null), //$NON-NLS-1$ 
++                new HierarchySearchCriterias("C", null, null, null, null) //$NON-NLS-1$ 
++        };
++        HierarchySearchCriterias[] subCriteriasTemp = Utils.getHeadCriteria(criterias);
++        assertEquals(criterias.length, subCriteriasTemp.length + 1);
++        assertArrayEquals(subCriterias, subCriteriasTemp);
++
+     }
+ }

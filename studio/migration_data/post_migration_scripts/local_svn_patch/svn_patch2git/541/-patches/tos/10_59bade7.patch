@@ -1,0 +1,25 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/repository/model/RepositoryNode.java b/org.talend.core.runtime/src/main/java/org/talend/repository/model/RepositoryNode.java
+index 327d97f..6a9bfcf 100755
+--- a/org.talend.core.runtime/src/main/java/org/talend/repository/model/RepositoryNode.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/repository/model/RepositoryNode.java
+@@ -13,10 +13,10 @@
+ package org.talend.repository.model;
+ 
+ import java.util.ArrayList;
+-import java.util.Hashtable;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ import org.eclipse.ui.IActionFilter;
+ import org.talend.commons.ui.runtime.image.IImage;
+@@ -49,7 +49,7 @@ public class RepositoryNode implements IRepositoryNode, IActionFilter {
+ 
+     protected ENodeType type;
+ 
+-    private Map<EProperties, Object> properties = new Hashtable<EProperties, Object>();
++    private Map<EProperties, Object> properties = new ConcurrentHashMap<EProperties, Object>();
+ 
+     private IProjectRepositoryNode root;
+ 

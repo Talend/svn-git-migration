@@ -1,0 +1,288 @@
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnHandler.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnHandler.java
+index adc32f6..4f497bf 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnHandler.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/SvnHandler.java
+@@ -12,14 +12,14 @@
+ // ============================================================================
+ package org.talend.repository.svnprovider;
+ 
+-import java.io.File;
+-import java.io.IOException;
+ import java.util.Map;
+ 
+-import org.apache.commons.io.FileUtils;
+ import org.apache.log4j.Logger;
+ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+ import org.tigris.subversion.javahl.ClientException;
++import org.tigris.subversion.javahl.ConflictDescriptor;
++import org.tigris.subversion.javahl.ConflictResolverCallback;
++import org.tigris.subversion.javahl.ConflictResult;
+ import org.tigris.subversion.javahl.Depth;
+ import org.tigris.subversion.javahl.DirEntry;
+ import org.tigris.subversion.javahl.Info;
+@@ -28,6 +28,7 @@ import org.tigris.subversion.javahl.LogMessage;
+ import org.tigris.subversion.javahl.Revision;
+ import org.tigris.subversion.javahl.SVNClientInterface;
+ import org.tigris.subversion.javahl.Status;
++import org.tigris.subversion.javahl.SubversionException;
+ 
+ @SuppressWarnings("deprecation")
+ public class SvnHandler {
+@@ -79,6 +80,13 @@ public class SvnHandler {
+     public SvnHandler(SVNClientInterface svnClient, int mode) {
+         this.svnClient = svnClient;
+         this.mode = mode;
++        svnClient.setConflictResolver(new ConflictResolverCallback() {
++
++            @Override
++            public ConflictResult resolve(ConflictDescriptor conflictDesc) throws SubversionException {
++                return new ConflictResult(ConflictResult.chooseMineFull, conflictDesc.getMergedPath());
++            }
++        });
+     }
+ 
+     public void setMode(int mode) {
+@@ -232,7 +240,53 @@ public class SvnHandler {
+     }
+ 
+     private long internalCommit(String[] filesPath, String message, Map<String, String> revProps) throws ClientException {
+-        return svnClient.commit(filesPath, message, Depth.empty, false, false, null, revProps);
++        try {
++            return svnClient.commit(filesPath, message, Depth.empty, false, false, null, revProps);
++        } catch (ClientException e) {
++            // in case there is any out of date exception, we try to force to update the common folder for each file
++            // commited, and update it.
++            String commonFolder = getCommonFileOrFolder(filesPath);
++            update(commonFolder);
++            // at this point, we should have avoided any out of date exception, and should be able to commit.
++            return svnClient.commit(filesPath, message, Depth.empty, false, false, null, revProps);
++        }
++    }
++
++    /**
++     * DOC nrousseau Comment method "getCommonFolder".
++     * 
++     * @param filesPath
++     * @return
++     */
++    public String getCommonFileOrFolder(String[] filesPath) {
++        if (filesPath.length == 0) {
++            return ""; //$NON-NLS-1$
++        }
++        if (filesPath.length == 1) {
++            return filesPath[0]; // in this case don't return especially the folder, maybe the just the current file.
++        }
++        String commonPath = filesPath[0];
++        for (String curFilePath : filesPath) {
++            commonPath = greatestCommonPrefix(commonPath, curFilePath);
++        }
++        int lastSeparator = commonPath.lastIndexOf('/');
++        if (lastSeparator == -1) {
++            lastSeparator = commonPath.lastIndexOf('\\');
++        }
++        if (lastSeparator != -1) {
++            commonPath = commonPath.substring(0, lastSeparator + 1);
++        }
++        return commonPath;
++    }
++
++    private String greatestCommonPrefix(String a, String b) {
++        int minLength = Math.min(a.length(), b.length());
++        for (int i = 0; i < minLength; i++) {
++            if (a.charAt(i) != b.charAt(i)) {
++                return a.substring(0, i);
++            }
++        }
++        return a.substring(0, minLength);
+     }
+ 
+     public synchronized void add(String filePath) throws ClientException {
+@@ -345,50 +399,6 @@ public class SvnHandler {
+         }
+     }
+ 
+-    private void keepWorkItemIfHasConfict(String filePath) throws ClientException {
+-        try {
+-            Status[] statusArray = svnClient.status(filePath, true, false, false);
+-            for (Status status : statusArray) {
+-                if (status.isManaged()) {
+-                    if (status.getTextStatus() == Status.Kind.conflicted) {
+-                        String localItemPath = status.getPath();
+-                        String conflictWorkingPath = localItemPath.replace(
+-                                localItemPath.substring(localItemPath.lastIndexOf("/") + 1, localItemPath.length()),
+-                                status.getConflictWorking());
+-                        String conflictOldPath = localItemPath.replace(
+-                                localItemPath.substring(localItemPath.lastIndexOf("/") + 1, localItemPath.length()),
+-                                status.getConflictOld());
+-                        String conflictNewPath = localItemPath.replace(
+-                                localItemPath.substring(localItemPath.lastIndexOf("/") + 1, localItemPath.length()),
+-                                status.getConflictNew());
+-
+-                        File conflictWorkingFile = new File(conflictWorkingPath);
+-                        File conflictOldFile = new File(conflictOldPath);
+-                        File conflictNewFile = new File(conflictNewPath);
+-                        File conflictItemFile = new File(localItemPath);
+-
+-                        if (conflictWorkingFile.exists()) {
+-                            String workingItemString = FileUtils.readFileToString(conflictWorkingFile);
+-                            // replace the current conflict item's content with the latest local of mine
+-                            FileUtils.writeStringToFile(conflictItemFile, workingItemString);
+-                        }
+-                        if (conflictWorkingFile.exists()) {
+-                            conflictWorkingFile.delete();
+-                        }
+-                        if (conflictOldFile.exists()) {
+-                            conflictOldFile.delete();
+-                        }
+-                        if (conflictNewFile.exists()) {
+-                            conflictNewFile.delete();
+-                        }
+-                    }
+-                }
+-            }
+-        } catch (IOException e) {
+-            //
+-        }
+-    }
+-
+     private void internalUpdate(String filePath, long revision, boolean... recursive) throws ClientException {
+         if (recursive.length != 0) {
+             svnClient.update(filePath, Revision.getInstance(revision), JavaHLObjectFactory.unknownOrFiles(recursive[0]), false,
+@@ -397,7 +407,6 @@ public class SvnHandler {
+             svnClient.update(filePath, Revision.getInstance(revision), JavaHLObjectFactory.unknownOrFiles(UPDATE_RECURSE), false,
+                     false, true);
+         }
+-        keepWorkItemIfHasConfict(filePath);
+     }
+ 
+     public synchronized void update(String filePath) throws ClientException {
+@@ -414,10 +423,7 @@ public class SvnHandler {
+     }
+ 
+     private long internalUpdate(String filePath) throws ClientException {
+-        long update = svnClient.update(filePath, Revision.HEAD, JavaHLObjectFactory.unknownOrFiles(UPDATE_RECURSE), false, false,
+-                true);
+-        keepWorkItemIfHasConfict(filePath);
+-        return update;
++        return svnClient.update(filePath, Revision.HEAD, JavaHLObjectFactory.unknownOrFiles(UPDATE_RECURSE), false, false, true);
+     }
+ 
+     public synchronized Status[] status(String filePath, boolean onServer) throws ClientException {
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNTreeContentProvider.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNTreeContentProvider.java
+index 23e39c3..0686fad 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNTreeContentProvider.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/ui/dialog/SVNTreeContentProvider.java
+@@ -107,7 +107,11 @@ public class SVNTreeContentProvider implements IStructuredContentProvider, ITree
+                 if (((DirEntry) parentElement).getPath().equals(SVNConstants.NAME_BRANCHES)) {
+                     try {
+                         String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-                        urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++                        if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                            urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES;
++                        } else {
++                            urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++                        }
+                         List<DirEntry> dirList = new ArrayList<DirEntry>();
+                         DirEntry[] dirs = svnHandler.list(urlPath);
+                         for (DirEntry dir : dirs) {
+@@ -126,7 +130,11 @@ public class SVNTreeContentProvider implements IStructuredContentProvider, ITree
+                 } else if (((DirEntry) parentElement).getPath().equals(SVNConstants.NAME_TAGS)) {
+                     try {
+                         String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-                        urlPath = urlPath + SVNConstants.NAME_TAGS;
++                        if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                            urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_TAGS;
++                        } else {
++                            urlPath = urlPath + SVNConstants.NAME_TAGS;
++                        }
+                         List<DirEntry> dirList = new ArrayList<DirEntry>();
+                         DirEntry[] dirs = svnHandler.list(urlPath);
+                         for (DirEntry dir : dirs) {
+@@ -180,7 +188,11 @@ public class SVNTreeContentProvider implements IStructuredContentProvider, ITree
+                     if (((DirEntry) element).getPath().equals(SVNConstants.NAME_BRANCHES)) {
+                         try {
+                             String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-                            urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++                            if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                                urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES;
++                            } else {
++                                urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++                            }
+                             return svnHandler.list(urlPath).length > 0;
+                         } catch (ClientException e) {
+                             ExceptionHandler.process(e);
+@@ -192,7 +204,11 @@ public class SVNTreeContentProvider implements IStructuredContentProvider, ITree
+                     if (((DirEntry) element).getPath().equals(SVNConstants.NAME_TAGS)) {
+                         try {
+                             String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-                            urlPath = urlPath + SVNConstants.NAME_TAGS;
++                            if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                                urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_TAGS;
++                            } else {
++                                urlPath = urlPath + SVNConstants.NAME_TAGS;
++                            }
+                             return svnHandler.list(urlPath).length > 0;
+                         } catch (ClientException e) {
+                             ExceptionHandler.process(e);
+diff --git a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SVNUtil.java b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SVNUtil.java
+index 8181c79..c9855eb 100644
+--- a/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SVNUtil.java
++++ b/org.talend.repository.svnprovider/src/org/talend/repository/svnprovider/utils/SVNUtil.java
+@@ -112,16 +112,27 @@ public class SVNUtil {
+             this.project = ProjectManager.getInstance().getCurrentProject();
+         }
+         try {
+-            String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-            for (DirEntry dirEntry : getSvnHandler().list(urlPath)) {
++            String urlPathTemp = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
++            for (DirEntry dirEntry : getSvnHandler().list(urlPathTemp)) {
++                String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+                 if (dirEntry.getPath().contains(SVNConstants.NAME_TRUNK)) {
+                     svnList.add(dirEntry);
+                 } else if (dirEntry.getPath().contains(SVNConstants.NAME_BRANCHES)) {
+-                    for (DirEntry dirBranch : getSvnHandler().list(urlPath + SVNConstants.NAME_BRANCHES)) {
++                    if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                        urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES;
++                    } else {
++                        urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++                    }
++                    for (DirEntry dirBranch : getSvnHandler().list(urlPath)) {
+                         svnList.add(dirBranch);
+                     }
+                 } else if (dirEntry.getPath().contains(SVNConstants.NAME_TAGS)) {
+-                    for (DirEntry dirBranch : getSvnHandler().list(urlPath + SVNConstants.NAME_TAGS)) {
++                    if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                        urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_TAGS;
++                    } else {
++                        urlPath = urlPath + SVNConstants.NAME_TAGS;
++                    }
++                    for (DirEntry dirBranch : getSvnHandler().list(urlPath)) {
+                         svnList.add(dirBranch);
+                     }
+                 }
+@@ -215,7 +226,11 @@ public class SVNUtil {
+     private void initBranchChild() {
+         try {
+             String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-            urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++            if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_BRANCHES;
++            } else {
++                urlPath = urlPath + SVNConstants.NAME_BRANCHES;
++            }
+             branchesChild = getSvnHandler().list(urlPath);
+         } catch (ClientException e) {
+             // nothing, maybe no branch exist yet, not an error since by default it will initialize everything
+@@ -228,7 +243,11 @@ public class SVNUtil {
+     private void initTagChild() {
+         try {
+             String urlPath = ProjectUrlHelper.getProjectRootUrl(project.getEmfProject());
+-            urlPath = urlPath + SVNConstants.NAME_TAGS;
++            if (urlPath != null && !urlPath.endsWith(SVNConstants.SEP_CHAR)) {
++                urlPath = urlPath + SVNConstants.SEP_CHAR + SVNConstants.NAME_TAGS;
++            } else {
++                urlPath = urlPath + SVNConstants.NAME_TAGS;
++            }
+             tagsChild = getSvnHandler().list(urlPath);
+         } catch (ClientException e) {
+             // nothing, maybe no branch exist yet, not an error since by default it will initialize everything

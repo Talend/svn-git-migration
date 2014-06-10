@@ -1,0 +1,102 @@
+diff --git a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
+index cb17bfb..30acf57 100644
+--- a/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
++++ b/org.talend.dataquality.reporting.engine/src/main/java/org/talend/dataquality/reporting/engine/StandaloneReportDocGenerator.java
+@@ -116,6 +116,12 @@ public class StandaloneReportDocGenerator extends ReportDocGenerator {
+                 folderOK = outputFolder.mkdirs();
+             }
+ 
++            // if the output folder doesn't exist, create it under the current folder
++            if (!folderOK) {
++                outputFolder = new File(new File("").getAbsolutePath() + File.separator + outputFolderPath); //$NON-NLS-1$
++                folderOK = outputFolder.mkdirs();
++            }
++
+             if (folderOK) {
+                 if (generateReport(outputFolder)) {
+                     System.out.println("Report \"" + report.getName() + "\" generated."); //$NON-NLS-1$ //$NON-NLS-2$
+@@ -124,7 +130,6 @@ public class StandaloneReportDocGenerator extends ReportDocGenerator {
+                     rc.setOk(false);
+                 }
+             }
+-
+         } catch (ClassNotFoundException e) {
+             e.printStackTrace();
+             rc.setOk(false);
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/net.sourceforge.sqlexplorer.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/net.sourceforge.sqlexplorer.jar
+index a263902..26518c8 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/net.sourceforge.sqlexplorer.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/net.sourceforge.sqlexplorer.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.eclipse.swt.unknown.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.eclipse.swt.unknown.jar
+index 9b95073..b8f067f 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.eclipse.swt.unknown.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.eclipse.swt.unknown.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.common.ui.runtime.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.common.ui.runtime.jar
+index 09c7c4f..da3c2e1 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.common.ui.runtime.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.common.ui.runtime.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.runtime.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.runtime.jar
+index 88b6126..49dd0bb 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.runtime.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.runtime.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.ui.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.ui.jar
+index 23088ea..1484202 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.ui.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.commons.ui.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.repository.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.repository.jar
+index 91fd91f..486ef31 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.repository.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.repository.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.runtime.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.runtime.jar
+index d810a53..534581f 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.runtime.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.core.runtime.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.management.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.management.jar
+index 27823f8..05a5ea2 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.management.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.management.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.mip.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.mip.jar
+index ca7a76f..57d730b 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.mip.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.cwm.mip.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.datamart.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.datamart.jar
+index 124bf01..3207f42 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.datamart.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.datamart.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.migration.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.migration.jar
+index 21ab52c..9bc9e86 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.migration.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.migration.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.persistence.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.persistence.jar
+index d1ff20a..7b3dced 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.persistence.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataprofiler.persistence.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.jar
+index 7c526b0..345177c 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.engine.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.engine.jar
+index f926cd7..7df31df 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.engine.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.engine.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.jar
+index a34ac75..145ab30 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.dataquality.reporting.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.jar
+index e33d467..622d599 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.ui.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.ui.jar
+index d7f0a59..69f17b4 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.ui.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.metadata.managment.ui.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.model.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.model.jar
+index 6c86072..f8334bc 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.model.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.model.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.repository.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.repository.jar
+index 1fd6f9d..991a686 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.repository.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.repository.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.utils.jar b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.utils.jar
+index 04c7b28..eb15370 100644
+Binary files a/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.utils.jar and b/org.talend.designer.components.tdqprovider/components/tDqReportRun/org.talend.utils.jar differ
+diff --git a/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet b/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
+index 3fcd1a2..6bd2aaa 100644
+--- a/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
++++ b/org.talend.designer.components.tdqprovider/components/tDqReportRun/tDqReportRun_begin.javajet
+@@ -82,7 +82,11 @@
+             generator_<%=cid%>.generate();
+         }catch(Exception e){
+             generator_<%=cid%>.setSucceeded(false);
+-            generator_<%=cid%>.setErrorMessage(e.getMessage());
++            if(e.getMessage() != null){
++            	generator_<%=cid%>.setErrorMessage(e.getMessage());
++            }else{
++            	generator_<%=cid%>.setErrorMessage(e.getStackTrace()[0].toString());
++            }
+         }
+         double endTime = System.currentTimeMillis();
+         double duration = (endTime - startTime)/1000;

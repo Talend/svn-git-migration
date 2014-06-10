@@ -1,0 +1,70 @@
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/commons/emf/EmfFileResourceUtil.java b/org.talend.cwm.management/src/main/java/org/talend/commons/emf/EmfFileResourceUtil.java
+index 670e48c..2f05acd 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/commons/emf/EmfFileResourceUtil.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/commons/emf/EmfFileResourceUtil.java
+@@ -44,7 +44,9 @@ public class EmfFileResourceUtil {
+         // ADD sizhaoliu TDQ-6698 used by tDqReportRun jobs, the project name and description need to be read from
+         // "talend.project" file.
+         Resource.Factory.Registry reg = Resource.Factory.Registry.INSTANCE;
+-        reg.getExtensionToFactoryMap().put("project", new CwmResourceFactory());//$NON-NLS-1$
++        CwmResourceFactory cwmFactory = new CwmResourceFactory();
++        reg.getExtensionToFactoryMap().put("project", cwmFactory);//$NON-NLS-1$ 
++        reg.getExtensionToFactoryMap().put("properties", cwmFactory);//$NON-NLS-1$ 
+     }
+ 
+     public Resource getFileResource(String string) {
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java b/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
+index 9bb69a1..91371b3 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/cwm/db/connection/ConnectionUtils.java
+@@ -1920,7 +1920,7 @@ public final class ConnectionUtils {
+                     DatabaseConnection dbConn = (DatabaseConnection) dataProvider;
+                     IMetadataConnection metaConnection = ConvertionHelper.convert(dbConn);
+                     dbConn = (DatabaseConnection) MetadataFillFactory.getDBInstance().fillUIConnParams(metaConnection, dbConn);
+-                    if (dbConn != null) {
++                    if (dbConn != null && Platform.isRunning()) {
+                         try {
+                             ProxyRepositoryFactory.getInstance().save(item);
+                         } catch (PersistenceException e) {
+diff --git a/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java b/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
+index 63c2cf6..576f0eb 100644
+--- a/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
++++ b/org.talend.cwm.management/src/main/java/org/talend/dq/helper/PropertyHelper.java
+@@ -31,6 +31,7 @@ import org.eclipse.emf.ecore.resource.Resource;
+ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+ import org.eclipse.emf.ecore.util.EcoreUtil;
+ import org.talend.commons.bridge.ReponsitoryContextBridge;
++import org.talend.commons.emf.EmfFileResourceUtil;
+ import org.talend.commons.emf.FactoriesUtil;
+ import org.talend.commons.emf.FactoriesUtil.EElementEName;
+ import org.talend.commons.exception.PersistenceException;
+@@ -127,9 +128,10 @@ public final class PropertyHelper {
+ 
+         return null;
+     }
+-/**
+- * getItemFile from the resource of property
+- */
++
++    /**
++     * getItemFile from the resource of property
++     */
+     public static IFile getModelElementFile(Resource propertyResource) {
+         assert propertyResource != null;
+         if (propertyResource.getURI().isPlatform()) {
+@@ -205,8 +207,13 @@ public final class PropertyHelper {
+         } else {
+             if (propertyFile.exists()) {
+                 if (propertyFile.getName().endsWith(FactoriesUtil.PROPERTIES_EXTENSION)) {
+-                    URI propURI = URI.createFileURI(propertyFile.getAbsolutePath());
+-                    Resource resource = new ResourceSetImpl().getResource(propURI, true);
++                    Resource resource = null;
++                    if (Platform.isRunning()) {
++                        URI propURI = URI.createFileURI(propertyFile.getAbsolutePath());
++                        resource = new ResourceSetImpl().getResource(propURI, true);
++                    } else {
++                        resource = EmfFileResourceUtil.getInstance().getFileResource(propertyFile.getAbsolutePath());
++                    }
+                     if (resource.getContents() != null) {
+                         Object object = EcoreUtil.getObjectByType(resource.getContents(),
+                                 PropertiesPackage.eINSTANCE.getProperty());

@@ -1,0 +1,14 @@
+diff --git a/org.talend.designer.runprocess/src/main/java/org/talend/designer/runprocess/RunProcessContext.java b/org.talend.designer.runprocess/src/main/java/org/talend/designer/runprocess/RunProcessContext.java
+index 0328fea..2d19fe5 100755
+--- a/org.talend.designer.runprocess/src/main/java/org/talend/designer/runprocess/RunProcessContext.java
++++ b/org.talend.designer.runprocess/src/main/java/org/talend/designer/runprocess/RunProcessContext.java
+@@ -1058,6 +1058,9 @@ public class RunProcessContext {
+         }
+ 
+         private void processPerformances(final String data, final PerformanceData perfData, final IConnection conn) {
++            if (conn == null) {
++                return;
++            }
+             processPerformanceForConnection(data, perfData, conn);
+             String uniqueName = ConnectionUtil.getConnectionUnifiedName(conn);
+             IConnection[] shadowConnections = traceConnectionsManager.getShadowConnenctions(uniqueName);

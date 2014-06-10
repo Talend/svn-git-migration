@@ -8,8 +8,10 @@ i=1
 branchesFolders=`ls | sort`
 for bFolder in ${branchesFolders};
 do
-	branchesArray[i]=${bFolder}
-	i=$(($i+1))
+	if [ -d $bFolder ]; then
+		branchesArray[i]=${bFolder}
+		i=$(($i+1))	
+	fi
 done
 
 #clean all diff files

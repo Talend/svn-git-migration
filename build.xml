@@ -6,7 +6,8 @@
     <property name="svn-migration-scripts.jar.path" value="${svn2gitMigration.dir.path}/svn-migration-scripts.jar"/>
     <property name="bfg.jar.path" value="${svn2gitMigration.dir.path}/bfg-1.11.2.jar"/>
     <property name="not.existing.migration.data.file" value="${svn2gitMigration.dir.path}/not_existing_migration_data.txt"/>
-    <property name="talend.git.base.url" value="ssh://git@bitbucket.org/talend"/>
+    <property name="talend.remote.git.base.url" value="ssh://git@bitbucket.org/talend"/><!-- github value is : git@github.com:Talend-->
+    
     <property name="commit.prefix" value="[GIT Migration]"/>
 	<taskdef resource="net/sf/antcontrib/antlib.xml">
       <classpath>
@@ -44,16 +45,21 @@
                </not>
              </condition>
         </fail>
-        <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; property ">
+        <fail message="You must specify a &quot;remote.git.username&quot; and &quot;remote.git.password&quot; or &quot;github.authorisation.token&quot; property ">
             <condition>
-                <or>
+                <and>
+                    <or>
+                        <not>
+                            <isset property="remote.git.username"/>
+                        </not>
+                        <not>
+                            <isset property="remote.git.password"/>
+                        </not>
+                    </or>
                     <not>
-                        <isset property="remote.git.username"/>
+                        <isset property="github.authorisation.token"/>
                     </not>
-                    <not>
-                        <isset property="remote.git.password"/>
-                    </not>
-                </or>
+                </and>
              </condition>
         </fail>
         <fail message="You must specify a &quot;migration.data.folder.path&quot; property (using -D in the commandline)">
@@ -76,6 +82,7 @@
         <echo message="root of svn-git, workspace and final folders for git repos is [${repo.root.folder}]"/>
         <echo message="migration data folder is [${migration.data.folder.path}]"/>
         <echo message="final git repos list is [${list.of.final.git.repos}]"/>
+        <echo message="list of branches to keep is [${list.of.branches}]"/>
         <echo message="error log may be create at [${error.log.path}]"/>
     </target>
 
@@ -108,8 +115,12 @@
          - - - - - - - - - - - - - - - - - -->
     <target name="clean.final.repos">
         <!-- remove all final repos -->
-        <echo message="clean final repo : ${final.repos.path}"/>
-        <delete dir="${final.repos.path}" />
+        <echo message="clean final repo : ${list.of.final.git.repos}"/>
+        <local name="folder.to.be.removed.pattern"/>
+        <propertyregex property="folder.to.be.removed.pattern" input="${list.of.final.git.repos}," regexp="(.+?)(,|$)" replace="**/\1/\2"/>
+        <delete includeemptydirs="true" failonerror="false" >
+            <fileset dir="${final.repos.path}" includes="${folder.to.be.removed.pattern}" defaultexcludes="false"/>
+        </delete>
         <mkdir dir="${final.repos.path}" />
     </target>
 
@@ -131,6 +142,7 @@
 	        <try>
 	           <runtarget  target="update.all.git.svn.repos"/>
 	           <runtarget  target="perform.each.repo.migration"/>
+	           <execute-all-extra-script/>
 	       </try>
 	       <finally>
 	           <dump-error-log/>
@@ -142,7 +154,7 @@
 <!-- ================================= 
           target: update.all.git.svn.repos              
          ================================= -->
-    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits" unless="skip.svn.upadte">
+    <target name="update.all.git.svn.repos" description="this updates all local git repositories with the latest svn commits" unless="skip.svn.update">
         <foreach target="update.git.svn.repo" param="svn.git.repo.path">
         	<path refid ="svn.git.repo.dirset"/>
     	</foreach>
@@ -159,8 +171,6 @@
         <echo message="fixing branches and tags..."/>
         <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} sync-rebase"/>
         <my-exec executable="java" dir="${svn.git.repo.path}/" argline="-Dfile.encoding=utf-8 -Djava.io.tmpdir=${final.repos.path} -jar ${svn-migration-scripts.jar.path} clean-git --force" failonerror="false"/>
-        <keep-branches list="${list.of.branches}" repoPath="${svn.git.repo.path}" />
-        <keep-tags list="${list.of.tags}" repoPath="${svn.git.repo.path}" />
         <!-- remove the old history using git grafts using the ${history.date.limit}, the format is YYYY-MM-DD-->
         <if>
             <isset property="history.date.limit"/>
@@ -221,13 +231,38 @@
 
          	    <!-- check that repo contains what is expected -->
     		    <check-final-repo repo="@{git.final.repo.name}"/>
+    		    <rename-final-repo.branches repo="@{git.final.repo.name}"/>
                 <!-- push the final repos-->
                 <git-push-repo localrepo="${final.repo.path}" remoteRepo="@{git.final.repo.name}"/>
     		</sequential>
     	</for>
     </target>
 	
-                    	
+
+<!-- = = = = = = = = = = = = = = = = =
+          macrodef: execute-all-extra-script 
+          look for all files in the ${migration.data.folder.path}/extrascripts
+          and execute them using this main script folder as a working dir.         
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="execute-all-extra-script">
+        <sequential>
+            <if>
+                <available file="${final.repos.path}/post_migration_scripts"/>
+            <then>
+                <for param="scriptfile">
+                  <path>
+                    <fileset dir="${migration.data.folder.path}/post_migration_scripts" includes="*.*"/>
+                  </path>
+                  <sequential>
+                      <my-exec dir="${svn2gitMigration.dir.path}" executable="@{scriptfile}" showoutput="true" argline=""/>
+                  </sequential>
+                </for>
+            </then>
+            </if>
+        </sequential>
+    </macrodef>
+    
+    
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-mv-set
           1) create subfolder
@@ -263,8 +298,33 @@
         </sequential>
     </macrodef>
 	
-	
-	<!-- = = = = = = = = = = = = = = = = =
+    
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: rename-final-repo.branches          
+          rename branches  of the git rpository  
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="rename-final-repo.branches">
+        <attribute name="repo" default="name of the final repo where to rename branches" />
+        <sequential>
+            <if>
+                <isset property="rename.branches"/>
+            <then>
+                <for param="branch" list="${list.of.branches.no.master}">
+                    <sequential>
+                        <local name="new.branch.name"/>
+                        <propertyregex property="new.branch.name" input="@{branch}" regexp="${branch.rename.matching.pattern}" replace="${branch.rename.replace.pattern}"/>
+                        <git argline="branch -m @{branch} ${new.branch.name}" dir="${final.repos.path}/@{repo}"/>
+                    </sequential>
+                </for>
+            </then>
+            </if>
+        </sequential>
+    </macrodef>
+
+    
+    
+    
+    <!-- = = = = = = = = = = = = = = = = =
           macrodef: check-final-repo          
           this will check that in the final repository for each branches it contains all the desired folders. 
          = = = = = = = = = = = = = = = = = -->
@@ -459,7 +519,6 @@
                 </not>        	    
         	<then>
                 <!-- remove all calculated local branches -->
-                <echo message="remove the following branches : ${local.branches.to.remove}"/>
                 <git dir="@{repoPath}" argline="branch -D ${local.branches.to.remove}"/>
         	</then>
         	<else>
@@ -475,7 +534,7 @@
                             <stringtokenizer delims="\n, *" suppressdelims="true" />
                         </tokens>
                         <contains text="remotes/" casesensitive="no"/>
-                    </restrict>
+		    </restrict>
             		<globmapper from="remotes/*" to="*"/>
             	</mappedresources>
             </resources>
@@ -488,7 +547,6 @@
                     <length string="${remote.branches.to.remove}" trim="true" length="0" />                    
                 </not>              
             <then>
-                <echo message="remove the following remote branches : ${remote.branches.to.remove}"/>
                 <git dir="@{repoPath}" argline="branch -rD ${remote.branches.to.remove}"/>
             </then>
             <else>
@@ -525,7 +583,7 @@
                 <resources refid="all.tags.res"/>
                 <intersect id="intersect"><resources refid="tags.to.keep.res"/><resources refid="all.tags.res"/></intersect>
             </difference>
-            <local name="local.branches.to.remove"/>
+            <local name="tags.to.remove"/>
             <pathconvert property="tags.to.remove" refid="tags.to.remove.res" pathsep=" "/>
             
             <if>
@@ -534,7 +592,6 @@
                 </not>              
                 <then>
                     <!-- remove all calculated tags -->
-                    <echo message="remove the following tags : ${tags.to.remove}"/>
                     <git dir="@{repoPath}" argline="tag -d ${tags.to.remove}"/>
                 </then>
                 <else>
@@ -564,8 +621,9 @@
 	
 	<!-- = = = = = = = = = = = = = = = = =
           macrodef: prepare.svn.git.repo
-          1) loop on all branches to remove the unnecessary folders not matching the migration data pattern
-          2) removes all unused folders from the whole git history       
+          1) removes unecessary branches and tags
+          2) loop on all branches to remove the unnecessary folders not matching the migration data pattern
+          3) removes all unused folders from the whole git history       
          = = = = = = = = = = = = = = = = = -->
     <macrodef name="prepare.svn.git.repo">
         <attribute name="svnrepo" description="name of the svn.git repo found in ${svn.git.repos.path}"/>
@@ -574,6 +632,8 @@
             <var name="all.removed.files" value=""/>
             <local name="destination.dir"/>
             <property name="destination.dir" value="${migration.workspace.path}/@{svnrepo}/"/>
+            <keep-branches list="${list.of.branches}" repoPath="${destination.dir}" />
+            <keep-tags list="${list.of.tags}" repoPath="${destination.dir}" />
             <for param="branch" list="${list.of.branches}">
                 <sequential><!-- remove all root files and folders unecessary for the branch -->
                     <local name="migration.data.file"/>
@@ -613,9 +673,40 @@
                 </sequential>
             </for>
             <git-remove-history alreadyremoved="${all.removed.files}" gitrepo="@{gitrepo}" svnrepo="@{svnrepo}"/>
+            <git-rename-tags repopath="${destination.dir}" tagsuffix="@{svnrepo}"/>    
         </sequential>
     </macrodef>
 
+    
+ <!-- - - - - - - - - - - - - - - - - - 
+          target: git-rename-tags     
+          rename all repo_path tags by adding the tag_suffix to them           
+         - - - - - - - - - - - - - - - - - -->
+    <macrodef name="git-rename-tags">
+        <attribute name="repopath" description="absolute path on the git repository to use" />
+        <attribute name="tagsuffix" description="suffixe use to be placed after each tag name" />
+        <sequential>
+            <git argline="tag" dir="@{repopath}" output="all.tags"/>
+            <propertyregex property="all.tags.list" input="${all.tags}," regexp="\n" replace=","/>
+            <for param="tag.name" list="${all.tags.list}" >
+                <sequential>
+                    <local name="new.tag.name"/>
+                    <if>
+                        <isset property="rename.tags"/>
+                        <then>
+                            <propertyregex property="new.tag.name" input="@{tag.name}" regexp="${tag.rename.matching.pattern}" replace="${tag.rename.replace.pattern}"/>
+                        </then>
+                        <else>
+                            <property name="new.tag.name" value="@{tag.name}"/>
+                        </else>
+                    </if>
+                    <git argline="tag ${new.tag.name}/@{tagsuffix} @{tag.name}" dir="@{repopath}"/>
+                    <git argline="tag -d @{tag.name}" dir="@{repopath}"/>
+                </sequential>
+            </for>
+        </sequential>
+    </macrodef>
+   
 
 <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-remove-history
@@ -663,17 +754,18 @@
                     <local name="files.to.remove"/>
                     <pathconvert property="files.to.remove" refid="real.files.to.remove.res" pathsep=","/>
                     <echo message="removing [${files.to.remove}] from the history using bfg."/>
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection --delete-folders '{${files.to.remove}}'"/>
-<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="-XX-no-blob-protection -XX-delete-folders '{${files.to.remove}}'"/>
-                    </java>
--->
-                    <!-- remove all blobs bigger than 1MB from history -->
-                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --protect-blobs-from ${list.of.branches},${list.of.tags}"/>
-<!--                     <java jar="${bfg.jar.path}" dir="${migration.workspace.path}/@{svnrepo}" fork="true">
-                        <arg line="-XX-strip-blobs-bigger-than 1M -XX-protect-blobs-from ${list.of.branches},${list.of.tags}"/>
-                    </java>
--->
+                    <!-- remove files from history -->
+                    <local name="strip-all-blobs"/>
+                    <condition property="strip-all-blobs" value="--strip-blobs-bigger-than ${@{gitrepo}.remove.all.files.bigger.than}" else="">
+                        <isset property="@{gitrepo}.remove.all.files.bigger.than"/>
+                    </condition>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --no-blob-protection ${strip-all-blobs} --delete-folders '{${files.to.remove}}'" showoutput="true"/>
+                        <!--get the list of all tags, cause they may have been renamed -->
+                        <local name="this.repo.tags"/>
+                        <local name="all.tags.to.be.protected"/>
+                        <git argline="tag" dir="${migration.workspace.path}/@{svnrepo}" output="this.repo.tags"/>
+                        <propertyregex property="all.tags.to.be.protected" input="${this.repo.tags}," regexp="\n" replace=","/>
+                    <my-exec executable="java" dir="${migration.workspace.path}/@{svnrepo}" argline="-jar ${bfg.jar.path} --strip-blobs-bigger-than 1M --delete-files '{*.jar,*.zip,*.war,*.jpg,*.png,*.jpeg,*.gif}' --protect-blobs-from ${list.of.branches},${all.tags.to.be.protected}" showoutput="true"/>
                     <!--reset the current master branch to remove files that where removed above in the index-->
                     <git argline="reset --hard" dir="${migration.workspace.path}/@{svnrepo}"/>
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
@@ -769,9 +861,17 @@
         <attribute name="remoteRepo" description="remote repository name"/>
         <sequential>
         	<local name="remote.repo.url"/>
-        	<property name="remote.repo.url" value="${talend.git.base.url}/@{remoteRepo}"/> 
+        	<property name="remote.repo.url" value="${talend.remote.git.base.url}/@{remoteRepo}"/> 
             <echo message="push the final repo : @{localrepo} to [@{remoteRepo}]"/>
-        	<git-create-remote-repo name="@{remoteRepo}"/>
+            <if>
+                <contains string="${remote.repo.url}" substring="bitbucket.org"/>
+                <then>
+                    <git-create-remote-repo-bitbucket name="@{remoteRepo}"/>
+                </then>
+                <else>
+                    <git-create-remote-repo-github name="@{remoteRepo}"/>
+                </else>
+            </if>
             <echo message="setting the remote url to repo [@{localrepo}] on
             	[${remote.repo.url}]"/>
             <git argline="remote add origin ${remote.repo.url}" dir="@{localrepo}/" />
@@ -783,10 +883,10 @@
     </macrodef>
 
     <!-- = = = = = = = = = = = = = = = = =
-          macrodef: git-create-remote-repo   
+          macrodef: git-create-remote-repo-bitbucket   
           this creates a remote repo on bitBucket right after deleting it, this will fail if creation fails       
          = = = = = = = = = = = = = = = = = -->
-    <macrodef name="git-create-remote-repo">
+    <macrodef name="git-create-remote-repo-bitbucket">
         <attribute name="name" description="name of the repo"/>
         <sequential>
             <echo message="deleting remote [@{name}] "/>
@@ -795,7 +895,22 @@
             <my-exec executable="curl" argline="-f -X POST -u ${remote.git.username}:${remote.git.password} -H &quot;Content-Type: application/json&quot; https://api.bitbucket.org/2.0/repositories/talend/@{name} -d '{&quot;scm&quot;: &quot;git&quot;, &quot;is_private&quot;: true}'"/>
         </sequential>
     </macrodef>
-	
+
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: git-create-remote-repo-bitbucket   
+          this creates a remote repo on bitBucket right after deleting it, this will fail if creation fails       
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="git-create-remote-repo-github">
+        <attribute name="name" description="name of the repo"/>
+        <sequential>
+            <echo message="deleting remote [@{name}] "/>
+            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -X DELETE https://api.github.com/repos/talend/@{name}" failonerror="false"/>
+            <echo message="creating remote [@{name}] "/>
+            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true}' https://api.github.com/orgs/talend/repos"/>
+        </sequential>
+    </macrodef>
+  
+    
     <!-- = = = = = = = = = = = = = = = = =
           macrodef: git-init-final-repo   
           this initialise the final repo and creates an initial commit to have the master branch and be able to use it.   
@@ -841,7 +956,7 @@
         <attribute name="argline" description="argument line passed to the git command"/>
         <attribute name="dir" default="${user.dir}" description="directory where to run the git command"/>
         <attribute name="failonerror" default="true" description="argument line passed to the git command"/>
-        <attribute name="output" default="git.output" description="name of the property to be filled with the git output"/>
+        <attribute name="output" default="exec.output" description="name of the property to be filled with the git output"/>
         <attribute name="showoutput" default="false" description="display the stdout after the command was executed, default is false"/>
         <sequential>
             <echo message="in folder [@{dir}]"/>
@@ -904,7 +1019,13 @@
         </sequential>
     </macrodef>
 
-	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: test.git-push-repo                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test.git-push-repo">
+            <git-push-repo localrepo="${test.git.push.repo.path}" remoteRepo="${test.git.push.repo.name}"/>
+    </target>
+
     <!-- ================================= 
           target: git-init-final-repo.test              
          ================================= -->
@@ -913,6 +1034,41 @@
         <dump-error-log/>
     </target>
 
+    
+    <!-- ================================= 
+          target: test.clean.final.repos              
+         ================================= -->
+    <target name="test.clean.final.repos" >
+        <mkdir dir="${final.repos.path}/foo"/>
+        <mkdir dir="${final.repos.path}/bar"/>
+        <echo file="${final.repos.path}/foo/foo.txt">foo</echo>
+        <mkdir dir="${final.repos.path}/foobar"/>
+        <fail>
+            <condition>
+                <not>
+                    <and>
+                        <available file="${final.repos.path}/foo"/>
+                        <available file="${final.repos.path}/bar"/>
+                    </and>
+                </not>
+            </condition>
+        </fail>
+        <antcall target="clean.final.repos">
+            <param name="list.of.final.git.repos" value="foo,bar"/>
+        </antcall>
+        <fail>
+            <condition>
+                <or>
+                    <available file="${final.repos.path}/foo"/>
+                    <available file="${final.repos.path}/bar"/>
+                    <not>
+                        <available file="${final.repos.path}/foobar"/>
+                    </not>
+                </or>
+            </condition>
+        </fail>
+    </target>
+    
 	<!-- ================================= 
 	      target: test.prepare.svn.git.repo              
 	     ================================= -->
@@ -942,7 +1098,7 @@
     <target name="test.keep-branches" > <!-- depends="clean.workspace">-->
 <!--     	<copy-original-to-workspace from="tis_private"/>
 -->
-        <keep-branches list="${list.of.branches}" repopath="${svn.git.repos.path}/tis_private"/>
+        <keep-branches list="${list.of.branches}" repopath="${test.keep.branch.repo.path}"/>
         <dump-error-log/>
     </target>
 
@@ -952,7 +1108,7 @@
     <target name="test.keep-tags" ><!--depends="clean.workspace">
         <copy-original-to-workspace from="tis_private"/>-->
 
-        <keep-tags list="${list.of.tags}" repopath="${svn.git.repos.path}/tis_private"/>
+        <keep-tags list="${list.of.tags}" repopath="${test.keep.tags.repo.path}"/>
         <dump-error-log/>
     </target>
 	
@@ -1065,6 +1221,34 @@
         <git-remove-history alreadyremoved="${all.file.removed}" svnrepo="tis_private" gitrepo="tcommon-studio-ee"/>
         
     </target>
+
+    <!-- ================================= 
+              target: test-git-remove-history              
+             ================================= -->
+        <target name="test-rename-final-repo.branches" >
+            <property name="migration.data.file.path" value="studio/migration_data/migration_ant.properties"/> 
+            <property file="${migration.data.file.path}"/> 
+            <rename-final-repo.branches repo="${test.repo.path}"/>
+        </target>
+
+<!-- - - - - - - - - - - - - - - - - - 
+          target: test-execute-all-extra-script                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-execute-all-extra-script">
+        <property name="migration.data.folder.path" value="${svn2gitMigration.dir.path}/licence_security_migration_data"/>
+        <execute-all-extra-script/>
+    </target>
+    
+    
+    
+<!-- - - - - - - - - - - - - - - - - - 
+          target: test-git-rename-tags                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-git-rename-tags">
+        <property file="studio/migration_data/migration_ant.properties"/> 
+        <git-rename-tags repopath="${test.repo.path}" tagsuffix="${test.tag.suffix}"/>    
+    </target>
+    
     
  <!-- ================================= 
           target: test              

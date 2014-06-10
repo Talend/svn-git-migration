@@ -1,0 +1,13 @@
+diff --git a/org.talend.core.tis/resources/supportDynamic.txt b/org.talend.core.tis/resources/supportDynamic.txt
+index ac39470..b1d2970 100644
+--- a/org.talend.core.tis/resources/supportDynamic.txt
++++ b/org.talend.core.tis/resources/supportDynamic.txt
+@@ -60,4 +60,5 @@ tFileOutputPositional
+ tAmazonMysqlInput
+ tAmazonMysqlOutput
+ tAmazonOracleInput
+-tAmazonOracleOutput
+\ No newline at end of file
++tAmazonOracleOutput
++tLDAPInput
+\ No newline at end of file

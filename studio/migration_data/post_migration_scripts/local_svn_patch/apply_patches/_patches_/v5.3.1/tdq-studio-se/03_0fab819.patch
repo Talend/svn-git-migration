@@ -1,0 +1,41 @@
+diff --git a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
+index 9ecc51d..2dd5479 100644
+--- a/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
++++ b/org.talend.dataprofiler.core/src/org/talend/dataprofiler/core/ui/action/actions/RunAnalysisAction.java
+@@ -171,7 +171,12 @@ public class RunAnalysisAction extends Action implements ICheatSheetAction {
+                         return;
+                     }
+                     // ~
+-                    saveBeforeRun(anaEditor);
++                    try {
++                        saveBeforeRun(anaEditor);
++                    } catch (Exception e) {
++                        log.error(e, e);
++                        return;
++                    }
+                 }
+ 
+                 ReturnCode canRun = anaEditor.canRun();
+@@ -360,14 +365,19 @@ public class RunAnalysisAction extends Action implements ICheatSheetAction {
+      * 
+      * @param anaEditor
+      */
+-    private void saveBeforeRun(AnalysisEditor anaEditor) {
++    private void saveBeforeRun(AnalysisEditor anaEditor) throws Exception {
+         IRepositoryFactory localRepository = RepositoryFactoryProvider
+                 .getRepositoriyById(RepositoryConstants.REPOSITORY_LOCAL_ID);
+         IRepositoryFactory oldRepository = ProxyRepositoryFactory.getInstance().getRepositoryFactoryFromProvider();
+         ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(localRepository);
+         // This save action won't invoke any remote repository action such as svn commit. TDQ-7508
+-        anaEditor.doSave(null);
+-        ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(oldRepository);
++        try {
++            anaEditor.doSave(null);
++        } catch (Exception e) {
++            throw e;
++        } finally {
++            ProxyRepositoryFactory.getInstance().setRepositoryFactoryFromProvider(oldRepository);
++        }
+     }
+ 
+     private void displayResultStatus(final ReturnCode executed) {

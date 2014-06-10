@@ -1,0 +1,3 @@
+ - This is temp working folder.
+ - This folder is just for extracting the "git-diff" patches. Then, do half munual for each git repositories.
+ - When there are some commits in local patch svn, need fetch and check the newest patches for Bitbucket git repositories "--patches".

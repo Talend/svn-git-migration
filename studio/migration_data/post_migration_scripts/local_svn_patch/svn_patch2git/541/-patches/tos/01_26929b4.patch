@@ -1,0 +1,35 @@
+diff --git a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/process/Process.java b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/process/Process.java
+index d4fac29..49b4371 100755
+--- a/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/process/Process.java
++++ b/org.talend.designer.core/src/main/java/org/talend/designer/core/ui/editor/process/Process.java
+@@ -176,7 +176,7 @@ import org.talend.repository.ui.utils.Log4jPrefsSettingManager;
+  * The diagram will contain all elements (nodes, connections) The xml that describes the diagram will be saved from the
+  * information of this class. <br/>
+  * 
+- * $Id: Process.java 111486 2013-11-26 06:18:21Z hwang $
++ * $Id: Process.java 112632 2013-12-26 10:17:56Z wchen $
+  * 
+  */
+ public class Process extends Element implements IProcess2, IGEFProcess, ILastVersionChecker {
+@@ -2274,13 +2274,20 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
+                 }
+             }
+             // at this point we should have the uniquename set correctly in the connection.
+-            if (!connectionUniqueNames.contains(uniqueName) && checkValidConnectionName(uniqueName, false)) {
++            boolean isValidName = checkValidConnectionName(uniqueName, false);
++            if (!connectionUniqueNames.contains(uniqueName) && isValidName) {
+                 try {
+                     source.getProcess().addUniqueConnectionName(uniqueName);
+                 } catch (Exception e) {
+                     // nothing, since it should be added already in fact.
+                 }
+             } else {
++                if (!isValidName) {
++                    // fix for TDI-28468 ,some connection uniquename are not valid from some old
++                    // version like uniquename = OnSubjobOk (OnSubjobOK(TRIGGER_OUTPUT_1))
++                    // if base name is not valid ,generate a new one based on the default link name
++                    uniqueName = connec.getLineStyle().getDefaultLinkName();
++                }
+                 uniqueName = source.getProcess().generateUniqueConnectionName(uniqueName);
+                 if (connec.getLineStyle().hasConnectionCategory(IConnectionCategory.FLOW)) {
+                     ChangeConnTextCommand cctc = new ChangeConnTextCommand(connec, uniqueName);

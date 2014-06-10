@@ -61,6 +61,7 @@ org.talend.repository.sapwizard
 org.talend.repository.sapwizard.nl
 org.talend.repository.sapwizard.test
 org.talend.resources.export.job
+org.talend.resources.export.job.nl
 org.talend.tisenterprise-feature
 org.talend.tisexpress-feature
 org.talend.tis-feature

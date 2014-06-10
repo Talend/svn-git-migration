@@ -1,0 +1,56 @@
+diff --git a/org.talend.utils/src/main/java/org/talend/utils/dates/DateUtils.java b/org.talend.utils/src/main/java/org/talend/utils/dates/DateUtils.java
+index 3d2354f..d4f8d71 100644
+--- a/org.talend.utils/src/main/java/org/talend/utils/dates/DateUtils.java
++++ b/org.talend.utils/src/main/java/org/talend/utils/dates/DateUtils.java
+@@ -17,6 +17,9 @@ import java.text.DateFormat;
+ import java.text.ParseException;
+ import java.text.SimpleDateFormat;
+ import java.util.Date;
++import java.util.TimeZone;
++
++import org.apache.log4j.Logger;
+ 
+ /**
+  * 
+@@ -24,6 +27,8 @@ import java.util.Date;
+  */
+ public final class DateUtils {
+ 
++    protected static Logger log = Logger.getLogger(DateUtils.class);
++
+     public static final String PATTERN_1 = "MM/dd/yyyy";//$NON-NLS-1$
+ 
+     public static final String PATTERN_2 = "yyyy-MM-dd hh:mm:ss";//$NON-NLS-1$
+@@ -39,6 +44,8 @@ public final class DateUtils {
+     // Added yyin 2012-05-14 TDQ-5142
+     public static final String PATTERN_7 = "hh:mm:ss";//$NON-NLS-1$
+ 
++    public static final String UTC = "UTC";//$NON-NLS-1$
++
+     /**
+      * DOC bZhou DateUtils constructor comment.
+      */
+@@ -90,4 +97,23 @@ public final class DateUtils {
+         return df.format(nowDate.getTime());
+     }
+ 
++    /**
++     * get the standard time: UTC.
++     * 
++     * @param localDate the date with local time zone
++     * @return
++     */
++    public static Date convert2StandardTime(Date localDate) {
++        Date result = localDate;
++        SimpleDateFormat dateFormat = new SimpleDateFormat(PATTERN_5);
++        dateFormat.setTimeZone(TimeZone.getTimeZone(UTC));
++        String dateStr = dateFormat.format(localDate);
++        try {
++            dateFormat.setTimeZone(TimeZone.getDefault());
++            result = dateFormat.parse(dateStr);
++        } catch (ParseException e) {
++            log.error(e);
++        }
++        return result;
++    }
+ }

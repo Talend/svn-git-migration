@@ -1,0 +1,432 @@
+diff --git a/org.talend.repository/src/main/java/messages.properties b/org.talend.repository/src/main/java/messages.properties
+index 21517f6..f4dcdcc 100644
+--- a/org.talend.repository/src/main/java/messages.properties
++++ b/org.talend.repository/src/main/java/messages.properties
+@@ -737,6 +737,12 @@ ImportItemUtil.taskMonitor=apply migration task {0} on item {1}
+ ImportItemUtil.tdqErrorInfor=Can't import tdq item {0}
+ ImportItemUtil.unknowException=Unknow language: {0}
+ ImportItemUtil.unsupportItem=Can not import the item, Please ensure the items are valid in current product.
++ImportItemUtil.ErrorCreateEmfResource=Load EMF Resource failed. 
++ImportItemUtil.MissingItemFile=missing item file. 
++ImportItemUtil.NotHrefCurrentItemFile=original item file has some errors, it has been recovered from file name, please recheck.  
++ImportItemUtil.MissingItemError={0};Missing '{1}' file!;{2} 
++ImportItemUtil.LoadEMFResourceError={0};Load EMF Resource failed;{1} 
++
+ ImportItemWizardPage.0=The 2 following items haves the same ID, please unselect one of them : \n [{0}] [{1}]
+ ImportItemWizardPage.ItemsList=Items List
+ ImportItemWizardPage.ImportDescription=Import items from an archive file or directory.
+@@ -787,4 +793,9 @@ RepositoryService.projectNotFound=The project '{0}' is not found.
+ RepositoryService.projectReadonlyTitle=Information
+ RepositoryService.projectReadonly=The current login project is readonly.
+ 
+-JobScriptsManager.ResourceNotFoundForExport="Resource cannot be found for export: " {0} 
+\ No newline at end of file
++JobScriptsManager.ResourceNotFoundForExport="Resource cannot be found for export: " {0} 
++
++ShowErrorsDuringImportItemsDialog_title=Errors during the import items 
++ShowErrorsDuringImportItemsDialog_exportLogButton_title=Export Log 
++ShowErrorsDuringImportItemsDialog_exportLogEntry=Export Log Entry 
++ShowErrorsDuringImportItemsDialog_confirmOverwrite_message = File " {0}" exists.  Would you like to overwrite it?
+\ No newline at end of file
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemUtil.java b/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemUtil.java
+index dabc043..82b3f6d 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemUtil.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemUtil.java
+@@ -54,6 +54,7 @@ import org.eclipse.emf.common.util.URI;
+ import org.eclipse.emf.ecore.EObject;
+ import org.eclipse.emf.ecore.EPackage;
+ import org.eclipse.emf.ecore.InternalEObject;
++import org.eclipse.emf.ecore.impl.EObjectImpl;
+ import org.eclipse.emf.ecore.resource.Resource;
+ import org.eclipse.emf.ecore.resource.ResourceSet;
+ import org.eclipse.emf.ecore.resource.URIConverter;
+@@ -641,6 +642,9 @@ public class ImportItemUtil {
+             final IProgressMonitor monitor) {
+         monitor.subTask(Messages.getString("ImportItemWizardPage.Importing") + itemRecord.getItemName()); //$NON-NLS-1$
+         resolveItem(manager, itemRecord);
++        if (!itemRecord.isValid()) {
++            return;
++        }
+ 
+         int num = 0;
+         for (Object obj : itemRecord.getResourceSet().getResources()) {
+@@ -1478,6 +1482,20 @@ public class ImportItemUtil {
+         return null;
+     }
+ 
++    /**
++     * get relative Path of the Item
++     */
++    private IPath getValidItemRelativePath(ResourcesManager resManager, IPath path) {
++        IPath projectFilePath = getValidProjectFilePath(resManager, path, null);
++        if (projectFilePath != null) {
++            // remove the last segments "talend.project"
++            IPath projectRootPath = projectFilePath.removeLastSegments(1);
++            // relative to import project
++            return path.makeRelativeTo(projectRootPath);
++        }
++        return null;
++    }
++
+     private ItemRecord computeItemRecord(ResourcesManager collector, IPath path) {
+         ItemRecord itemRecord = new ItemRecord(path);
+         computeProperty(collector, itemRecord);
+@@ -1538,6 +1556,16 @@ public class ImportItemUtil {
+             final Item item = itemRecord.getItem();
+             boolean byteArray = (item instanceof FileItem);
+             IPath itemPath = getItemPath(itemRecord.getPath(), item);
++            IPath itemRelativePath = getValidItemRelativePath(manager, itemPath);
++            Set<IPath> paths = manager.getPaths();
++            // check the item file
++            if (!paths.contains(itemPath)) {
++                itemRecord.addError(Messages.getString("ImportItemUtil.MissingItemError", itemRecord.getItemName(),
++                        itemPath.lastSegment(), itemRelativePath));
++                log.error(itemRecord.getItemName()
++                        + " " + Messages.getString("ImportItemUtil.MissingItemFile") + " - " + itemPath); //$NON-NLS-1$
++                return;
++            }
+             stream = manager.getStream(itemPath);
+             Resource resource = createResource(itemRecord, itemPath, byteArray);
+ 
+@@ -1563,8 +1591,27 @@ public class ImportItemUtil {
+                 Resource rfResource = createResource(itemRecord, itemPath, true);
+                 rfResource.load(stream, null);
+             }
+-            resetItemReference(itemRecord, resource);
+-            // EcoreUtil.resolveAll(itemRecord.getResourceSet());
++
++            Iterator<EObject> itRef = item.eCrossReferences().iterator();
++            IPath parentPath = itemRecord.getPath().removeLastSegments(1);
++            while (itRef.hasNext()) {
++                EObject object = itRef.next();
++                String linkedFile = EcoreUtil.getURI(object).toFileString();
++                IPath linkedPath = parentPath.append(linkedFile);
++                if (!paths.contains(linkedPath)) {
++                    if (linkedFile != null && !linkedFile.equals(itemPath.lastSegment())
++                            && linkedFile.endsWith(itemPath.getFileExtension())) {
++                        if (object.eIsProxy()) {
++                            // if original href of the item point to some missing item file
++                            // and if we can get the original item file from the name, recover it, but add a warning
++                            ((EObjectImpl) object).eSetProxyURI(URI.createFileURI(itemPath.lastSegment()));
++                            log.warn(itemRecord.getItemName()
++                                    + " " + Messages.getString("ImportItemUtil.NotHrefCurrentItemFile") + " - " + itemRecord.getPath()); //$NON-NLS-1$
++                        }
++                    }
++                }
++                EcoreUtil.resolve(object, resource);
++            }
+         } catch (IOException e) {
+             // ignore
+         } finally {
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemWizardPage.java b/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemWizardPage.java
+index 64d4d82..e6761ff 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemWizardPage.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/imports/ImportItemWizardPage.java
+@@ -62,6 +62,7 @@ import org.eclipse.swt.layout.GridLayout;
+ import org.eclipse.swt.widgets.Button;
+ import org.eclipse.swt.widgets.Composite;
+ import org.eclipse.swt.widgets.DirectoryDialog;
++import org.eclipse.swt.widgets.Display;
+ import org.eclipse.swt.widgets.FileDialog;
+ import org.eclipse.swt.widgets.Label;
+ import org.eclipse.swt.widgets.Shell;
+@@ -1036,6 +1037,23 @@ class ImportItemWizardPage extends WizardPage {
+ 
+         } catch (InterruptedException e) {
+             //
++        } finally {
++            // Check Error Items
++            final List<String> errors = new ArrayList<String>();
++            for (ItemRecord itemRecord : checkedItemRecords) {
++                errors.addAll(itemRecord.getErrors());
++            }
++            Display.getDefault().asyncExec(new Runnable() {
++
++                @Override
++                public void run() {
++                    if (!errors.isEmpty()) {
++                        ShowErrorsDuringImportItemsDialog dialog = new ShowErrorsDuringImportItemsDialog(Display.getCurrent()
++                                .getActiveShell(), errors);
++                        dialog.open();
++                    }
++                }
++            });
+         }
+         ResourcesManager curManager = this.manager;
+         if (curManager instanceof ProviderManager) {
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/imports/ShowErrorsDuringImportItemsDialog.java b/org.talend.repository/src/main/java/org/talend/repository/imports/ShowErrorsDuringImportItemsDialog.java
+new file mode 100644
+index 0000000..b3aea83
+--- /dev/null
++++ b/org.talend.repository/src/main/java/org/talend/repository/imports/ShowErrorsDuringImportItemsDialog.java
+@@ -0,0 +1,270 @@
++// ============================================================================
++//
++// Copyright (C) 2006-2013 Talend Inc. - www.talend.com
++//
++// This source code is available under agreement available at
++// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
++//
++// You should have received a copy of the agreement
++// along with this program; if not, write to Talend SA
++// 9 rue Pages 92150 Suresnes, France
++//
++// ============================================================================
++package org.talend.repository.imports;
++
++import java.io.BufferedReader;
++import java.io.BufferedWriter;
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.io.OutputStreamWriter;
++import java.io.Reader;
++import java.io.Writer;
++import java.util.ArrayList;
++import java.util.List;
++
++import org.eclipse.core.runtime.Path;
++import org.eclipse.core.runtime.Platform;
++import org.eclipse.jface.dialogs.Dialog;
++import org.eclipse.jface.dialogs.IDialogConstants;
++import org.eclipse.jface.dialogs.MessageDialog;
++import org.eclipse.osgi.util.NLS;
++import org.eclipse.swt.SWT;
++import org.eclipse.swt.dnd.Clipboard;
++import org.eclipse.swt.dnd.TextTransfer;
++import org.eclipse.swt.dnd.Transfer;
++import org.eclipse.swt.events.KeyEvent;
++import org.eclipse.swt.events.KeyListener;
++import org.eclipse.swt.layout.GridData;
++import org.eclipse.swt.layout.GridLayout;
++import org.eclipse.swt.widgets.Composite;
++import org.eclipse.swt.widgets.Control;
++import org.eclipse.swt.widgets.Display;
++import org.eclipse.swt.widgets.Event;
++import org.eclipse.swt.widgets.FileDialog;
++import org.eclipse.swt.widgets.Listener;
++import org.eclipse.swt.widgets.Menu;
++import org.eclipse.swt.widgets.MenuItem;
++import org.eclipse.swt.widgets.Shell;
++import org.eclipse.swt.widgets.Table;
++import org.eclipse.swt.widgets.TableColumn;
++import org.eclipse.swt.widgets.TableItem;
++import org.talend.commons.ui.runtime.image.EImage;
++import org.talend.commons.ui.runtime.image.ImageProvider;
++import org.talend.repository.i18n.Messages;
++
++/**
++ * DOC hcyi class global comment. Detailled comment
++ */
++public class ShowErrorsDuringImportItemsDialog extends Dialog {
++
++    public List<String> errors = new ArrayList<String>();
++
++    public Table table;
++
++    private String fDirectory;
++
++    private File fInputFile;
++
++    public ShowErrorsDuringImportItemsDialog(Shell shell, List<String> errors) {
++        super(shell);
++        this.setShellStyle(this.getShellStyle() | SWT.MIN | SWT.MAX | SWT.RESIZE);
++        this.errors = errors;
++        fInputFile = Platform.getLogFileLocation().toFile();
++    }
++
++    @Override
++    protected void configureShell(Shell newShell) {
++        super.configureShell(newShell);
++        newShell.setText(Messages.getString("ShowErrorsDuringImportItemsDialog_title")); //$NON-NLS-1$
++        newShell.setImage(ImageProvider.getImage(EImage.ERROR_ICON));
++    }
++
++    @Override
++    protected void createButtonsForButtonBar(Composite parent) {
++        createButton(parent, IDialogConstants.OK_ID,
++                Messages.getString("ShowErrorsDuringImportItemsDialog_exportLogButton_title"), true);
++        createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CLOSE_LABEL, false);
++    }
++
++    @Override
++    protected void okPressed() {
++        handleExport(true);
++        super.okPressed();
++    }
++
++    @Override
++    protected Control createDialogArea(Composite parent) {
++        Composite tableComposite = new Composite(parent, SWT.NONE);
++        tableComposite.setLayout(new GridLayout());
++
++        GridData gd = new GridData(GridData.FILL_BOTH);
++        gd.heightHint = 500;
++        gd.widthHint = 900;
++        tableComposite.setLayoutData(gd);
++
++        // List Table
++        table = new Table(tableComposite, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
++        table.setLayoutData(new GridData(GridData.FILL_BOTH));
++        table.setHeaderVisible(true);
++        table.setLinesVisible(true);
++
++        TableColumn itemName = new TableColumn(table, SWT.NONE);
++        itemName.setText("Item Name"); //$NON-NLS-1$
++        itemName.setWidth(230);
++
++        TableColumn errorLog = new TableColumn(table, SWT.NONE);
++        errorLog.setText("Error Log"); //$NON-NLS-1$
++        errorLog.setWidth(330);
++
++        TableColumn path = new TableColumn(table, SWT.NONE);
++        path.setText("Path"); //$NON-NLS-1$
++        path.setWidth(350);
++        setMenu(table);
++        addItemElements(errors);
++        return parent;
++    }
++
++    //
++    private void setMenu(final Table table) {
++        Listener popUpListener = new Listener() {
++
++            @Override
++            public void handleEvent(Event event) {
++                StringBuffer sbf = new StringBuffer();
++                for (int i : table.getSelectionIndices()) {
++                    TableItem item = table.getItem(i);
++                    sbf.append(item.getData());
++                    sbf.append("\n");
++                }
++                Object[] data = { "" + sbf };
++                Clipboard clipboard = new Clipboard(Display.getCurrent());
++                Transfer[] transfers = new Transfer[] { TextTransfer.getInstance() };
++                clipboard.setContents(data, transfers);
++            }
++        };
++        Menu menu = new Menu(table);
++        MenuItem copy = new MenuItem(menu, SWT.PUSH);
++        copy.setText("Copy");
++        copy.setImage(ImageProvider.getImage(EImage.COPY_ICON));
++        copy.addListener(SWT.Selection, popUpListener);
++        table.setMenu(menu);
++
++        // add key Listener
++        table.addKeyListener(new KeyListener() {
++
++            @Override
++            public void keyReleased(KeyEvent arg0) {
++            }
++
++            @Override
++            public void keyPressed(KeyEvent e) {
++                if (e.keyCode == 99 && (e.stateMask & SWT.CTRL) != 0) {
++                    StringBuffer sbf = new StringBuffer();
++                    for (int i : table.getSelectionIndices()) {
++                        TableItem item = table.getItem(i);
++                        sbf.append(item.getData());
++                        sbf.append("\n");
++                    }
++                    Object[] data = { "" + sbf };
++                    Clipboard clipboard = new Clipboard(Display.getCurrent());
++                    Transfer[] transfers = new Transfer[] { TextTransfer.getInstance() };
++                    clipboard.setContents(data, transfers);
++                }
++            }
++        });
++    }
++
++    public void addItemElements(List<String> errors) {
++        table.setRedraw(false);
++        for (String error : errors) {
++            if (error != null) {
++                String[] messages = error.split(";");
++                if (messages.length != 3) {
++                    continue;
++                }
++                TableItem tableItem = new TableItem(table, SWT.NONE);
++                tableItem.setData(error);
++                tableItem.setImage(0, ImageProvider.getImage(EImage.ERROR_SMALL));
++                tableItem.setText(0, messages[0]);
++                tableItem.setText(1, messages[1]);
++                tableItem.setText(2, messages[2]);
++            }
++        }
++        table.setRedraw(true);
++    }
++
++    private void handleExport(boolean exportWholeLog) {
++        FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
++        dialog.setFilterExtensions(new String[] { "*.log" }); //$NON-NLS-1$
++        if (fDirectory != null) {
++            dialog.setFilterPath(fDirectory);
++        }
++        String path = dialog.open();
++        if (path != null) {
++            if (path.indexOf('.') == -1 && !path.endsWith(".log")) {
++                path += ".log"; //$NON-NLS-1$
++            }
++            File outputFile = new Path(path).toFile();
++            fDirectory = outputFile.getParent();
++            if (outputFile.exists()) {
++                String message = NLS.bind(Messages.getString("ShowErrorsDuringImportItemsDialog_confirmOverwrite_message"),
++                        outputFile.toString());
++                if (!MessageDialog.openQuestion(getShell(),
++                        (exportWholeLog ? Messages.getString("ShowErrorsDuringImportItemsDialog_exportLogButton_title")
++                                : Messages.getString("ShowErrorsDuringImportItemsDialog_exportLogEntry")), message)) {
++                    ;
++                }
++                return;
++            }
++
++            Reader in = null;
++            Writer out = null;
++            try {
++                out = new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"); //$NON-NLS-1$
++                if (exportWholeLog) {
++                    in = new InputStreamReader(new FileInputStream(fInputFile), "UTF-8"); //$NON-NLS-1$
++                }
++                copy(in, out);
++            } catch (IOException ex) {
++                try {
++                    if (in != null) {
++                        in.close();
++                    }
++                    if (out != null) {
++                        out.close();
++                    }
++                } catch (IOException e1) { // do nothing
++                }
++            }
++        }
++    }
++
++    private void copy(Reader input, Writer output) {
++        BufferedReader reader = null;
++        BufferedWriter writer = null;
++        try {
++            reader = new BufferedReader(input);
++            writer = new BufferedWriter(output);
++            String line;
++            while (reader.ready() && ((line = reader.readLine()) != null)) {
++                writer.write(line);
++                writer.newLine();
++            }
++        } catch (IOException e) { // do nothing
++        } finally {
++            try {
++                if (reader != null) {
++                    reader.close();
++                }
++                if (writer != null) {
++                    writer.close();
++                }
++            } catch (IOException e1) {
++                // do nothing
++            }
++        }
++    }
++}

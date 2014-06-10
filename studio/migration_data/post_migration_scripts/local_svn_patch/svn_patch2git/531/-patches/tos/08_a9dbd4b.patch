@@ -1,0 +1,98 @@
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/core/model/repository/RepositoryViewObject.java b/org.talend.core.runtime/src/main/java/org/talend/core/model/repository/RepositoryViewObject.java
+index ca5f04f..8733784 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/core/model/repository/RepositoryViewObject.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/core/model/repository/RepositoryViewObject.java
+@@ -30,6 +30,7 @@ import org.talend.commons.ui.runtime.image.ImageUtils;
+ import org.talend.commons.ui.runtime.image.ImageUtils.ICON_SIZE;
+ import org.talend.core.GlobalServiceRegister;
+ import org.talend.core.ICoreService;
++import org.talend.core.model.general.Project;
+ import org.talend.core.model.metadata.builder.connection.ConnectionFactory;
+ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
+ import org.talend.core.model.metadata.builder.connection.MetadataColumn;
+@@ -87,7 +88,7 @@ public class RepositoryViewObject implements IRepositoryViewObject {
+ 
+     private boolean deleted;
+ 
+-    private String projectLabel;
++    private final String projectLabel;
+ 
+     private String path;
+ 
+@@ -271,7 +272,12 @@ public class RepositoryViewObject implements IRepositoryViewObject {
+             factory = ((IProxyRepositoryService) GlobalServiceRegister.getDefault().getService(IProxyRepositoryService.class))
+                     .getProxyRepositoryFactory();
+ 
+-            IRepositoryViewObject object = factory.getLastVersion(id);
++            Project project = ProjectManager.getInstance().getProjectFromProjectLabel(this.projectLabel);
++            IRepositoryViewObject object = factory.getLastVersion(project, id, this.path, this.type);
++            if (object == null) {
++                // function less optimized, but at least it will find back the item no matter where it is.
++                object = factory.getLastVersion(id);
++            }
+             if (object == null) {
+                 throw new PersistenceException("item with name:" + label + " / id:" + id
+                         + " not found !\n\nPlease Refresh the repository.");
+diff --git a/org.talend.core.runtime/src/main/java/org/talend/repository/ProjectManager.java b/org.talend.core.runtime/src/main/java/org/talend/repository/ProjectManager.java
+index 93cf2b3..7c31a35 100644
+--- a/org.talend.core.runtime/src/main/java/org/talend/repository/ProjectManager.java
++++ b/org.talend.core.runtime/src/main/java/org/talend/repository/ProjectManager.java
+@@ -67,13 +67,13 @@ public final class ProjectManager {
+ 
+     private Project currentProject;
+ 
+-    private List<Project> referencedprojects = new ArrayList<Project>();
++    private final List<Project> referencedprojects = new ArrayList<Project>();
+ 
+-    private List<Project> allReferencedprojects = new ArrayList<Project>();
++    private final List<Project> allReferencedprojects = new ArrayList<Project>();
+ 
+-    private Map<String, String> mapProjectUrlToBranchUrl = new HashMap<String, String>();
++    private final Map<String, String> mapProjectUrlToBranchUrl = new HashMap<String, String>();
+ 
+-    private Map<String, List<FolderItem>> foldersMap = new HashMap<String, List<FolderItem>>();
++    private final Map<String, List<FolderItem>> foldersMap = new HashMap<String, List<FolderItem>>();
+ 
+     private ProjectManager() {
+         initCurrentProject();
+@@ -86,6 +86,18 @@ public final class ProjectManager {
+         return singleton;
+     }
+ 
++    public Project getProjectFromProjectLabel(String label) {
++        if (currentProject.getLabel().equals(label)) {
++            return currentProject;
++        }
++        for (Project project : getReferencedProjects()) {
++            if (project.getLabel().equals(label)) {
++                return project;
++            }
++        }
++        return null;
++    }
++
+     private void initCurrentProject() {
+         Context ctx = CoreRuntimePlugin.getInstance().getContext();
+         if (ctx != null) {
+diff --git a/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java b/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
+index de81980..1aea8ea 100644
+--- a/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
++++ b/org.talend.repository/src/main/java/org/talend/repository/ui/dialog/RepositoryReviewDialog.java
+@@ -375,7 +375,7 @@ public class RepositoryReviewDialog extends Dialog {
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "finshed add Filters"); //$NON-NLS-1$
+ 
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "set input"); //$NON-NLS-1$ 
+-        repositoryTreeViewer.expandAll();
++        repositoryTreeViewer.expandToLevel(2);
+         TimeMeasure.step(RepositoryReviewDialog.class.getSimpleName(), "expandAll"); //$NON-NLS-1$
+ 
+         // see feature 0003664: tRunJob: When opening the tree dialog to select the job target, it could be useful to
+@@ -610,7 +610,7 @@ class ViewerTextFilter extends ViewerFilter {
+  */
+ class DatabaseTypeFilter extends ViewerFilter {
+ 
+-    private String[] filterItems;
++    private final String[] filterItems;
+ 
+     public DatabaseTypeFilter(String[] filterItems) {
+         this.filterItems = filterItems;

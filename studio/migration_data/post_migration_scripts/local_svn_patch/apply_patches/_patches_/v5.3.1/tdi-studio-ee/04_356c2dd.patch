@@ -1,0 +1,33 @@
+diff --git a/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java b/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
+index e834b2d..25fc8b2 100644
+--- a/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
++++ b/org.talend.core.tis/src/main/java/org/talend/core/tis/showchanges/ui/body/BodyHeader.java
+@@ -132,6 +132,10 @@ public class BodyHeader extends Composite {
+ 
+     private DiffOfCurrentAndSVNRoot compareInput;
+ 
++    private static String BRANCHS_P = "/branches";
++
++    private static String BRANCHS_PS = "/branches/";
++
+     public BodyHeader(CompareResultView comResView, int style) {
+         super(comResView.getForm().getHead(), style);
+         this.comResView = comResView;
+@@ -690,9 +694,15 @@ public class BodyHeader extends Composite {
+     public void initCopyCompare(DirEntry branchEntry, DirEntry jobEntry) {
+         IRepositoryObject version1 = (IRepositoryObject) ((IStructuredSelection) currentVersionCombo.getSelection())
+                 .getFirstElement();
+-        anotherBranchCombo.getCombo().setText(branchEntry.getPath());
+         String path = branchEntry.getPath();
+-        compareTool.initCurrentBranchSVNJob(path, null);
++        if (path != null && path.equals(SVNConstant.NAME_TRUNK)) {
++            anotherBranchCombo.getCombo().setText(path);
++            compareTool.initCurrentBranchSVNJob(path, null);
++        } else {
++            String branchPath = BRANCHS_PS + path;
++            anotherBranchCombo.getCombo().setText(branchPath);
++            compareTool.initCurrentBranchSVNJob(branchPath, null);
++        }
+         svnJobList = initSvnJobList();
+         anotherVersionCombo.getCombo().removeAll();
+         String jobpath = jobEntry.getPath();

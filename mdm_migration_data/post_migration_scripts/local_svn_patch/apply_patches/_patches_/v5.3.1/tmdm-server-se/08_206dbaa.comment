@@ -1,0 +1,1 @@
+Committed by glzhou for patch TPS-596:  Incorporate Changeset #114242 from TMDM-6900 Missing namespace declaration in <exchange> message generated for beforeSaving processes while having xsi:types attributes in the entity
