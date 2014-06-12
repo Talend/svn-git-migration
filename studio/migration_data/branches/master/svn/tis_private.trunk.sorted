@@ -17,7 +17,9 @@ org.talend.configurator.common/
 org.talend.configurator.test/
 org.talend.dbrepocleaner/
 org.talend.dbrepocleaner-feature/
+org.talend.designer.components.ipaas/
 org.talend.gadget.admindashboard/
+org.talend.ipaas.tooling-feature/
 org.talend.jobserver.karaf.feature/
 org.talend.libraries.jdbc.db2/
 org.talend.libraries.jdbc.informix/

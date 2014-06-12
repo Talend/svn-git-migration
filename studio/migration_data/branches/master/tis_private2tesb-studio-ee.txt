@@ -1,0 +1,2 @@
+org.talend.designer.components.ipaas
+org.talend.ipaas.tooling-feature
