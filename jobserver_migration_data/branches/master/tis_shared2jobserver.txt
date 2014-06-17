@@ -7,3 +7,4 @@ org.talend.remote.jobserver.commons.nl
 org.talend.remote.jobserver.commons.test
 org.talend.remote.runtime.client
 org.talend.remote.runtime.client.test
+org.talend.remote.jobserver.client-feature
