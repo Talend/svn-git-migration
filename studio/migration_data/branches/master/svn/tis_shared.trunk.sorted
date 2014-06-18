@@ -60,6 +60,7 @@ org.talend.designer.components.clusterprovider/
 org.talend.designer.components.libs.tis/
 org.talend.designer.components.mrprovider/
 org.talend.designer.components.petalsprovider/
+org.talend.designer.components.stormprovider/
 org.talend.designer.components.thalesprovider/
 org.talend.designer.components.tismpprovider/
 org.talend.designer.components.tispeprovider/
@@ -227,6 +228,7 @@ org.talend.repository.rules/
 org.talend.repository.sapwizard/
 org.talend.repository.sapwizard.nl/
 org.talend.repository.sapwizard.test/
+org.talend.repository.storm/
 org.talend.repository.svnprovider/
 org.talend.repository.svnprovider-feature/
 org.talend.repository.svnprovider.nl/

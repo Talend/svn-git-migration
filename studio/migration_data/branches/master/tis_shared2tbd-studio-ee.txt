@@ -3,6 +3,7 @@ org.talend.demo.bigdata.ee
 org.talend.demo.bigdata.ee.nl
 org.talend.designer.components.clusterprovider
 org.talend.designer.components.mrprovider
+org.talend.designer.components.stormprovider
 org.talend.designer.components.tismpprovider
 org.talend.designer.mapreduce
 org.talend.designer.mapreduce.nl
@@ -17,4 +18,5 @@ org.talend.repository.hdfs
 org.talend.repository.hdfs.nl
 org.talend.repository.oozie
 org.talend.repository.oozie.nl
+org.talend.repository.storm
 org.talend.tismpx-feature
