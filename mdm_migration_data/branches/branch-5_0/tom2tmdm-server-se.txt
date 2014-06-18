@@ -10,7 +10,6 @@ org.talend.mdm.core.open
 org.talend.mdm.core.plugin.base
 org.talend.mdm.datamodel.synchronization
 org.talend.mdm.ext.images.server
-org.talend.mdm.ext.publish.component
 org.talend.mdm.jaas.jboss.open
 org.talend.mdm.service.calljob
 org.talend.mdm.service.calltransformer
@@ -28,13 +27,18 @@ org.talend.mdm.webapp.core
 org.talend.mdm.webapp.core.open
 org.talend.mdm.webapp.general
 org.talend.mdm.webapp.hierarchical
+org.talend.mdm.webapp.itemsbrowser
+org.talend.mdm.webapp.itemsbrowser2
+org.talend.mdm.webapp.itemstrash
 org.talend.mdm.webapp.journal
 org.talend.mdm.webapp.openmdm
 org.talend.mdm.webapp.recyclebin
 org.talend.mdm.webapp.reporting
-org.talend.mdm.webapp.stagingarea
+org.talend.mdm.webapp.updatereport
 org.talend.mdm.webapp.viewbrowser
+org.talend.mdm.webapp.welcome
 org.talend.mdm.webapp.welcomeportal
 org.talend.mdm.xmldb
 org.talend.mdm.xmlserver.interfaces
 talend.mdm.libraries
+
