@@ -1,0 +1,2 @@
+org.talend.dqportal
+org.talend.dqportal.installer.resources
