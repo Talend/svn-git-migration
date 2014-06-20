@@ -7,7 +7,7 @@ if [ -z $1 ]; then
 fi
 
 ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=studio/migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/studio_migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=dqportal_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/dqportal_migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=licence_security_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/licence_security_migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=mdm_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/mdm_migration.log
-ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=jobserver_migration_data -lib ant-contrib-1.0b3.jar  | tee ../final_repos/jobserver_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=dqportal_migration_data -Dskip.svn.update=true -lib ant-contrib-1.0b3.jar  | tee ../final_repos/dqportal_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=licence_security_migration_data -Dskip.svn.update=true -lib ant-contrib-1.0b3.jar  | tee ../final_repos/licence_security_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=mdm_migration_data -Dskip.svn.update=true -lib ant-contrib-1.0b3.jar  | tee ../final_repos/mdm_migration.log
+ant -Dtalend.remote.git.base.url=git@github.com:Talend -Dgithub.authorisation.token=$1 -Dmigration.data.folder.path=jobserver_migration_data -Dskip.svn.update=true -lib ant-contrib-1.0b3.jar  | tee ../final_repos/jobserver_migration.log
