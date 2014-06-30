@@ -1,5 +1,5 @@
 <!-- Ant script for migrating Talend SVN repositories to Git repostiories for the Studio -->    
-<project name="svn2gitMigration" default="migration">
+<project name="svn2gitMigration">
 	<property name="svn2gitMigration.file.path" value="${ant.file.svn2gitMigration}"/>
 	<dirname property="svn2gitMigration.dir.path" file="${svn2gitMigration.file.path}"/>	
 	<property name="repo.root.folder" location="${svn2gitMigration.dir.path}/.."/>
@@ -149,9 +149,20 @@
 	           <dump-error-log/>
             </finally>
 	    </trycatch>
-	    
 	</target>
 
+    
+    <!-- this target was created after the migration because we did not know how to simulate a merge before. -->
+    <!-- this i -->
+    <target name="merge.all.branches" depends="init" description="main migration script">
+        <for list="${list.of.final.git.repos}" param="git.final.repo.name">
+            <sequential>
+                <harmless-merge repo="@{git.final.repo.name}"/>     
+            </sequential>
+        </for>
+    </target>
+    
+    
 <!-- ================================= 
           target: update.all.git.svn.repos              
          ================================= -->
@@ -1037,6 +1048,33 @@
         </sequential>
     </macrodef>
 
+    <!-- = = = = = = = = = = = = = = = = =
+          macrodef: harmless-merge
+          This virtually merges (-s ours) branches defined in migration_ant.properties without mofiying any file.
+          This allow to prepare the branches for future merges of bux fixes from older branches to newer onces.            
+         = = = = = = = = = = = = = = = = = -->
+    <macrodef name="harmless-merge">
+        <attribute name="repo" description="name of the repo"/>
+        <sequential>
+            <local name="repo.path"/><!-- make the property local-->
+            <property name="repo.path" value="${final.repos.path}/@{repo}"/>            
+            <local name="branch.to.merge.list"/><!-- make the property local-->
+            <propertyselector property="branch.to.merge.list"
+                                     delimiter=","
+                                     match="merge\.ours\.from\.(.*)\.to"
+                                     select="\1"
+                                     casesensitive="true" />      
+            <echo>merge branches on repo ${repo.path}</echo>
+            <for list="${branch.to.merge.list}" delimiter="," param="branch.to.merge">
+                <sequential>
+                    <git argline="checkout ${merge.ours.from.@{branch.to.merge}.to}" dir="${repo.path}" />                    
+                    <git argline="merge -s ours @{branch.to.merge}" dir="${repo.path}" />                    
+                </sequential>
+            </for>    
+        </sequential>
+    </macrodef>
+    
+    
 	<!-- - - - - - - - - - - - - - - - - - 
           target: test.git-push-repo                      
          - - - - - - - - - - - - - - - - - -->
@@ -1052,6 +1090,15 @@
         <dump-error-log/>
     </target>
 
+<!-- - - - - - - - - - - - - - - - - - 
+          target: test-harmless-merge                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-harmless-merge">
+        <property name="repo.root.folder" value="/Applications/java/talend/git/studio-full-master"/>
+        <harmless-merge repo="tmdm-common"/>     
+    </target>
+ 
+    
     
     <!-- ================================= 
           target: test.clean.final.repos              
