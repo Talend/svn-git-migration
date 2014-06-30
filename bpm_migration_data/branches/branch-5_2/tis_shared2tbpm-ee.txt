@@ -1,0 +1,14 @@
+org.bonitasoft.studio.common.nl
+org.talend.bossp-feature
+org.talend.bpm
+org.talend.bpm-feature
+org.talend.bpm.workspace
+org.talend.designer.esb.bpm.core
+org.talend.designer.esb.bpm.ui
+org.talend.rcp.branding.talendplatform.bpmdqee-feature
+org.talend.rcp.branding.talendplatform.bpmdqeempx-feature
+org.talend.rcp.branding.talendplatform.bpmee-feature
+org.talend.rcp.branding.talendplatform.bpmeempx-feature
+org.talend.rcp.branding.talendplatform.bpmpe-feature
+org.talend.rcp.branding.talendplatform.bpmte-feature
+org.talend.rcp.branding.talendplatform.cloudbpmeempx-feature

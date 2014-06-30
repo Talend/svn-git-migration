@@ -1,0 +1,11 @@
+org.bonitasoft.studio.common.nl
+org.talend.bpm
+org.talend.bpm-feature
+org.talend.rcp.branding.talendplatform.bpmee
+org.talend.rcp.branding.talendplatform.bpmee-feature
+org.talend.rcp.branding.talendplatform.bpmeempx
+org.talend.rcp.branding.talendplatform.bpmeempx-feature
+org.talend.rcp.branding.talendplatform.bpmpe
+org.talend.rcp.branding.talendplatform.bpmpe-feature
+org.talend.rcp.branding.talendplatform.bpmte
+org.talend.rcp.branding.talendplatform.bpmte-feature
