@@ -1,0 +1,8 @@
+JenaSemProject
+MetaSem
+SemTest
+org.talend.dataquality.semantic.indicators
+org.talend.libraries.alignapi
+org.talend.libraries.apache.jena
+org.talend.model.sem
+org.talend.siq.resources

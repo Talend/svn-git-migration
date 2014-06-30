@@ -259,7 +259,7 @@
     <macrodef name="execute-all-extra-script">
         <sequential>
             <if>
-                <available file="${final.repos.path}/post_migration_scripts"/>
+                <available file="${migration.data.folder.path}/post_migration_scripts"/>
             <then>
                 <for param="scriptfile">
                   <path>
@@ -675,7 +675,7 @@
                             <git argline="rm -q -r ${files.to.remove}" dir="${destination.dir}"/>
                             <!-- remove the remaining folders cause git rm does not remove them -->
                             <my-exec executable="rm" dir="${destination.dir}" argline="-rf  ${files.to.remove}"/>
-                            <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch}from [@{svnrepo}]&quot;" dir="${destination.dir}"/>
+                            <git argline="commit -qam &quot;${commit.prefix} Removed unnecessary root files on branch @{branch} from [@{svnrepo}]&quot;" dir="${destination.dir}"/>
                             <var name="all.removed.files" value="${all.removed.files} ${files.to.remove}"/>
                         </then>
                         <else>
@@ -743,6 +743,16 @@
             <tempfile property="temp.file"/>
             <trycatch>
                 <try>
+                    <!--creates a commit that will be filled with all the files removed from history to avoid temper real svn commits -->
+                    <for param="branch" list="${list.of.branches}">
+                       <sequential>
+                         <git argline="checkout @{branch}" dir="${migration.workspace.path}/@{svnrepo}"/>
+                         <!-- creates a dummy file caus empty commit does not work with bfg, this file will be removed later  -->
+                         <my-exec executable="touch" dir="${migration.workspace.path}/@{svnrepo}" failonerror="true" argline="@{branch}.dummy"/>
+                         <git argline="add @{branch}.dummy" dir="${migration.workspace.path}/@{svnrepo}"/>
+                         <git argline="commit -m &quot;${commit.prefix} All binaries removed from history but required on HEAD&quot;" dir="${migration.workspace.path}/@{svnrepo}"/>
+                      </sequential>
+                    </for>
                     <concat destfile="${temp.file}">
                         <fileset refid="all.migration.files"/>
                     </concat>
@@ -783,6 +793,13 @@
                     <git argline="clean -fd" dir="${migration.workspace.path}/@{svnrepo}"/>
                 </try>
                 <finally>
+                    <for param="branch" list="${list.of.branches}">
+                       <sequential>
+                         <git argline="checkout @{branch}" dir="${migration.workspace.path}/@{svnrepo}"/>
+                         <git argline="rm @{branch}.dummy" dir="${migration.workspace.path}/@{svnrepo}"/>
+                         <git argline="commit --allow-empty --amend --no-edit" dir="${migration.workspace.path}/@{svnrepo}"/>
+                      </sequential>
+                    </for>
                     <delete file="${temp.file}"/>
                 </finally>
             </trycatch>
@@ -851,10 +868,10 @@
         		    <if>
         		        <isset property="@{from}2@{to}.merge.strategy"/>
         		        <then>
-                            <git argline="merge -s ${@{from}2@{to}.merge.strategy} @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
+                            <git argline="merge -s ${@{from}2@{to}.merge.strategy} @{from}/@{branch.name} -m &quot;${commit.prefix} migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
         		        </then>
         		        <else>
-                            <git argline="merge @{from}/@{branch.name} -m &quot;migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
+                            <git argline="merge @{from}/@{branch.name} -m &quot;${commit.prefix} migration merge @{from}/@{branch.name}&quot;" dir="${final.git.repo.path}" />
         		        </else>
         		    </if>
         		</sequential>
