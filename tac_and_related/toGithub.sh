@@ -102,8 +102,8 @@ git push -u origin --tags
 }
 
 cd ~
-init_cp
-#init_clone
+#init_cp
+init_clone
 tags
 branches
 clean_bfg

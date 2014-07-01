@@ -55,7 +55,7 @@ git push -u origin --tags
 }
 
 cd ~
-init_cp
-#init_clone
+#init_cp
+init_clone
 branches
 push
