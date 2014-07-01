@@ -995,9 +995,16 @@
             
             <trycatch reference="exception.to.rethrown">
                 <try>
-                    <exec executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
-                          <arg line="@{argline}"/>
-                    </exec>
+                    <if>
+                        <not>
+                            <isset property="skip.exec"/>
+                        </not>
+                        <then>    
+                            <exec executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" errorproperty="error.prop" outputproperty="@{output}">
+                                <arg line="@{argline}"/>
+                            </exec>
+                        </then>
+                    </if>
                     <!-- log the stdout if desired  -->
                     <if>
                         <and>
@@ -1057,18 +1064,29 @@
         <attribute name="repo" description="name of the repo"/>
         <sequential>
             <local name="repo.path"/><!-- make the property local-->
-            <property name="repo.path" value="${final.repos.path}/@{repo}"/>            
+            <property name="repo.path" value="${final.repos.path}/@{repo}"/>      
+            <!-- get and sort the list of properties for merging branches -->
             <local name="branch.to.merge.list"/><!-- make the property local-->
             <propertyselector property="branch.to.merge.list"
                                      delimiter=","
                                      match="merge\.ours\.from\.(.*)\.to"
-                                     select="\1"
-                                     casesensitive="true" />      
+                                     select="\0"
+                                     casesensitive="true" />
+            <local name="sorted.branch.to.merge.list"/><!-- make the property local-->
+            <sortlist property="sorted.branch.to.merge.list"
+                             value="${branch.to.merge.list}"
+                             delimiter=","
+                             orderPropertyFile="${migration.data.folder.path}/migration_ant.properties"/>            
             <echo>merge branches on repo ${repo.path}</echo>
-            <for list="${branch.to.merge.list}" delimiter="," param="branch.to.merge">
+            <for list="${sorted.branch.to.merge.list}" delimiter="," param="branch.to.merge.prop">
                 <sequential>
-                    <git argline="checkout ${merge.ours.from.@{branch.to.merge}.to}" dir="${repo.path}" />                    
-                    <git argline="merge -s ours @{branch.to.merge}" dir="${repo.path}" />                    
+                    <!--extract the branch to merge -->
+                    <local name="branch.to.merge"/>
+                    <propertyregex property="branch.to.merge" input="@{branch.to.merge.prop}" regexp="merge\.ours\.from\.(.*)\.to" replace="\1"/>
+                    <local name="branch.to.merge.in"/>
+                    <propertycopy name="branch.to.merge.in" from="merge.ours.from.${branch.to.merge}.to" />
+                    <git argline="checkout ${branch.to.merge.in}" dir="${repo.path}" />                    
+                    <git argline="merge -s ours ${branch.to.merge}" dir="${repo.path}" />                    
                 </sequential>
             </for>    
         </sequential>
@@ -1094,6 +1112,8 @@
           target: test-harmless-merge                      
          - - - - - - - - - - - - - - - - - -->
     <target name="test-harmless-merge">
+        <property name="skip.exec" value="true"/>
+
         <property name="repo.root.folder" value="/Applications/java/talend/git/studio-full-master"/>
         <harmless-merge repo="tmdm-common"/>     
     </target>
