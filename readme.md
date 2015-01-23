@@ -10,7 +10,7 @@ the script requires the following tools to be installed
 * git (with svn module: `# apt-get install git-svn`)
 * ant (`# apt-get install ant`). Engine to run the script
 * curl (`# apt-get install curl`). Used to call bitbucket REST APIs to delete and create remote repositories.
-* this GIT repository (`$ git clone https://bitbucket.org/talend/talend-svn-git-migration.git`).
+* this GIT repository (`$ git clone https://github.com/Talend/svn-git-migration.git`).
 
 ### Main script
 
