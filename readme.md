@@ -91,6 +91,7 @@ for Github
 * your\_password : (bitbucket only)the password used to create the remote repository.
 * your\_authorisation\_token : (github only)authorisation key generated on github to access the github APIs
 * the\_team\_id : (github only) optional property to specify the inital team id (number) that will be allowed to access the created repository(ies). You can get the list of teams and Ids using this command `curl -i -H 'Authorization: token your_authorisation_token' https://api.github.com/orgs/<your_organization>/teams`
+
 ###What does the script
 * Fetches the latest commit from the remote svn server.
 * create git tags and branches from the svn tags and branches.
