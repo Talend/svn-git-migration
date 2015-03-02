@@ -1338,6 +1338,13 @@
         <git-rename-tags repopath="${test.repo.path}" tagsuffix="${test.tag.suffix}"/>    
     </target>
     
+<!-- - - - - - - - - - - - - - - - - - 
+          target: git-create-remote-repo-github                     
+         - - - - - - - - - - - - - - - - - -->
+    <target name="test-git-create-remote-repo-github">
+        <property file="studio/migration_data/migration_ant.properties"/> 
+        <git-create-remote-repo-github name="test-repo-creation-through-api"/>    
+    </target>
     
  <!-- ================================= 
           target: test              
