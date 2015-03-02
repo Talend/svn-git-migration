@@ -935,7 +935,11 @@
             <echo message="deleting remote [@{name}] "/>
             <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -X DELETE https://api.github.com/repos/talend/@{name}" failonerror="false"/>
             <echo message="creating remote [@{name}] "/>
-            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true}' https://api.github.com/orgs/talend/repos"/>
+            <local name="extra.json"/><!-- make the property local-->
+            <condition property="extra.json" value=", &quot;team_id&quot;:${github.team.id}" else="">
+            	<isset property="github.team.id"/>
+            </condition>
+            <my-exec executable="curl" argline="-i -H 'Authorization: token ${github.authorisation.token}' -d '{ &quot;name&quot;: &quot;@{name}&quot;, &quot;private&quot;: true ${extra.json}	}' https://api.github.com/orgs/talend/repos"/>
         </sequential>
     </macrodef>
   
