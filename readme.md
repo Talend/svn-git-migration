@@ -21,7 +21,7 @@ all repos are found according to the java property **repo.root.folder**, by defa
 
 ### Preparing the Svn Git clones
 Before launching the migration script you need to clone locally the svn repositories you need to migrate. Please follow the Atlassian tuto [here](https://www.atlassian.com/git/migration#!migration-convert).
-You must create svn git clone in 
+You must create a git svn clone (by using the `git svn clone` command) in 
 
     ${repo.root.folder}/svn_git_repos
 please be sure to follow the full Atlassian tuto including the clean phase
